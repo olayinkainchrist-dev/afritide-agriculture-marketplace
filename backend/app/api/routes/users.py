@@ -1,0 +1,110 @@
+"""
+Afritide - Users Routes
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from sqlalchemy.orm import Session
+from sqlalchemy import desc
+from typing import Optional
+import uuid
+
+from app.core.database import get_db
+from app.core.dependencies import get_current_user, get_admin_user, get_pagination, PaginationParams
+from app.core.responses import success_response, paginated_response
+from app.models.user import User, UserStatus
+from app.models.product import Product, ProductStatus
+from app.schemas.user import UserUpdateSchema, UserPublicSchema, UserProfileSchema
+from app.services.cloudinary import upload_image
+
+router = APIRouter()
+
+
+@router.get("/profile/{user_id}", summary="Get public user profile")
+async def get_user_profile(user_id: uuid.UUID, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id, User.status != UserStatus.BANNED).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return success_response(data=UserPublicSchema.from_orm(user).dict())
+
+
+@router.put("/me", summary="Update my profile")
+async def update_profile(
+    payload: UserUpdateSchema,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    update_data = payload.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(current_user, field, value)
+    db.commit()
+    db.refresh(current_user)
+    return success_response(
+        data=UserProfileSchema.from_orm(current_user).dict(),
+        message="Profile updated successfully",
+    )
+
+
+@router.post("/me/avatar", summary="Upload profile avatar")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    url = await upload_image(file, folder="avatars")
+    if not url:
+        raise HTTPException(status_code=400, detail="Image upload failed")
+    current_user.profile_image = url
+    db.commit()
+    return success_response(data={"profile_image": url}, message="Avatar updated")
+
+
+@router.get("/me/wishlist", summary="Get my wishlisted products")
+async def get_my_wishlist(
+    pagination: PaginationParams = Depends(get_pagination),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.user import Wishlist
+    from app.schemas.product import ProductResponseSchema
+    query = db.query(Product).join(
+        Wishlist, Wishlist.product_id == Product.id
+    ).filter(
+        Wishlist.user_id == current_user.id,
+        Product.status == ProductStatus.ACTIVE,
+    ).order_by(desc(Wishlist.created_at))
+
+    total = query.count()
+    products = query.offset(pagination.offset).limit(pagination.page_size).all()
+
+    return paginated_response(
+        data=[ProductResponseSchema.from_orm(p).dict() for p in products],
+        total=total, page=pagination.page, page_size=pagination.page_size,
+    )
+
+
+@router.get("/farmers", summary="List verified farmers")
+async def list_farmers(
+    country: Optional[str] = None,
+    is_featured: Optional[bool] = None,
+    pagination: PaginationParams = Depends(get_pagination),
+    db: Session = Depends(get_db),
+):
+    from app.models.user import UserRole
+    query = db.query(User).filter(
+        User.role.in_([UserRole.FARMER, UserRole.COOPERATIVE, UserRole.EXPORTER]),
+        User.status == UserStatus.ACTIVE,
+    )
+    if country:
+        query = query.filter(User.country.ilike(f"%{country}%"))
+    if is_featured is not None:
+        query = query.filter(User.is_featured == is_featured)
+
+    query = query.order_by(desc(User.is_featured), desc(User.rating_average))
+
+    total = query.count()
+    users = query.offset(pagination.offset).limit(pagination.page_size).all()
+
+    return paginated_response(
+        data=[UserPublicSchema.from_orm(u).dict() for u in users],
+        total=total, page=pagination.page, page_size=pagination.page_size,
+    )
