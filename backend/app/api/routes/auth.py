@@ -60,7 +60,7 @@ async def register(
 
     user = User(
         email=payload.email,
-        phone=payload.phone if payload.phone else None,,
+        phone=payload.phone if payload.phone else None,
         password_hash=hash_password(payload.password),
         first_name=payload.first_name,
         last_name=payload.last_name,
