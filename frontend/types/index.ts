@@ -32,6 +32,7 @@ export interface User {
   is_featured: boolean;
   email_verified: boolean;
   phone_verified: boolean;
+  kyc_submitted: boolean;
   kyc_approved: boolean;
   subscription_plan: string;
   currency: string;

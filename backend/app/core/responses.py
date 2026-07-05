@@ -4,6 +4,7 @@ Afritide - Standard API Response Helpers
 
 from typing import Any, Optional
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 import math
 
 
@@ -14,11 +15,11 @@ def success_response(
 ) -> dict:
     return JSONResponse(
         status_code=status_code,
-        content={
+        content=jsonable_encoder({
             "success": True,
             "message": message,
             "data": data,
-        },
+        }),
     )
 
 
@@ -29,12 +30,12 @@ def error_response(
 ) -> dict:
     return JSONResponse(
         status_code=status_code,
-        content={
+        content=jsonable_encoder({
             "success": False,
             "message": message,
             "errors": errors,
             "data": None,
-        },
+        }),
     )
 
 
@@ -48,7 +49,7 @@ def paginated_response(
     total_pages = math.ceil(total / page_size) if page_size > 0 else 0
     return JSONResponse(
         status_code=200,
-        content={
+        content=jsonable_encoder({
             "success": True,
             "message": message,
             "data": data,
@@ -60,5 +61,5 @@ def paginated_response(
                 "has_next": page < total_pages,
                 "has_prev": page > 1,
             },
-        },
+        }),
     )

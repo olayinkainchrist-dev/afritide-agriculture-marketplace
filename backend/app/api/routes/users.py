@@ -25,7 +25,7 @@ async def get_user_profile(user_id: uuid.UUID, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id, User.status != UserStatus.BANNED).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return success_response(data=UserPublicSchema.from_orm(user).dict())
+    return success_response(data=UserPublicSchema.model_validate(current_user).model_dump(mode="json"))
 
 
 @router.put("/me", summary="Update my profile")
@@ -34,7 +34,7 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    update_data = payload.dict(exclude_unset=True)
+    update_data = payload.model_dump(exclude_unset=True)
 
     # Stamp submission time when KYC is first submitted
     if update_data.get("kyc_submitted") is True and not current_user.kyc_submitted:
@@ -45,7 +45,7 @@ async def update_profile(
     db.commit()
     db.refresh(current_user)
     return success_response(
-        data=UserProfileSchema.from_orm(current_user).dict(),
+        data=UserProfileSchema.model_validate(current_user).model_dump(mode="json"),
         message="Profile updated successfully",
     )
 
@@ -83,7 +83,7 @@ async def get_my_wishlist(
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
 
     return paginated_response(
-        data=[ProductResponseSchema.from_orm(p).dict() for p in products],
+        data=[ProductResponseSchema.model_validate(p).model_dump(mode="json") for p in products],
         total=total, page=pagination.page, page_size=pagination.page_size,
     )
 

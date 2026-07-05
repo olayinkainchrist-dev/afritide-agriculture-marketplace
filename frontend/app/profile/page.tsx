@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
@@ -20,6 +20,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -76,6 +78,32 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiClient.post("/users/me/avatar", formData, {
+        headers: { "Content-Type": undefined },
+      });
+      if (res.data.success) {
+        updateUser({ ...user!, profile_image: res.data.data.profile_image });
+        toast.success("Avatar updated");
+      }
+    } catch {
+      toast.error("Failed to upload avatar");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
   if (!isAuthenticated || !user) return null;
 
   const isFarmer = ["farmer", "cooperative", "exporter"].includes(user.role);
@@ -93,12 +121,25 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="relative flex-shrink-0">
               <div className="w-24 h-24 rounded-2xl bg-green-700 flex items-center justify-center text-white text-3xl font-black overflow-hidden border-2 border-green-600/40">
-                {user.profile_image
+                {uploadingAvatar
+                  ? <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  : user.profile_image
                   ? <img src={user.profile_image} alt="" className="w-full h-full object-cover" />
                   : getInitials(`${user.first_name} ${user.last_name}`)
                 }
               </div>
-              <button className="absolute -bottom-2 -right-2 w-7 h-7 bg-green-600 hover:bg-green-500 rounded-full flex items-center justify-center transition-colors shadow-lg">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute -bottom-2 -right-2 w-7 h-7 bg-green-600 hover:bg-green-500 disabled:bg-green-900 rounded-full flex items-center justify-center transition-colors shadow-lg"
+              >
                 <Camera className="w-3.5 h-3.5 text-white" />
               </button>
             </div>
