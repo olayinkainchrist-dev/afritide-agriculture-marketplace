@@ -144,3 +144,68 @@ export default function NotificationBell() {
                 </p>
               </div>
             ) : (
+              <div className="divide-y divide-white/[0.04]">
+                {notifications.map((notif) => {
+                  const config = TYPE_CONFIG[notif.type] ?? TYPE_CONFIG.system;
+                  const Icon = config.icon;
+                  return (
+                    <div
+                      key={notif.id}
+                      onClick={() => handleClick(notif)}
+                      className={`relative flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-all hover:bg-white/[0.04] ${
+                        !notif.is_read ? "bg-white/[0.02]" : ""
+                      }`}
+                    >
+                      {/* Unread dot */}
+                      {!notif.is_read && (
+                        <span className="absolute top-4 right-4 w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+                      )}
+
+                      {/* Icon */}
+                      <div className={`w-9 h-9 rounded-xl ${config.bg} flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                        <Icon className={`w-4 h-4 ${config.color}`} />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0 pr-6">
+                        <p className={`text-sm font-semibold leading-tight mb-0.5 ${notif.is_read ? "text-gray-300" : "text-white"}`}>
+                          {notif.title}
+                        </p>
+                        <p className="text-gray-500 text-xs leading-relaxed line-clamp-2">
+                          {notif.message}
+                        </p>
+                        <p className="text-gray-700 text-[10px] mt-1.5">
+                          {formatDate(notif.created_at)}
+                        </p>
+                      </div>
+
+                      {/* Delete */}
+                      <button
+                        onClick={(e) => deleteNotif(e, notif.id)}
+                        className="absolute top-3 right-3 p-1 text-gray-700 hover:text-gray-400 rounded-lg transition-colors opacity-0 hover:opacity-100 group-hover:opacity-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          {notifications.length > 0 && (
+            <div className="border-t border-white/[0.06] px-5 py-3 text-center">
+              <button
+                onClick={() => setOpen(false)}
+                className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
