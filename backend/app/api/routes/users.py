@@ -111,6 +111,6 @@ async def list_farmers(
     users = query.offset(pagination.offset).limit(pagination.page_size).all()
 
     return paginated_response(
-        data=[UserPublicSchema.from_orm(u).dict() for u in users],
+        data=[UserPublicSchema.model_validate(u).model_dump(mode="json") for u in users],
         total=total, page=pagination.page, page_size=pagination.page_size,
     )
