@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatPrice, getCategoryLabel, formatDate, formatNumber } from "@/lib/utils";
 import toast from "react-hot-toast";
+import ContactSellerButton from "@/components/shared/ContactSellerButton";
 
 interface Props { id: string; }
 
@@ -69,14 +70,7 @@ export default function ProductDetailClient({ id }: Props) {
 
   const images = product.images?.length ? product.images : (product.main_image ? [product.main_image] : []);
   const seller = product.seller;
-
-  const handleContact = () => {
-    if (!isAuthenticated) {
-      toast.error("Please login to contact the seller");
-      return;
-    }
-    toast.success("Opening chat with seller...");
-  };
+  const sellerName = seller ? (seller.business_name || `${seller.first_name} ${seller.last_name}`) : "the seller";
 
   const handleRFQ = () => {
     if (!isAuthenticated) {
@@ -357,14 +351,15 @@ export default function ProductDetailClient({ id }: Props) {
 
             {/* Action buttons */}
             <div className="flex flex-col gap-3">
-              <button
-                onClick={handleContact}
-                className="w-full group bg-green-500 hover:bg-green-400 text-white font-bold py-4 rounded-2xl transition-all shadow-xl shadow-green-900/30 flex items-center justify-center gap-2"
-              >
-                <MessageSquare className="w-5 h-5" />
-                Contact Seller
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+              {seller && (
+                <ContactSellerButton
+                  sellerId={seller.id}
+                  sellerName={sellerName}
+                  productId={product.id}
+                  className="w-full group bg-green-500 hover:bg-green-400 text-white font-bold py-4 rounded-2xl transition-all shadow-xl shadow-green-900/30 flex items-center justify-center gap-2"
+                  label="Contact Seller"
+                />
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleRFQ}
@@ -551,13 +546,13 @@ export default function ProductDetailClient({ id }: Props) {
                   ))}
                 </div>
 
-                <button
-                  onClick={handleContact}
+                <ContactSellerButton
+                  sellerId={seller.id}
+                  sellerName={sellerName}
+                  productId={product.id}
                   className="w-full bg-green-500 hover:bg-green-400 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  Send Message to Seller
-                </button>
+                  label="Send Message to Seller"
+                />
               </div>
             )}
 
