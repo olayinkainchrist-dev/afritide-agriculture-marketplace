@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import Optional
+from datetime import datetime
 import uuid
 
 from app.core.database import get_db
@@ -34,6 +35,11 @@ async def update_profile(
     db: Session = Depends(get_db),
 ):
     update_data = payload.dict(exclude_unset=True)
+
+    # Stamp submission time when KYC is first submitted
+    if update_data.get("kyc_submitted") is True and not current_user.kyc_submitted:
+        update_data["kyc_submitted_at"] = datetime.utcnow()
+
     for field, value in update_data.items():
         setattr(current_user, field, value)
     db.commit()

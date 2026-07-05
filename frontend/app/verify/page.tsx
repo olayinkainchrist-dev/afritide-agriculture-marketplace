@@ -33,6 +33,7 @@ export default function VerifyPage() {
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
     if (user?.kyc_approved) setSubmitted(true);
+    else if (user?.kyc_submitted) setSubmitted(true);
   }, [isAuthenticated, user, router]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

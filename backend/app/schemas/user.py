@@ -82,6 +82,10 @@ class UserUpdateSchema(BaseModel):
     # Exporter specific
     export_license_number: Optional[str] = None
 
+    # KYC submission
+    kyc_submitted: Optional[bool] = None
+    kyc_document_url: Optional[str] = None
+
 
 class UserPublicSchema(BaseModel):
     id: UUID
@@ -115,6 +119,7 @@ class UserProfileSchema(UserPublicSchema):
     website: Optional[str]
     email_verified: bool
     phone_verified: bool
+    kyc_submitted: bool
     kyc_approved: bool
     subscription_plan: str
     currency: str
