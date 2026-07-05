@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth.store";
 import {
   Leaf, LayoutDashboard, Package, ShoppingCart,
-  MessageSquare, FileText, TrendingUp, Bell,
+  MessageSquare, FileText, TrendingUp,
   Settings, LogOut, Menu, X, BadgeCheck,
   Users, BarChart3, Shield,
 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 interface NavItem {
   label: string;
@@ -147,10 +148,7 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="relative p-2 text-gray-500 hover:text-white rounded-xl hover:bg-white/[0.05] transition-all">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-green-400 rounded-full" />
-            </button>
+            <NotificationBell />
             <Link href="/marketplace" className="hidden sm:flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 bg-green-950/40 border border-green-800/40 px-3 py-2 rounded-xl transition-colors font-medium">
               View Marketplace →
             </Link>

@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Search, Bell, ChevronDown, Leaf, TrendingUp } from "lucide-react";
+import { Menu, X, Search, ChevronDown, Leaf, TrendingUp } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { getInitials } from "@/lib/utils";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 const categories = [
   { label: "🐄 Livestock", href: "/marketplace?category=livestock" },
@@ -80,10 +81,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2 ml-auto">
             {isAuthenticated && user ? (
               <>
-                <button className="relative p-2 text-gray-500 hover:text-white rounded-lg hover:bg-white/[0.05] transition-all">
-                  <Bell className="w-5 h-5" />
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-green-400 rounded-full" />
-                </button>
+                <NotificationBell />
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/[0.05] transition-colors">
                     <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center text-white text-xs font-black">
