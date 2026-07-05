@@ -128,7 +128,7 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
       </>
 
       {/* ── Main content ─────────────────────────────────── */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen">
 
         {/* Top bar */}
         <header className="sticky top-0 z-30 bg-[#07120a]/95 backdrop-blur-xl border-b border-white/[0.06] px-4 sm:px-6 py-3.5 flex items-center justify-between">
@@ -156,7 +156,7 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>
