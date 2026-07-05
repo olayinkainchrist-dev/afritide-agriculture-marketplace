@@ -25,7 +25,7 @@ async def get_user_profile(user_id: uuid.UUID, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id, User.status != UserStatus.BANNED).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return success_response(data=UserPublicSchema.model_validate(current_user).model_dump(mode="json"))
+    return success_response(data=UserPublicSchema.model_validate(user).model_dump(mode="json"))
 
 
 @router.put("/me", summary="Update my profile")

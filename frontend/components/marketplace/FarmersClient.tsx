@@ -178,7 +178,7 @@ function FarmerCard({ farmer }: { farmer: any }) {
 
   return (
     <Link
-      href={`/users/${farmer.id}`}
+      href={`/farmers/${farmer.id}`}
       className="group bg-white/[0.03] border border-white/[0.07] hover:border-green-800/50 rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/60 flex flex-col"
     >
       {/* Header with gradient */}

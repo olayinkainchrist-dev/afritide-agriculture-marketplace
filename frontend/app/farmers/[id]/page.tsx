@@ -50,7 +50,7 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
     </main>
   );
 
-  if (!farmer) return (
+  if (!userLoading && !farmer) return (
     <main className="min-h-screen bg-[#060f08]">
       <Navbar />
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
