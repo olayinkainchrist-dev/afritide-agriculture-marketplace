@@ -3,6 +3,7 @@ Afritide - Application Configuration
 """
 
 from pydantic_settings import BaseSettings
+from pydantic import validator
 from typing import List
 import secrets
 
@@ -24,13 +25,13 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     # ── CORS ─────────────────────────────────────────────────────────────
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://afritide.com",
-        "https://www.afritide.com",
-        "https://app.afritide.com",
-    ]
+    ALLOWED_ORIGINS: List[str] = ["*"]
+
+    @validator("ALLOWED_ORIGINS", pre=True)
+    def parse_origins(cls, v):
+        if isinstance(v, str):
+            return [i.strip() for i in v.split(",")]
+        return v
 
     # ── SUPABASE ─────────────────────────────────────────────────────────
     SUPABASE_URL: str = ""
