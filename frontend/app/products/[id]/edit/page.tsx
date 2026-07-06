@@ -37,7 +37,7 @@ const schema = z.object({
   storage_condition:      z.string().optional(),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.input<typeof schema>;
 
 const UNITS = ["kg","tonne","gram","litre","piece","bag","crate","dozen","bunch","head","unit"];
 const CURRENCIES = ["USD","NGN","GBP","EUR","GHS","CFA"];
