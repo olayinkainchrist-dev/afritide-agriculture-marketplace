@@ -21,12 +21,12 @@ const schema = z.object({
   description:            z.string().optional(),
   short_description:      z.string().optional(),
   category:               z.enum(["livestock","dairy","cash_crops","fruits","vegetables","fishery","poultry","machinery","seeds","fertilizers"]),
-  price:                  z.number({ invalid_type_error: "Enter a valid price" }).positive("Price must be greater than 0"),
-  currency:               z.string().default("USD"),
+  price:                  z.number().positive("Price must be greater than 0"),
+  currency:               z.string().min(1).default("USD"),
   is_negotiable:          z.boolean().default(false),
   minimum_order_quantity: z.number().positive().default(1),
   unit:                   z.enum(["kg","tonne","gram","litre","piece","bag","crate","dozen","bunch","head","unit"]),
-  quantity_available:     z.number({ invalid_type_error: "Enter available quantity" }).positive(),
+  quantity_available:     z.number().positive("Enter available quantity"),
   is_organic:             z.boolean().default(false),
   is_export_ready:        z.boolean().default(false),
   country:                z.string().optional(),
@@ -36,7 +36,7 @@ const schema = z.object({
   tags:                   z.string().optional(),
 });
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.input<typeof schema>;
 
 const CATEGORIES = [
   { value: "livestock",    label: "Livestock",    emoji: "🐄" },
