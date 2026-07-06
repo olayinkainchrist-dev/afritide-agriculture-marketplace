@@ -147,7 +147,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     try {
       await productsApi.update(id, {
         images: newImages,
-        main_image: newImages[0] || null,
+        main_image: newImages[0] || undefined,
       });
       toast.success("Image removed");
     } catch {
@@ -187,7 +187,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   );
 
   // Check ownership — only after product has loaded
-  if (!isLoading && product && product.seller_id !== user?.id) {
+  if (!isLoading && product && product?.seller_id !== user?.id) {
     router.push("/dashboard/farmer/products");
     return null;
   }
@@ -206,7 +206,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-3xl font-black text-white mb-1">Edit Product</h1>
-              <p className="text-gray-500 text-sm truncate max-w-md">{product.title}</p>
+              <p className="text-gray-500 text-sm truncate max-w-md">{product?.title}</p>
             </div>
             <Link href={`/products/${id}`}
               className="flex-shrink-0 text-xs text-green-400 hover:text-green-300 bg-green-950/40 border border-green-800/40 px-3 py-2 rounded-xl transition-colors">
