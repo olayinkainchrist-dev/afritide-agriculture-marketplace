@@ -48,6 +48,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [productImages, setProductImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
@@ -92,6 +93,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     }
   }, [product, reset]);
 
+  // Populate images when product loads
+  useEffect(() => {
+    if (product) {
+      setProductImages(product.images || (product.main_image ? [product.main_image] : []));
+    }
+  }, [product]);
+
   const onSubmit = async (data: FormData) => {
     setSaving(true);
     try {
@@ -117,13 +125,30 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setUploadingImages(true);
     try {
       const res = await productsApi.uploadImages(id, files);
-      if (res.success) {
+      if (res.success && res.data?.images) {
+        setProductImages(res.data.images);
         toast.success(`${files.length} image(s) uploaded`);
       }
     } catch {
       toast.error("Image upload failed");
     } finally {
       setUploadingImages(false);
+    }
+  };
+
+  const removeImage = async (index: number) => {
+    const newImages = productImages.filter((_, i) => i !== index);
+    setProductImages(newImages);
+    try {
+      await productsApi.update(id, {
+        images: newImages,
+        main_image: newImages[0] || null,
+      });
+      toast.success("Image removed");
+    } catch {
+      toast.error("Failed to remove image");
+      // Revert on failure
+      setProductImages(productImages);
     }
   };
 
@@ -141,7 +166,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     </main>
   );
 
-  if (!product) return (
+  if (!isLoading && !product) return (
     <main className="min-h-screen bg-[#060f08]">
       <Navbar />
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
@@ -156,8 +181,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     </main>
   );
 
-  // Check ownership
-  if (product.seller_id !== user?.id) {
+  // Check ownership — only after product has loaded
+  if (!isLoading && product && product.seller_id !== user?.id) {
     router.push("/dashboard/farmer/products");
     return null;
   }
@@ -340,14 +365,22 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </h2>
 
             {/* Existing images */}
-            {product.images && product.images.length > 0 && (
+            {productImages.length > 0 && (
               <div className="grid grid-cols-4 gap-3 mb-4">
-                {product.images.map((img, i) => (
-                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-white/[0.04] border border-white/[0.07]">
+                {productImages.map((img, i) => (
+                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-white/[0.04] border border-white/[0.07] group">
                     <img src={img} alt="" className="w-full h-full object-cover" />
                     {i === 0 && (
                       <span className="absolute bottom-1 left-1 text-[9px] bg-green-600 text-white px-1.5 py-0.5 rounded font-bold">Main</span>
                     )}
+                    {/* Delete button */}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500/90 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                    >
+                      <X className="w-3 h-3 text-white" />
+                    </button>
                   </div>
                 ))}
               </div>

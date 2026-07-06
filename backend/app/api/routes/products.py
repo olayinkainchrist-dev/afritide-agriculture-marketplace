@@ -145,18 +145,21 @@ async def get_product(
     db: Session = Depends(get_db),
     current_user: Optional[User] = Depends(get_optional_user),
 ):
-    product = db.query(Product).filter(
-        Product.id == product_id,
-        Product.status == ProductStatus.ACTIVE,
-    ).first()
+    product = db.query(Product).filter(Product.id == product_id).first()
 
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Increment view count
-    product.view_count += 1
-    db.commit()
-    db.refresh(product)
+    is_owner = current_user is not None and product.seller_id == current_user.id
+
+    if product.status != ProductStatus.ACTIVE and not is_owner:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # Only count views for the public, active listing
+    if product.status == ProductStatus.ACTIVE:
+        product.view_count += 1
+        db.commit()
+        db.refresh(product)
 
     data = ProductDetailSchema.from_orm(product).dict()
 
