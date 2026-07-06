@@ -75,8 +75,6 @@ class ProductUpdateSchema(BaseModel):
     is_organic: Optional[bool] = None
     is_export_ready: Optional[bool] = None
     certifications: Optional[List[str]] = None
-    images: Optional[List[str]] = None
-    main_image: Optional[str] = None
     country: Optional[str] = None
     state: Optional[str] = None
     city: Optional[str] = None
@@ -93,6 +91,8 @@ class ProductUpdateSchema(BaseModel):
     expiry_date: Optional[datetime] = None
     delivery_time_days: Optional[int] = None
     tags: Optional[List[str]] = None
+    images: Optional[List[str]] = None
+    main_image: Optional[str] = None
 
 
 class ProductResponseSchema(BaseModel):
