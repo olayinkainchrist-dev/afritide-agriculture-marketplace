@@ -127,8 +127,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setUploadingImages(true);
     try {
       const res = await productsApi.uploadImages(id, files);
-      if (res.success && res.data?.images) {
-        setProductImages(res.data.images);
+      if (res.success) {
+        const updated = await productsApi.getById(id);
+        if (updated.data?.images) {
+          setProductImages(updated.data.images);
+        }
         toast.success(`${files.length} image(s) uploaded`);
       }
     } catch {
