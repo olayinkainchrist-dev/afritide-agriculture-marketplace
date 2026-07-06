@@ -29,6 +29,8 @@ export interface User {
   rating_average: number;
   rating_count: number;
   total_sales: number;
+  total_orders: number;
+  total_spent: number;
   is_featured: boolean;
   email_verified: boolean;
   phone_verified: boolean;
