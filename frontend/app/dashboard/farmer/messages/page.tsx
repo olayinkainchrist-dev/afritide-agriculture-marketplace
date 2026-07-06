@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import apiClient from "@/lib/api/client";
 import { LayoutDashboard, Package, ShoppingCart, MessageSquare, FileText, BarChart3 } from "lucide-react";
@@ -60,23 +61,33 @@ export default function FarmerMessagesPage() {
           ) : (
             <div className="divide-y divide-white/[0.04]">
               {conversations.map((convo: any) => (
-                <div key={convo.conversation_id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer">
-                  <div className="w-10 h-10 rounded-xl bg-green-900/40 flex items-center justify-center text-green-400 font-black text-sm flex-shrink-0">
+                <Link
+                  key={convo.conversation_id}
+                  href={`/dashboard/farmer/messages/${convo.conversation_id}`}
+                  className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.04] transition-colors cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-green-900/40 border border-green-800/30 flex items-center justify-center text-green-400 font-black text-sm flex-shrink-0">
                     {convo.other_user_id?.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm">Buyer {convo.other_user_id?.slice(0, 8)}...</p>
-                    <p className="text-gray-600 text-xs truncate">{convo.last_message || "No messages yet"}</p>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-white font-semibold text-sm">
+                        Buyer {convo.other_user_id?.slice(0, 8)}...
+                      </p>
+                      {convo.last_message_at && (
+                        <p className="text-gray-600 text-xs">{formatDate(convo.last_message_at)}</p>
+                      )}
+                    </div>
+                    <p className="text-gray-500 text-xs truncate">
+                      {convo.last_message || "Start a conversation"}
+                    </p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    {convo.last_message_at && <p className="text-gray-600 text-xs">{formatDate(convo.last_message_at)}</p>}
-                    {convo.unread_count > 0 && (
-                      <span className="inline-flex items-center justify-center w-5 h-5 bg-green-500 text-white text-[10px] font-black rounded-full mt-1">
-                        {convo.unread_count}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                  {convo.unread_count > 0 && (
+                    <span className="w-5 h-5 bg-green-500 text-white text-[10px] font-black rounded-full flex items-center justify-center flex-shrink-0">
+                      {convo.unread_count}
+                    </span>
+                  )}
+                </Link>
               ))}
             </div>
           )}
