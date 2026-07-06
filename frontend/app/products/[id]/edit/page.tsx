@@ -107,7 +107,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         ...data,
         tags: data.tags ? data.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
         images: productImages,
-        main_image: productImages[0] || null,
+        main_image: productImages[0] || undefined,
       };
       const res = await productsApi.update(id, payload);
       if (res.success) {
