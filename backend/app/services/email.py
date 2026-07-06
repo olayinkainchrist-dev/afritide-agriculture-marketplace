@@ -83,7 +83,7 @@ def send_welcome_email(to_email: str, first_name: str, role: str):
 
 
 def send_password_reset_email(to_email: str, first_name: str, token: str):
-    reset_url = f"https://afritide.com/reset-password?token={token}"
+    reset_url = f"https://afritidegroup.com/reset-password?token={token}"
     content = f"""
         <h2 style="color: #1A1A1A;">Reset your password, {first_name}</h2>
         <p style="color: #555; font-size: 15px;">We received a request to reset your password. This link expires in 1 hour.</p>
