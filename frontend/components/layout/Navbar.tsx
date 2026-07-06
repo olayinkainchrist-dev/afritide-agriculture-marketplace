@@ -37,7 +37,7 @@ export default function Navbar() {
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
               <Leaf className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-black text-white">Afritide</span>
+            <span className="text-lg font-black text-white">Afritide Group</span>
           </Link>
 
           {/* Search */}

@@ -12,7 +12,7 @@ export default function Footer() {
               <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
                 <Leaf className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">Afritide</span>
+              <span className="text-xl font-bold text-white">Afritide Group</span>
             </div>
             <p className="text-sm leading-relaxed text-gray-400">
               Africa&apos;s leading digital agricultural marketplace connecting verified farmers, exporters, and buyers worldwide.
