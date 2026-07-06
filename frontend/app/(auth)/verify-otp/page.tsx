@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { Leaf, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -7,7 +7,7 @@ import { authApi } from "@/lib/api/auth.api";
 import { useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 
-export default function VerifyOtpPage() {
+function VerifyOtpForm() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
@@ -123,5 +123,13 @@ export default function VerifyOtpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#060f08]" />}>
+      <VerifyOtpForm />
+    </Suspense>
   );
 }
