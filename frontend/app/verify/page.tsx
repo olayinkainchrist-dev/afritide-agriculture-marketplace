@@ -39,16 +39,17 @@ export default function VerifyPage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File size must be under 10MB");
-      return;
-    }
+    if (file.size > 10 * 1024 * 1024) { toast.error("File must be under 10MB"); return; }
     setUploading(true);
     try {
-      // Simulate upload — in production this goes to Cloudinary
-      await new Promise(r => setTimeout(r, 1500));
-      setDocUrl(`uploaded:${file.name}`);
-      toast.success("Document uploaded successfully");
+      const formData = new FormData();
+      formData.append("file", file);
+      // No Content-Type header — let axios set it automatically with boundary
+      const res = await apiClient.post("/certificates/upload-doc", formData);
+      if (res.data.success) {
+        setDocUrl(res.data.data.document_url);
+        toast.success("Document uploaded successfully");
+      }
     } catch {
       toast.error("Upload failed");
     } finally {
@@ -57,17 +58,17 @@ export default function VerifyPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedDocType) {
-      toast.error("Please select a document type");
-      return;
-    }
+    if (!selectedDocType) { toast.error("Please select a document type"); return; }
+    if (!docUrl) { toast.error("Please upload your document first"); return; }
     setSubmitting(true);
     try {
-      // Use the admin KYC submission endpoint instead
       await apiClient.put("/users/me", {
         kyc_submitted: true,
-        kyc_document_url: docUrl || "pending-upload",
+        kyc_document_url: docUrl,
       });
+      await apiClient.post(
+        `/certificates/from-url?type=other&document_url=${encodeURIComponent(docUrl)}&notes=${encodeURIComponent(`KYC: ${selectedDocType}`)}`
+      );
       setSubmitted(true);
       toast.success("KYC submitted! Admin will review within 24-48 hours.");
     } catch {

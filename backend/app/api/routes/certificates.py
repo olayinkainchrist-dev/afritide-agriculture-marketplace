@@ -11,9 +11,10 @@ import uuid
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_admin_user
 from app.core.responses import success_response
+from app.models.user import User
 from app.models.certificate import Certificate, CertificateType, CertificateStatus
 from app.schemas.common import CertificateResponseSchema
-from app.services.cloudinary import upload_document
+from app.services.cloudinary import upload_document, upload_image
 from app.services.email import send_kyc_status_email
 
 router = APIRouter()
@@ -47,6 +48,46 @@ async def upload_certificate(
     return success_response(
         data=CertificateResponseSchema.from_orm(certificate).dict(),
         message="Certificate uploaded and pending review",
+        status_code=201,
+    )
+
+
+@router.post("/upload-doc", summary="Upload KYC document to Cloudinary")
+async def upload_kyc_document(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    url = await upload_image(file, folder="kyc-documents")
+    if not url:
+        raise HTTPException(status_code=400, detail="Document upload failed")
+    return success_response(
+        data={"document_url": url},
+        message="Document uploaded successfully",
+    )
+
+
+@router.post("/from-url", summary="Submit certificate from URL")
+async def submit_certificate_from_url(
+    type: str,
+    document_url: str,
+    notes: str = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    certificate = Certificate(
+        user_id=current_user.id,
+        type=CertificateType.OTHER,
+        document_url=document_url,
+        notes=notes,
+        status=CertificateStatus.PENDING,
+    )
+    db.add(certificate)
+    db.commit()
+    db.refresh(certificate)
+    return success_response(
+        data=CertificateResponseSchema.model_validate(certificate).model_dump(mode="json"),
+        message="Certificate submitted for review",
         status_code=201,
     )
 
