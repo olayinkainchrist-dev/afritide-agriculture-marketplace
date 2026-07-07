@@ -70,27 +70,27 @@ export default function AdminCertificatesPage() {
             </div>
           ) : (
             <div className="divide-y divide-white/[0.04]">
-              <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-white/[0.06] text-xs text-gray-600 font-medium uppercase tracking-wide">
+              <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 border-b border-white/[0.06] text-xs text-gray-600 font-medium uppercase tracking-wide">
                 <div className="col-span-3">User</div>
                 <div className="col-span-2">Type</div>
-                <div className="col-span-2">Cert No.</div>
+                <div className="col-span-1">Cert No.</div>
                 <div className="col-span-2">Submitted</div>
                 <div className="col-span-1">Doc</div>
-                <div className="col-span-2">Actions</div>
+                <div className="col-span-3">Actions</div>
               </div>
               {certs.map((c: any) => (
-                <div key={c.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors items-center">
-                  <div className="col-span-3">
-                    <p className="text-gray-400 text-xs font-mono">{c.user_id?.slice(0, 12)}...</p>
+                <div key={c.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors items-center">
+                  <div className="col-span-3 min-w-0">
+                    <p className="text-gray-400 text-xs font-mono truncate">{c.user_id?.slice(0, 12)}...</p>
                   </div>
-                  <div className="col-span-2">
-                    <span className="text-xs text-gray-300 capitalize bg-white/[0.04] px-2 py-1 rounded-lg">{c.type?.replace("_", " ")}</span>
+                  <div className="col-span-2 min-w-0">
+                    <span className="text-xs text-gray-300 capitalize bg-white/[0.04] px-2 py-1 rounded-lg whitespace-nowrap">{c.type?.replace("_", " ")}</span>
                   </div>
-                  <div className="col-span-2">
-                    <p className="text-gray-500 text-xs">{c.certificate_number || "—"}</p>
+                  <div className="col-span-1 min-w-0">
+                    <p className="text-gray-500 text-xs truncate">{c.certificate_number || "—"}</p>
                   </div>
-                  <div className="col-span-2">
-                    <p className="text-gray-500 text-xs">{formatDate(c.created_at)}</p>
+                  <div className="col-span-2 min-w-0">
+                    <p className="text-gray-500 text-xs truncate">{formatDate(c.created_at)}</p>
                   </div>
                   <div className="col-span-1">
                     <a href={c.document_url} target="_blank" rel="noopener noreferrer"
@@ -98,14 +98,14 @@ export default function AdminCertificatesPage() {
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   </div>
-                  <div className="col-span-2 flex items-center gap-2">
+                  <div className="col-span-3 flex items-center gap-1.5 flex-wrap">
                     <button onClick={() => approve(c.id)}
-                      className="flex items-center gap-1 bg-green-600/20 hover:bg-green-600/40 border border-green-700/40 text-green-400 text-xs font-bold px-3 py-1.5 rounded-xl transition-colors">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                      className="flex items-center gap-1 bg-green-600/20 hover:bg-green-600/40 border border-green-700/40 text-green-400 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors whitespace-nowrap">
+                      <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> Approve
                     </button>
                     <button onClick={() => reject(c.id)}
-                      className="flex items-center gap-1 bg-red-600/10 hover:bg-red-600/20 border border-red-700/30 text-red-400 text-xs font-bold px-3 py-1.5 rounded-xl transition-colors">
-                      <XCircle className="w-3.5 h-3.5" /> Reject
+                      className="flex items-center gap-1 bg-red-600/10 hover:bg-red-600/20 border border-red-700/30 text-red-400 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors whitespace-nowrap">
+                      <XCircle className="w-3.5 h-3.5 flex-shrink-0" /> Reject
                     </button>
                   </div>
                 </div>

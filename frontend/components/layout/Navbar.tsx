@@ -129,6 +129,9 @@ export default function Navbar() {
               {c.label}
             </Link>
           ))}
+          <Link href="/support" className="block py-2.5 px-3 text-gray-400 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors text-sm">
+            🆘 Support
+          </Link>
           {!isAuthenticated && (
             <div className="flex gap-3 pt-3">
               <Link href="/login" className="flex-1 text-center py-2.5 border border-green-800/60 text-green-400 rounded-xl text-sm font-bold">Login</Link>

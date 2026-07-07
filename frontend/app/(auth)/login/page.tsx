@@ -167,6 +167,15 @@ export default function LoginPage() {
               <Link href="/" className="text-gray-600 hover:text-gray-400 underline">Privacy Policy</Link>
             </p>
           </div>
+
+          <div className="mt-4 text-center">
+            <p className="text-gray-600 text-xs">
+              Account suspended or having trouble?{" "}
+              <Link href="/support" className="text-amber-400 hover:text-amber-300 transition-colors font-medium">
+                Contact Support
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
