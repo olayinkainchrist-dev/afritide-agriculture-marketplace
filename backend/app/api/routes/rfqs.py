@@ -10,7 +10,7 @@ from datetime import datetime
 import uuid
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, get_buyer_user, get_pagination, PaginationParams
+from app.core.dependencies import get_current_user, get_pagination, PaginationParams
 from app.core.responses import success_response, paginated_response
 from app.models.rfq import RFQ, RFQStatus
 from app.schemas.common import RFQCreateSchema, RFQQuoteSchema, RFQResponseSchema
@@ -25,7 +25,7 @@ def generate_rfq_number():
 @router.post("", summary="Create a Request for Quotation")
 async def create_rfq(
     payload: RFQCreateSchema,
-    current_user=Depends(get_buyer_user),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     rfq = RFQ(
@@ -50,7 +50,7 @@ async def create_rfq(
     db.refresh(rfq)
 
     return success_response(
-        data=RFQResponseSchema.from_orm(rfq).dict(),
+        data=RFQResponseSchema.model_validate(rfq).model_dump(mode="json"),
         message="RFQ submitted successfully",
         status_code=201,
     )
@@ -79,7 +79,7 @@ async def get_my_rfqs(
     rfqs = query.offset(pagination.offset).limit(pagination.page_size).all()
 
     return paginated_response(
-        data=[RFQResponseSchema.from_orm(r).dict() for r in rfqs],
+        data=[RFQResponseSchema.model_validate(r).model_dump(mode="json") for r in rfqs],
         total=total, page=pagination.page, page_size=pagination.page_size,
     )
 
@@ -96,7 +96,9 @@ async def get_rfq(
     if rfq.buyer_id != current_user.id and rfq.seller_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return success_response(data=RFQResponseSchema.from_orm(rfq).dict())
+    return success_response(
+        data=RFQResponseSchema.model_validate(rfq).model_dump(mode="json")
+    )
 
 
 @router.post("/{rfq_id}/quote", summary="Submit a quotation (seller)")
@@ -122,7 +124,7 @@ async def submit_quote(
     db.refresh(rfq)
 
     return success_response(
-        data=RFQResponseSchema.from_orm(rfq).dict(),
+        data=RFQResponseSchema.model_validate(rfq).model_dump(mode="json"),
         message="Quotation submitted successfully",
     )
 
@@ -133,7 +135,9 @@ async def accept_quote(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    rfq = db.query(RFQ).filter(RFQ.id == rfq_id, RFQ.buyer_id == current_user.id).first()
+    rfq = db.query(RFQ).filter(
+        RFQ.id == rfq_id, RFQ.buyer_id == current_user.id
+    ).first()
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
     if rfq.status != RFQStatus.QUOTED:
@@ -152,7 +156,9 @@ async def reject_quote(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    rfq = db.query(RFQ).filter(RFQ.id == rfq_id, RFQ.buyer_id == current_user.id).first()
+    rfq = db.query(RFQ).filter(
+        RFQ.id == rfq_id, RFQ.buyer_id == current_user.id
+    ).first()
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
 
