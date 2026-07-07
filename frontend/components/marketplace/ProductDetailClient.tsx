@@ -9,7 +9,7 @@ import {
   FileText, Package, Leaf, CheckCircle2, ArrowRight,
   ChevronLeft, ChevronRight, BadgeCheck, Clock,
   TrendingUp, Shield, Globe, Phone, Mail,
-  AlertCircle, Truck, Award, Users, Loader2,
+  AlertCircle, Truck, Award, Users, Loader2, X,
 } from "lucide-react";
 import { formatPrice, getCategoryLabel, formatDate, formatNumber } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -23,6 +23,7 @@ export default function ProductDetailClient({ id }: Props) {
   const [activeTab,   setActiveTab]   = useState<"overview" | "specs" | "seller" | "reviews">("overview");
   const [quantity,    setQuantity]    = useState(1);
   const [wishlisted,  setWishlisted]  = useState(false);
+  const [showRFQModal, setShowRFQModal] = useState(false);
 
   const { user, isAuthenticated } = useAuthStore();
   const queryClient = useQueryClient();
@@ -79,7 +80,7 @@ export default function ProductDetailClient({ id }: Props) {
       toast.error("Please login to send an RFQ");
       return;
     }
-    toast.success("RFQ form coming soon!");
+    setShowRFQModal(true);
   };
 
   const handleWishlist = async () => {
@@ -607,6 +608,14 @@ export default function ProductDetailClient({ id }: Props) {
         </div>
 
       </div>
+
+      {/* RFQ Modal */}
+      {showRFQModal && (
+        <RFQModal
+          product={product}
+          onClose={() => setShowRFQModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -704,6 +713,208 @@ function ReviewForm({ productId, onSubmitted }: { productId: string; onSubmitted
           : <><Star className="w-4 h-4" /> Submit Review</>
         }
       </button>
+    </div>
+  );
+}
+
+function RFQModal({ product, onClose }: { product: any; onClose: () => void }) {
+  const [form, setForm] = useState({
+    quantity: product.minimum_order_quantity || 1,
+    unit: product.unit,
+    target_price: "",
+    currency: product.currency || "USD",
+    delivery_country: "",
+    delivery_date: "",
+    specifications: "",
+    additional_requirements: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!form.quantity) { toast.error("Quantity is required"); return; }
+    setSubmitting(true);
+    try {
+      await apiClient.post("/rfqs", {
+        product_id: product.id,
+        seller_id: product.seller_id,
+        product_name: product.title,
+        category: product.category,
+        quantity: Number(form.quantity),
+        unit: form.unit,
+        target_price: form.target_price ? Number(form.target_price) : undefined,
+        currency: form.currency,
+        delivery_country: form.delivery_country || undefined,
+        delivery_date: form.delivery_date || undefined,
+        specifications: form.specifications || undefined,
+        additional_requirements: form.additional_requirements || undefined,
+      });
+      setSubmitted(true);
+      toast.success("RFQ submitted! The seller will respond shortly.");
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to submit RFQ");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-[#0a1a0f] border border-white/[0.08] rounded-3xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-white font-bold text-lg">Request for Quotation</h3>
+            <p className="text-gray-500 text-xs mt-0.5 truncate max-w-xs">{product.title}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-600 hover:text-white transition-colors p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {submitted ? (
+          <div className="text-center py-8">
+            <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
+            <h4 className="text-white font-bold text-xl mb-2">RFQ Submitted!</h4>
+            <p className="text-gray-400 text-sm mb-6">
+              Your request has been sent to the seller. They will respond with a quotation shortly.
+            </p>
+            <button
+              onClick={onClose}
+              className="bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-3 rounded-xl transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+
+            {/* Quantity + Unit */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">
+                  Quantity <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={form.quantity}
+                  onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })}
+                  min={product.minimum_order_quantity || 1}
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition-colors"
+                />
+                <p className="text-gray-700 text-[10px] mt-1">
+                  Min: {product.minimum_order_quantity} {product.unit}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">Unit</label>
+                <input
+                  value={form.unit}
+                  readOnly
+                  className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 text-gray-400 text-sm cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            {/* Target price + Currency */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">
+                  Target Price <span className="text-gray-600">(optional)</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={form.target_price}
+                  onChange={(e) => setForm({ ...form, target_price: e.target.value })}
+                  placeholder="Your budget"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">Currency</label>
+                <select
+                  value={form.currency}
+                  onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                  className="w-full bg-white/[0.05] border border-white/[0.08] text-white text-sm rounded-xl px-4 py-3 focus:outline-none appearance-none"
+                >
+                  {["USD","NGN","GBP","EUR","GHS","CFA"].map(c => (
+                    <option key={c} value={c} className="bg-[#0a1a0f]">{c}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Delivery country + date */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">Delivery Country</label>
+                <input
+                  value={form.delivery_country}
+                  onChange={(e) => setForm({ ...form, delivery_country: e.target.value })}
+                  placeholder="e.g. Nigeria"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">Delivery Date</label>
+                <input
+                  type="date"
+                  value={form.delivery_date}
+                  onChange={(e) => setForm({ ...form, delivery_date: e.target.value })}
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white text-sm focus:outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Specifications */}
+            <div>
+              <label className="text-xs text-gray-500 mb-1.5 block">Specifications</label>
+              <textarea
+                value={form.specifications}
+                onChange={(e) => setForm({ ...form, specifications: e.target.value })}
+                rows={2}
+                placeholder="Quality requirements, grade, certifications needed..."
+                className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors resize-none"
+              />
+            </div>
+
+            {/* Additional requirements */}
+            <div>
+              <label className="text-xs text-gray-500 mb-1.5 block">Additional Requirements</label>
+              <textarea
+                value={form.additional_requirements}
+                onChange={(e) => setForm({ ...form, additional_requirements: e.target.value })}
+                rows={2}
+                placeholder="Packaging, labelling, documentation..."
+                className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors resize-none"
+              />
+            </div>
+
+            {/* Current product price reference */}
+            <div className="bg-green-950/20 border border-green-800/20 rounded-xl p-3 flex items-center justify-between">
+              <span className="text-gray-500 text-xs">Listed price</span>
+              <span className="text-green-400 font-black text-sm">
+                {formatPrice(product.price, product.currency)} / {product.unit}
+              </span>
+            </div>
+
+            {/* Submit */}
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
+            >
+              {submitting
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+                : <><FileText className="w-4 h-4" /> Submit RFQ</>
+              }
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
