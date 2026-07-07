@@ -533,10 +533,10 @@ export default function ProductDetailClient({ id }: Props) {
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { label: "Response Rate",  value: `${seller.response_rate.toFixed(0)}%`,   icon: Clock },
-                    { label: "Total Sales",    value: seller.total_sales.toString(),            icon: TrendingUp },
-                    { label: "Rating",         value: seller.rating_average.toFixed(1),         icon: Star },
-                    { label: "Member Since",   value: formatDate(seller.created_at).split(" ").slice(2).join(" "), icon: Users },
+                    { label: "Response Rate", value: `${(seller.response_rate ?? 0).toFixed(0)}%`,  icon: Clock },
+                    { label: "Total Sales",   value: (seller.total_sales ?? 0).toString(),           icon: TrendingUp },
+                    { label: "Rating",        value: `${(seller.rating_average ?? 0).toFixed(1)}★`,  icon: Star },
+                    { label: "Member Since",  value: formatDate(seller.created_at).split(" ").slice(2).join(" "), icon: Users },
                   ].map(({ label, value, icon: Icon }) => (
                     <div key={label} className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-4 text-center">
                       <Icon className="w-4 h-4 text-green-500 mx-auto mb-2" />
