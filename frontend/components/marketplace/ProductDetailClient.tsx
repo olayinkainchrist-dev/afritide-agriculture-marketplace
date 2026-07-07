@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsApi } from "@/lib/api/products.api";
 import { useAuthStore } from "@/lib/store/auth.store";
 import Link from "next/link";
@@ -9,11 +9,12 @@ import {
   FileText, Package, Leaf, CheckCircle2, ArrowRight,
   ChevronLeft, ChevronRight, BadgeCheck, Clock,
   TrendingUp, Shield, Globe, Phone, Mail,
-  AlertCircle, Truck, Award, Users,
+  AlertCircle, Truck, Award, Users, Loader2,
 } from "lucide-react";
 import { formatPrice, getCategoryLabel, formatDate, formatNumber } from "@/lib/utils";
 import toast from "react-hot-toast";
 import ContactSellerButton from "@/components/shared/ContactSellerButton";
+import apiClient from "@/lib/api/client";
 
 interface Props { id: string; }
 
@@ -24,6 +25,7 @@ export default function ProductDetailClient({ id }: Props) {
   const [wishlisted,  setWishlisted]  = useState(false);
 
   const { user, isAuthenticated } = useAuthStore();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["product", id],
@@ -586,6 +588,13 @@ export default function ProductDetailClient({ id }: Props) {
                   </div>
                 </div>
 
+                {/* Review form — only for authenticated buyers */}
+                {isAuthenticated && user?.role === "buyer" && (
+                  <ReviewForm productId={product.id} onSubmitted={() => {
+                    queryClient.invalidateQueries({ queryKey: ["product", id] });
+                  }} />
+                )}
+
                 <div className="text-center py-12 border border-white/[0.06] rounded-2xl">
                   <Star className="w-10 h-10 text-gray-700 mx-auto mb-3" />
                   <p className="text-gray-500 font-medium">No reviews yet</p>
@@ -598,6 +607,103 @@ export default function ProductDetailClient({ id }: Props) {
         </div>
 
       </div>
+    </div>
+  );
+}
+
+function ReviewForm({ productId, onSubmitted }: { productId: string; onSubmitted: () => void }) {
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [comment, setComment] = useState("");
+  const [title, setTitle] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async () => {
+    if (rating === 0) { toast.error("Please select a rating"); return; }
+    if (!comment.trim()) { toast.error("Please write a review"); return; }
+    setSubmitting(true);
+    try {
+      await apiClient.post("/reviews", {
+        product_id: productId,
+        overall_rating: rating,
+        title: title.trim() || undefined,
+        comment: comment.trim(),
+      });
+      toast.success("Review submitted!");
+      setSubmitted(true);
+      onSubmitted();
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to submit review");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) return (
+    <div className="bg-green-950/30 border border-green-800/30 rounded-2xl p-5 text-center mb-6">
+      <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
+      <p className="text-white font-bold">Review submitted!</p>
+      <p className="text-gray-500 text-sm mt-1">Thank you for your feedback.</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 mb-6">
+      <h4 className="text-white font-bold mb-4 text-sm">Write a Review</h4>
+
+      {/* Star rating */}
+      <div className="flex items-center gap-1 mb-4">
+        {[1,2,3,4,5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => setRating(star)}
+            onMouseEnter={() => setHover(star)}
+            onMouseLeave={() => setHover(0)}
+            className="transition-transform hover:scale-110"
+          >
+            <Star className={`w-7 h-7 transition-colors ${
+              star <= (hover || rating)
+                ? "text-amber-400 fill-amber-400"
+                : "text-gray-700"
+            }`} />
+          </button>
+        ))}
+        {rating > 0 && (
+          <span className="text-gray-400 text-sm ml-2">
+            {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][rating]}
+          </span>
+        )}
+      </div>
+
+      {/* Title */}
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Review title (optional)"
+        className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors mb-3"
+      />
+
+      {/* Comment */}
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        rows={3}
+        placeholder="Share your experience with this product..."
+        className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors resize-none mb-4"
+      />
+
+      <button
+        onClick={handleSubmit}
+        disabled={submitting || rating === 0}
+        className="bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold px-6 py-3 rounded-xl transition-all flex items-center gap-2 text-sm"
+      >
+        {submitting
+          ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+          : <><Star className="w-4 h-4" /> Submit Review</>
+        }
+      </button>
     </div>
   );
 }
