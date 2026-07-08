@@ -68,7 +68,7 @@ def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
     """Get current user - must be active"""
-    if user.status != UserStatus.ACTIVE:
+    if current_user.status != UserStatus.ACTIVE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account not yet verified. Please verify your email.",
@@ -120,7 +120,10 @@ def get_admin_user(current_user: User = Depends(get_current_user)) -> User:
 
 
 def get_farmer_user(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role not in [UserRole.FARMER, UserRole.COOPERATIVE, UserRole.EXPORTER, UserRole.ADMIN]:
+    if current_user.role not in [
+        UserRole.FARMER, UserRole.COOPERATIVE,
+        UserRole.EXPORTER, UserRole.ADMIN,
+    ]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Farmer/Seller access required",
