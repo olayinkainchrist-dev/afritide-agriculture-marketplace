@@ -17,7 +17,7 @@ from app.core.config import settings
 from app.models import (
     user, product, order, payment,
     message, rfq, commodity, review, notification,
-    logistics, warehouse, certificate, advertisement, analytics
+    logistics, warehouse, certificate, advertisement, analytics, support
 )
 
 # Import all routers
@@ -26,7 +26,7 @@ from app.api.routes import (
     payments, messages, rfqs, commodities, reviews,
     notifications, logistics as logistics_router,
     warehouses, certificates, advertisements,
-    analytics as analytics_router, admin, search
+    analytics as analytics_router, admin, search, support
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -70,7 +70,7 @@ app = FastAPI(
     contact={
         "name": "SuperILM Technologies",
         "url": "https://superilmtech.com",
-        "email": "dev@superilmtech.com",
+        "email": "superilmtech@gmail.com",
     },
     license_info={
         "name": "Proprietary",
@@ -115,6 +115,7 @@ app.include_router(advertisements.router,   prefix=f"{API_PREFIX}/advertisements
 app.include_router(analytics_router.router, prefix=f"{API_PREFIX}/analytics",       tags=["📊 Analytics"])
 app.include_router(admin.router,            prefix=f"{API_PREFIX}/admin",           tags=["⚙️ Admin"])
 app.include_router(search.router,           prefix=f"{API_PREFIX}/search",          tags=["🔍 Search"])
+app.include_router(support.router,          prefix=f"{API_PREFIX}/support",         tags=["🆘 Support"])
 
 
 # ── HEALTH CHECK ────────────────────────────────────────────────────────────

@@ -119,3 +119,48 @@ def send_kyc_status_email(to_email: str, first_name: str, approved: bool, reason
             <p style="color: #c62828; font-size: 14px;">Reason: {reason or 'Documents did not meet requirements'}</p>
         """
     _send_email(to_email, "Afritide Verification Update", _email_wrapper(content))
+
+
+def send_support_notification(name: str, email: str, topic: str, message: str, ticket_id: str):
+    """Notify admin of new support ticket"""
+    content = f"""
+        <h2 style="color: #1A1A1A;">New Support Ticket #{ticket_id[:8].upper()}</h2>
+        <table style="width:100%; border-collapse:collapse;">
+            <tr><td style="padding:8px; color:#555; font-size:14px;"><strong>From:</strong></td><td style="padding:8px; color:#333; font-size:14px;">{name}</td></tr>
+            <tr><td style="padding:8px; color:#555; font-size:14px;"><strong>Email:</strong></td><td style="padding:8px; color:#333; font-size:14px;">{email}</td></tr>
+            <tr><td style="padding:8px; color:#555; font-size:14px;"><strong>Topic:</strong></td><td style="padding:8px; color:#333; font-size:14px;">{topic}</td></tr>
+        </table>
+        <div style="background:#f5f5f5; padding:16px; border-radius:8px; margin-top:16px;">
+            <p style="color:#333; font-size:14px; margin:0;">{message}</p>
+        </div>
+        <div style="text-align:center; margin-top:20px;">
+            <a href="https://www.afritidegroup.com/dashboard/admin/support"
+               style="background:#2E7D32; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold;">
+               View in Admin Dashboard
+            </a>
+        </div>
+    """
+    _send_email(
+        settings.SMTP_USER or "olayinkainchrist@gmail.com",
+        f"[Support] {topic} — {name}",
+        _email_wrapper(content)
+    )
+
+
+def send_support_reply(to_email: str, name: str, topic: str, reply: str):
+    """Send admin reply to user"""
+    content = f"""
+        <h2 style="color: #1A1A1A;">Response to your support request</h2>
+        <p style="color:#555; font-size:15px;">Hi {name}, we've responded to your request regarding: <strong>{topic}</strong></p>
+        <div style="background:#E8F5E9; padding:16px; border-radius:8px; margin:20px 0; border-left:4px solid #2E7D32;">
+            <p style="color:#1A1A1A; font-size:14px; margin:0; line-height:1.6;">{reply}</p>
+        </div>
+        <p style="color:#888; font-size:13px;">If you need further assistance, please visit our support page.</p>
+        <div style="text-align:center; margin-top:20px;">
+            <a href="https://www.afritidegroup.com/support"
+               style="background:#2E7D32; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold;">
+               Visit Support Center
+            </a>
+        </div>
+    """
+    _send_email(to_email, f"Re: {topic} — Afritide Support", _email_wrapper(content))

@@ -155,7 +155,7 @@ export default function SupportPage() {
                       <input
                         value={form.name}
                         onChange={e => setForm({ ...form, name: e.target.value })}
-                        placeholder="Olayinka Adebayo"
+                        placeholder="Olayinka Israel"
                         className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
                       />
                     </div>

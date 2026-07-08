@@ -18,7 +18,7 @@ export default function Footer() {
               Africa&apos;s leading digital agricultural marketplace connecting verified farmers, exporters, and buyers worldwide.
             </p>
             <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-green-500" /><span>hello@afritide.com</span></div>
+              <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-green-500" /><span>afritidegroup@gmail.com</span></div>
               <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-green-500" /><span>+2348023148419</span></div>
               <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-green-500" /><span>Lagos, Nigeria</span></div>
             </div>
