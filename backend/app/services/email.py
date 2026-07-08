@@ -4,7 +4,13 @@ Folder: backend/app/services/email.py
 """
 
 import logging
-import resend
+
+try:
+    import resend
+    RESEND_AVAILABLE = True
+except ImportError:
+    RESEND_AVAILABLE = False
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -16,10 +22,14 @@ def _send_email(to_email: str, subject: str, html_body: str) -> bool:
         logger.warning(f"[EMAIL SKIPPED - no RESEND_API_KEY] To: {to_email} | Subject: {subject}")
         return False
 
+    if not RESEND_AVAILABLE:
+        logger.error("Resend package not installed. Run: pip install resend")
+        return False
+
     try:
         resend.api_key = settings.RESEND_API_KEY
         resend.Emails.send({
-            "from": f"{settings.EMAIL_FROM_NAME} <onboarding@resend.dev>",
+            "from": f"{settings.EMAIL_FROM_NAME} <noreply@afritidegroup.com>",
             "to": to_email,
             "subject": subject,
             "html": html_body,
@@ -134,7 +144,7 @@ def send_support_notification(name: str, email: str, topic: str, message: str, t
         </div>
     """
     _send_email(
-        settings.SMTP_USER or "afritidegroup@gmail.com",
+        "afritidegroup@gmail.com",
         f"[Support] {topic} — {name}",
         _email_wrapper(content)
     )
