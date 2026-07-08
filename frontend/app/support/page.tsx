@@ -127,9 +127,16 @@ export default function SupportPage() {
                 </div>
                 <h2 className="text-2xl font-black text-white mb-2">Message Sent!</h2>
                 <p className="text-gray-400 mb-2 leading-relaxed">
-                  We&apos;ve received your message and will respond to <span className="text-green-400">{form.email}</span> within 24 hours.
+                  We&apos;ve received your message and will respond to{" "}
+                  <span className="text-green-400">{form.email}</span> within 24 hours.
                 </p>
-                <p className="text-gray-600 text-sm">
+                <div className="bg-amber-950/30 border border-amber-800/30 rounded-xl p-3 mt-3">
+                  <p className="text-amber-300 text-sm font-medium">
+                    📧 Check your email inbox for our reply — including your spam folder.
+                    You do not need to be logged in to receive our response.
+                  </p>
+                </div>
+                <p className="text-gray-600 text-sm mt-4">
                   For urgent issues, email us directly at{" "}
                   <a href="mailto:support@afritidegroup.com" className="text-green-400 hover:text-green-300">
                     support@afritidegroup.com
