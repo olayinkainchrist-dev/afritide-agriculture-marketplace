@@ -3,34 +3,27 @@ Afritide - Email Service
 Folder: backend/app/services/email.py
 """
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import logging
-
+import resend
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 
 def _send_email(to_email: str, subject: str, html_body: str) -> bool:
-    """Core SMTP send function. Logs and fails silently in dev if SMTP not configured."""
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        logger.warning(f"[EMAIL SKIPPED - no SMTP configured] To: {to_email} | Subject: {subject}")
+    """Send email via Resend API."""
+    if not settings.RESEND_API_KEY:
+        logger.warning(f"[EMAIL SKIPPED - no RESEND_API_KEY] To: {to_email} | Subject: {subject}")
         return False
 
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.EMAIL_FROM}>"
-        msg["To"] = to_email
-        msg.attach(MIMEText(html_body, "html"))
-
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(settings.EMAIL_FROM, to_email, msg.as_string())
-
+        resend.api_key = settings.RESEND_API_KEY
+        resend.Emails.send({
+            "from": f"{settings.EMAIL_FROM_NAME} <onboarding@resend.dev>",
+            "to": to_email,
+            "subject": subject,
+            "html": html_body,
+        })
         logger.info(f"Email sent to {to_email}: {subject}")
         return True
     except Exception as e:
@@ -76,14 +69,14 @@ def send_welcome_email(to_email: str, first_name: str, role: str):
         </p>
         <p style="color: #555; font-size: 15px;">You can now browse products, connect with verified farmers and buyers, and start trading.</p>
         <div style="text-align: center; margin: 28px 0;">
-            <a href="https://afritide.com/dashboard" style="background: #2E7D32; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold;">Go to Dashboard</a>
+            <a href="https://www.afritidegroup.com/dashboard" style="background: #2E7D32; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold;">Go to Dashboard</a>
         </div>
     """
     _send_email(to_email, "Welcome to Afritide!", _email_wrapper(content))
 
 
 def send_password_reset_email(to_email: str, first_name: str, token: str):
-    reset_url = f"https://afritidegroup.com/reset-password?token={token}"
+    reset_url = f"https://www.afritidegroup.com/reset-password?token={token}"
     content = f"""
         <h2 style="color: #1A1A1A;">Reset your password, {first_name}</h2>
         <p style="color: #555; font-size: 15px;">We received a request to reset your password. This link expires in 1 hour.</p>
@@ -141,7 +134,7 @@ def send_support_notification(name: str, email: str, topic: str, message: str, t
         </div>
     """
     _send_email(
-        settings.SMTP_USER or "olayinkainchrist@gmail.com",
+        settings.SMTP_USER or "afritidegroup@gmail.com",
         f"[Support] {topic} — {name}",
         _email_wrapper(content)
     )
