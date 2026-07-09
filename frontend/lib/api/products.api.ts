@@ -3,6 +3,7 @@ import { ApiResponse, PaginatedResponse, Product } from "@/types";
 
 export const productsApi = {
   list: async (params?: {
+    search?: string;
     category?: string;
     country?: string;
     min_price?: number;

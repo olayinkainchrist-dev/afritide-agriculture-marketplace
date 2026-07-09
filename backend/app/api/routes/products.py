@@ -47,6 +47,7 @@ async def list_products(
     is_negotiable: Optional[bool] = None,
     is_featured: Optional[bool] = None,
     seller_id: Optional[uuid.UUID] = None,
+    search: Optional[str] = None,
     sort_by: str = Query(default="created_at", enum=["created_at", "price", "rating", "views"]),
     sort_order: str = Query(default="desc", enum=["asc", "desc"]),
     pagination: PaginationParams = Depends(get_pagination),
@@ -79,6 +80,16 @@ async def list_products(
         query = query.filter(Product.is_featured == is_featured)
     if seller_id:
         query = query.filter(Product.seller_id == seller_id)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                Product.title.ilike(search_term),
+                Product.description.ilike(search_term),
+                Product.short_description.ilike(search_term),
+                Product.country.ilike(search_term),
+            )
+        )
 
     # Sorting
     sort_col = {
@@ -94,7 +105,7 @@ async def list_products(
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
 
     return paginated_response(
-        data=[ProductResponseSchema.from_orm(p).dict() for p in products],
+        data=[ProductResponseSchema.model_validate(p).model_dump(mode="json") for p in products],
         total=total,
         page=pagination.page,
         page_size=pagination.page_size,
