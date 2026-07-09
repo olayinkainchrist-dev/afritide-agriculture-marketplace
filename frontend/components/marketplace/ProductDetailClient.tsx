@@ -541,7 +541,7 @@ export default function ProductDetailClient({ id }: Props) {
                     className="flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors text-sm font-medium"
                   >
                     <Globe className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{seller.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
+                    <span>Website</span>
                   </a>
                 )}
                 
