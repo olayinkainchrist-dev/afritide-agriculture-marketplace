@@ -91,18 +91,25 @@ class UserPublicSchema(BaseModel):
     id: UUID
     first_name: str
     last_name: str
-    business_name: Optional[str]
-    profile_image: Optional[str]
+    business_name: Optional[str] = None
+    profile_image: Optional[str] = None
     role: UserRole
     badge: VerificationBadge
-    country: Optional[str]
-    state: Optional[str]
+    country: Optional[str] = None
+    state: Optional[str] = None
+    city: Optional[str] = None
+    bio: Optional[str] = None
+    website: Optional[str] = None
     rating_average: float
     rating_count: int
     total_sales: int
-    years_of_experience: Optional[int]
-    farm_name: Optional[str]
-    is_featured: bool
+    response_rate: float = 0.0
+    years_of_experience: Optional[int] = None
+    farm_name: Optional[str] = None
+    farm_size_hectares: Optional[float] = None
+    farm_description: Optional[str] = None
+    export_license_number: Optional[str] = None
+    is_featured: bool = False
     created_at: datetime
 
     class Config:
