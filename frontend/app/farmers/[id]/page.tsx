@@ -25,6 +25,7 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
       const res = await apiClient.get(`/users/profile/${id}`);
       return res.data.data;
     },
+    staleTime: 0,
   });
 
   const { data: productsData, isLoading: productsLoading } = useQuery({
