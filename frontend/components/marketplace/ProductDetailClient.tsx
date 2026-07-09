@@ -534,6 +534,17 @@ export default function ProductDetailClient({ id }: Props) {
                   </div>
                 )}
 
+                {seller.website && (
+                  <a href={seller.website.startsWith("http") ? seller.website : `https://${seller.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors text-sm font-medium"
+                  >
+                    <Globe className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{seller.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
+                  </a>
+                )}
+                
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
                     { label: "Response Rate", value: `${(seller.response_rate ?? 0).toFixed(0)}%`,  icon: Clock },
