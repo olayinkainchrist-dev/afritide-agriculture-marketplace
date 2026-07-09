@@ -69,9 +69,14 @@ export default function AdminReportsPage() {
   const handleDownload = async (report: typeof REPORTS[0]) => {
     setDownloading(report.id);
     try {
-      const res = await apiClient.get(report.endpoint, {
-        responseType: "blob",
-      });
+      const params = new URLSearchParams();
+      if (dateFrom) params.append("date_from", dateFrom);
+      if (dateTo) params.append("date_to", dateTo);
+
+      const res = await apiClient.get(
+        `${report.endpoint}?${params.toString()}`,
+        { responseType: "blob" }
+      );
 
       const blob = new Blob([res.data], { type: "text/csv" });
       const url = window.URL.createObjectURL(blob);
@@ -85,7 +90,7 @@ export default function AdminReportsPage() {
       toast.success(`${report.title} downloaded`);
     } catch (err: any) {
       if (err.response?.status === 404) {
-        toast.error("CSV export not available yet — use JSON instead");
+        toast.error("CSV export not available — use JSON instead");
       } else {
         toast.error("Failed to download report");
       }
@@ -97,19 +102,20 @@ export default function AdminReportsPage() {
   const handleDownloadJSON = async (report: typeof REPORTS[0]) => {
     setDownloading(report.id + "-json");
     try {
-      let endpoint = "";
-      switch (report.id) {
-        case "users": endpoint = "/admin/users?page_size=1000"; break;
-        case "products": endpoint = "/products?page_size=1000"; break;
-        case "orders": endpoint = "/orders?page_size=1000"; break;
-        case "commodities": endpoint = "/commodities?page_size=1000"; break;
-      }
+      const endpointMap: Record<string, string> = {
+        users:       "/admin/users?page_size=1000",
+        products:    "/products?page_size=1000",
+        orders:      "/orders?page_size=1000",
+        commodities: "/commodities?page_size=1000",
+      };
 
-      const res = await apiClient.get(endpoint);
-      const data = res.data?.data || [];
+      const res = await apiClient.get(endpointMap[report.id]);
+      const data = res.data?.data || res.data || [];
 
-      const json = JSON.stringify(data, null, 2);
-      const blob = new Blob([json], { type: "application/json" });
+      const blob = new Blob(
+        [JSON.stringify(data, null, 2)],
+        { type: "application/json" }
+      );
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -118,9 +124,9 @@ export default function AdminReportsPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success(`${report.title} downloaded`);
-    } catch {
-      toast.error("Failed to download report");
+      toast.success(`${report.title} downloaded as JSON`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to download JSON");
     } finally {
       setDownloading(null);
     }
@@ -168,7 +174,7 @@ export default function AdminReportsPage() {
           {REPORTS.map((report) => (
             <div key={report.id} className={`${report.bg} border rounded-2xl p-6`}>
               <div className="flex items-start gap-4 mb-4">
-                <div className={`w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center flex-shrink-0`}>
+                <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center flex-shrink-0">
                   <report.icon className={`w-5 h-5 ${report.color}`} />
                 </div>
                 <div>
@@ -204,17 +210,18 @@ export default function AdminReportsPage() {
           ))}
         </div>
 
-        {/* Quick stats export */}
+        {/* Full platform report */}
         <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
           <h3 className="text-white font-bold mb-4 text-sm">Platform Summary Export</h3>
           <p className="text-gray-500 text-sm mb-4">
             Export a complete platform summary including all key metrics in one file.
           </p>
           <button
+            disabled={downloading === "summary"}
             onClick={async () => {
               setDownloading("summary");
               try {
-                const [users, products, orders, commodities] = await Promise.all([
+                const [usersRes, productsRes, ordersRes, commoditiesRes] = await Promise.all([
                   apiClient.get("/admin/users?page_size=1000"),
                   apiClient.get("/products?page_size=1000"),
                   apiClient.get("/orders?page_size=1000"),
@@ -225,36 +232,40 @@ export default function AdminReportsPage() {
                   generated_at: new Date().toISOString(),
                   platform: "Afritide Agriculture Marketplace",
                   totals: {
-                    users: users.data?.pagination?.total || 0,
-                    products: products.data?.pagination?.total || 0,
-                    orders: orders.data?.pagination?.total || 0,
-                    commodities: commodities.data?.pagination?.total || 0,
+                    users:       usersRes.data?.pagination?.total ?? usersRes.data?.data?.length ?? 0,
+                    products:    productsRes.data?.pagination?.total ?? productsRes.data?.data?.length ?? 0,
+                    orders:      ordersRes.data?.pagination?.total ?? ordersRes.data?.data?.length ?? 0,
+                    commodities: commoditiesRes.data?.pagination?.total ?? commoditiesRes.data?.data?.length ?? 0,
                   },
-                  users: users.data?.data || [],
-                  products: products.data?.data || [],
-                  orders: orders.data?.data || [],
-                  commodities: commodities.data?.data || [],
+                  users:       usersRes.data?.data || [],
+                  products:    productsRes.data?.data || [],
+                  orders:      ordersRes.data?.data || [],
+                  commodities: commoditiesRes.data?.data || [],
                 };
 
-                const json = JSON.stringify(summary, null, 2);
-                const blob = new Blob([json], { type: "application/json" });
+                const blob = new Blob(
+                  [JSON.stringify(summary, null, 2)],
+                  { type: "application/json" }
+                );
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
-                link.setAttribute("download", `afritide-full-report-${new Date().toISOString().split("T")[0]}.json`);
+                link.setAttribute(
+                  "download",
+                  `afritide-full-report-${new Date().toISOString().split("T")[0]}.json`
+                );
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
                 window.URL.revokeObjectURL(url);
                 toast.success("Full platform report downloaded");
-              } catch {
-                toast.error("Failed to generate report");
+              } catch (err: any) {
+                toast.error(err.response?.data?.detail || "Failed to generate report");
               } finally {
                 setDownloading(null);
               }
             }}
-            disabled={downloading === "summary"}
-            className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
+            className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2"
           >
             {downloading === "summary"
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
