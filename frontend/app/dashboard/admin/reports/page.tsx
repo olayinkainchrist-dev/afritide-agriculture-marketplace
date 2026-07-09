@@ -69,16 +69,12 @@ export default function AdminReportsPage() {
   const handleDownload = async (report: typeof REPORTS[0]) => {
     setDownloading(report.id);
     try {
-      const params = new URLSearchParams();
-      if (dateFrom) params.append("date_from", dateFrom);
-      if (dateTo) params.append("date_to", dateTo);
+      const res = await apiClient.get(report.endpoint, {
+        responseType: "blob",
+      });
 
-      const res = await apiClient.get(
-        `${report.endpoint}?${params.toString()}`,
-        { responseType: "blob" }
-      );
-
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const blob = new Blob([res.data], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", report.filename);
@@ -87,8 +83,12 @@ export default function AdminReportsPage() {
       link.remove();
       window.URL.revokeObjectURL(url);
       toast.success(`${report.title} downloaded`);
-    } catch {
-      toast.error("Failed to download report");
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        toast.error("CSV export not available yet — use JSON instead");
+      } else {
+        toast.error("Failed to download report");
+      }
     } finally {
       setDownloading(null);
     }
@@ -97,7 +97,15 @@ export default function AdminReportsPage() {
   const handleDownloadJSON = async (report: typeof REPORTS[0]) => {
     setDownloading(report.id + "-json");
     try {
-      const res = await apiClient.get(report.endpoint.replace("/reports/", "/") + "?page_size=1000");
+      let endpoint = "";
+      switch (report.id) {
+        case "users": endpoint = "/admin/users?page_size=1000"; break;
+        case "products": endpoint = "/products?page_size=1000"; break;
+        case "orders": endpoint = "/orders?page_size=1000"; break;
+        case "commodities": endpoint = "/commodities?page_size=1000"; break;
+      }
+
+      const res = await apiClient.get(endpoint);
       const data = res.data?.data || [];
 
       const json = JSON.stringify(data, null, 2);
@@ -110,7 +118,7 @@ export default function AdminReportsPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success(`${report.title} downloaded as JSON`);
+      toast.success(`${report.title} downloaded`);
     } catch {
       toast.error("Failed to download report");
     } finally {

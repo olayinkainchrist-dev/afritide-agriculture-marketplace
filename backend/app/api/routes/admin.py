@@ -5,10 +5,13 @@ Folder: backend/app/api/routes/admin.py
 """
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime
 import uuid
+import csv
+import io
 
 from app.core.database import get_db
 from app.core.dependencies import get_admin_user, get_pagination, PaginationParams
@@ -211,3 +214,82 @@ async def send_announcement(
     db.commit()
 
     return success_response(message=f"Announcement sent to {len(users)} users")
+
+
+@router.get("/reports/users", summary="Download users report as CSV")
+async def download_users_report(
+    current_user=Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    users = db.query(User).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "First Name", "Last Name", "Email", "Phone", "Role", "Status", "KYC Approved", "Country", "Created At"])
+    for u in users:
+        writer.writerow([str(u.id), u.first_name, u.last_name, u.email, u.phone or "", u.role, u.status, u.kyc_approved, u.country or "", u.created_at])
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=afritide-users-report.csv"}
+    )
+
+
+@router.get("/reports/products", summary="Download products report as CSV")
+async def download_products_report(
+    current_user=Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.product import Product
+    products = db.query(Product).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Title", "Category", "Price", "Currency", "Unit", "Status", "Seller ID", "Country", "Created At"])
+    for p in products:
+        writer.writerow([str(p.id), p.title, p.category, p.price, p.currency, p.unit, p.status, str(p.seller_id), p.country or "", p.created_at])
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=afritide-products-report.csv"}
+    )
+
+
+@router.get("/reports/orders", summary="Download orders report as CSV")
+async def download_orders_report(
+    current_user=Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.order import Order
+    orders = db.query(Order).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Order Number", "Buyer ID", "Seller ID", "Status", "Total Amount", "Currency", "Created At"])
+    for o in orders:
+        writer.writerow([str(o.id), o.order_number, str(o.buyer_id), str(o.seller_id), o.status, o.total_amount, o.currency, o.created_at])
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=afritide-orders-report.csv"}
+    )
+
+
+@router.get("/reports/commodities", summary="Download commodities report as CSV")
+async def download_commodities_report(
+    current_user=Depends(get_admin_user),
+    db: Session = Depends(get_db),
+):
+    from app.models.commodity import CommodityPrice
+    commodities = db.query(CommodityPrice).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Commodity", "Category", "Price", "Currency", "Unit", "Trend", "Market", "Country", "Updated At"])
+    for c in commodities:
+        writer.writerow([str(c.id), c.commodity_name, c.category or "", c.price, c.currency, c.unit, c.trend, c.market or "", c.country or "", c.updated_at])
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=afritide-commodities-report.csv"}
+    )

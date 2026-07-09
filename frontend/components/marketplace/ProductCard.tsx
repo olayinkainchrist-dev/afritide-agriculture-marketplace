@@ -160,13 +160,13 @@ export default function ProductCard({ product, viewMode = "grid" }: Props) {
         )}
 
         {/* Price */}
-        <div className="flex items-end justify-between pt-3 border-t border-white/[0.06] mt-auto">
-          <div>
-            <span className="text-base font-black text-green-400">{formatPrice(product.price, product.currency)}</span>
-            <span className="text-[11px] text-gray-600 ml-1">/{product.unit}</span>
+        <div className="pt-3 border-t border-white/[0.06] mt-auto">
+          <div className="flex items-end gap-1 flex-wrap">
+            <span className="text-base font-black text-green-400 break-all">{formatPrice(product.price, product.currency)}</span>
+            <span className="text-[11px] text-gray-600">/{product.unit}</span>
           </div>
           {product.is_negotiable && (
-            <span className="text-[10px] text-amber-500 font-bold bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-900/40">
+            <span className="inline-block mt-1.5 text-[10px] text-amber-500 font-bold bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-900/40 whitespace-nowrap">
               Negotiable
             </span>
           )}
