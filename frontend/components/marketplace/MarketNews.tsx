@@ -19,7 +19,7 @@ export default function MarketNews() {
         "https://afritide-agriculture-marketplace.onrender.com/api/v1/search/news"
       );
       const json = await res.json();
-      return json.articles as NewsArticle[];
+      return (json.data || []) as NewsArticle[];
     },
     staleTime: 30 * 60 * 1000,
     retry: 1,
@@ -40,12 +40,12 @@ export default function MarketNews() {
   };
 
   if (isLoading) return (
-    <section className="py-20 bg-[#060f08] border-t border-white/[0.04]">
+    <section className="py-20 bg-[#060f08] border-t border-white/4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="h-10 bg-white/[0.04] rounded-2xl w-64 mb-10 animate-pulse" />
+        <div className="h-10 bg-white/4 rounded-2xl w-64 mb-10 animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white/[0.03] rounded-2xl h-56 animate-pulse" />
+            <div key={i} className="bg-white/3 rounded-2xl h-56 animate-pulse" />
           ))}
         </div>
       </div>
@@ -55,9 +55,10 @@ export default function MarketNews() {
   if (!articles.length) return null;
 
   return (
-    <section className="py-20 bg-[#060f08] border-t border-white/[0.04]">
+    <section className="py-20 bg-[#060f08] border-t border-white/4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
           <div>
             <p className="text-green-500 text-sm font-bold uppercase tracking-widest mb-3">
@@ -65,7 +66,7 @@ export default function MarketNews() {
             </p>
             <h2 className="text-4xl md:text-5xl font-black text-white">
               Agriculture
-              <span className="bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent"> News</span>
+              <span className="bg-linear-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent"> News</span>
             </h2>
             {updatedTime && (
               <p className="text-gray-600 text-sm mt-2 flex items-center gap-1.5">
@@ -81,14 +82,16 @@ export default function MarketNews() {
           </button>
         </div>
 
+        {/* Featured article */}
         {articles[0] && (
-          <a href={articles[0].url}
+          <a
+            href={articles[0].url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block bg-white/[0.03] border border-white/[0.07] hover:border-green-800/50 rounded-3xl overflow-hidden mb-5 transition-all hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/60"
+            className="group block bg-white/3 border border-white/[0.07] hover:border-green-800/50 rounded-3xl overflow-hidden mb-5 transition-all hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-black/60"
           >
             <div className="grid grid-cols-1 md:grid-cols-2">
-              <div className="h-56 md:h-72 bg-gradient-to-br from-green-950/60 to-emerald-950/40 overflow-hidden">
+              <div className="h-56 md:h-72 bg-linear-to-br from-green-950/60 to-emerald-950/40 overflow-hidden">
                 {articles[0].urlToImage ? (
                   <img
                     src={articles[0].urlToImage}
@@ -129,15 +132,17 @@ export default function MarketNews() {
           </a>
         )}
 
+        {/* News grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {articles.slice(1).map((article, i) => (
-            <a key={i}
+            <a
+              key={i}
               href={article.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group bg-white/[0.03] border border-white/[0.07] hover:border-green-800/50 rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/40 flex flex-col"
+              className="group bg-white/3 border border-white/[0.07] hover:border-green-800/50 rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/40 flex flex-col"
             >
-              <div className="h-40 bg-gradient-to-br from-green-950/60 to-emerald-950/40 overflow-hidden flex-shrink-0">
+              <div className="h-40 bg-linear-to-br from-green-950/60 to-emerald-950/40 overflow-hidden shrink-0">
                 {article.urlToImage ? (
                   <img
                     src={article.urlToImage}
@@ -156,14 +161,14 @@ export default function MarketNews() {
                   <span className="text-green-500 text-[10px] font-bold uppercase tracking-widest truncate">
                     {article.source.name}
                   </span>
-                  <span className="text-gray-700 text-[10px] ml-auto flex-shrink-0">
+                  <span className="text-gray-700 text-[10px] ml-auto shrink-0">
                     {formatDate(article.publishedAt)}
                   </span>
                 </div>
                 <h3 className="text-gray-200 font-bold text-sm leading-snug group-hover:text-white transition-colors line-clamp-3 flex-1">
                   {article.title}
                 </h3>
-                <div className="flex items-center gap-1 text-green-500 text-xs font-medium mt-3 pt-3 border-t border-white/[0.05]">
+                <div className="flex items-center gap-1 text-green-500 text-xs font-medium mt-3 pt-3 border-t border-white/5">
                   Read more <ExternalLink className="w-3 h-3" />
                 </div>
               </div>
