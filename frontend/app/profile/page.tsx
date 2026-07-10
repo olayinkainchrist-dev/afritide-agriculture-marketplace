@@ -415,10 +415,13 @@ export default function ProfilePage() {
                   <h3 className="text-white font-bold mb-4">Quick Links</h3>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { label: "My Dashboard",   href: isFarmer ? "/dashboard/farmer" : "/dashboard/buyer" },
-                      { label: "My Products",    href: "/dashboard/farmer/products", show: isFarmer },
-                      { label: "My Orders",      href: isFarmer ? "/dashboard/farmer/orders" : "/dashboard/buyer/orders" },
-                      { label: "Settings",       href: "/settings" },
+                      { label: "My Dashboard",    href: isFarmer ? "/dashboard/farmer" : "/dashboard/buyer" },
+                      { label: "My Products",     href: "/dashboard/farmer/products", show: isFarmer },
+                      { label: "My Orders",       href: isFarmer ? "/dashboard/farmer/orders" : "/dashboard/buyer/orders" },
+                      { label: "Settings",        href: "/settings" },
+                      { label: "Add Commodity",   href: "/dashboard/admin/commodities", show: user.role === "admin" },
+                      { label: "Support Tickets", href: "/dashboard/admin/support",     show: user.role === "admin" },
+                      { label: "View Reports",    href: "/dashboard/admin/reports",     show: user.role === "admin" },
                     ].filter(l => l.show !== false).map(({ label, href }) => (
                       <Link key={href} href={href}
                         className="bg-white/[0.03] border border-white/[0.06] hover:border-green-800/50 rounded-xl px-4 py-3 text-gray-400 hover:text-white text-sm font-medium transition-all text-center">
