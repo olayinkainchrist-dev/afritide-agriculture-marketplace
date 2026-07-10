@@ -1,15 +1,16 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { commoditiesApi } from "@/lib/api/commodities.api";
-import { formatPrice, getTrendColor, getTrendIcon } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { TrendingUp, RefreshCw, ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
 import Link from "next/link";
 
 export default function CommodityBoard() {
-  const { data, isLoading, refetch, dataUpdatedAt } = useQuery({
+  const { data, isLoading, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["commodities"],
     queryFn: () => commoditiesApi.list({ page_size: 12 }),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 
   const commodities = data?.data || [];
@@ -24,20 +25,29 @@ export default function CommodityBoard() {
   return (
     <section className="py-20 bg-[#06100a] border-t border-white/[0.04]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
           <div>
-            <p className="text-green-500 text-sm font-semibold uppercase tracking-widest mb-3">Market Intelligence</p>
+            <p className="text-green-500 text-sm font-semibold uppercase tracking-widest mb-3">
+              Market Intelligence
+            </p>
             <h2 className="text-4xl md:text-5xl font-black text-white">
               Live Commodity
               <span className="bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent"> Prices</span>
             </h2>
-            {updatedTime && <p className="text-gray-600 text-sm mt-2">Updated at {updatedTime}</p>}
+            {updatedTime && (
+              <p className="text-gray-600 text-sm mt-2">Updated at {updatedTime}</p>
+            )}
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => refetch()}
-              className="flex items-center gap-2 text-sm text-green-500 hover:text-green-400 font-medium transition-colors bg-green-950/40 border border-green-900/60 hover:border-green-700/60 px-4 py-2 rounded-xl">
-              <RefreshCw className="w-4 h-4" /> Refresh
+            <button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="flex items-center gap-2 text-sm text-green-500 hover:text-green-400 font-medium transition-colors bg-green-950/40 border border-green-900/60 hover:border-green-700/60 px-4 py-2 rounded-xl disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+              {isFetching ? "Refreshing..." : "Refresh"}
             </button>
             <Link href="/commodities" className="text-gray-500 hover:text-white text-sm font-medium transition-colors">
               Full board →
@@ -60,10 +70,14 @@ export default function CommodityBoard() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {commodities.map((c) => (
-              <div key={c.id}
-                className="bg-white/[0.03] border border-white/[0.07] hover:border-green-800/50 hover:bg-white/[0.05] rounded-2xl p-5 transition-all group cursor-pointer">
+              <div
+                key={c.id}
+                className="bg-white/[0.03] border border-white/[0.07] hover:border-green-800/50 hover:bg-white/[0.05] rounded-2xl p-5 transition-all group cursor-pointer"
+              >
                 <div className="flex items-start justify-between mb-3">
-                  <span className="font-semibold text-gray-200 text-sm leading-tight">{c.commodity_name}</span>
+                  <span className="font-semibold text-gray-200 text-sm leading-tight">
+                    {c.commodity_name}
+                  </span>
                   <TrendIcon trend={c.trend} />
                 </div>
                 <div className="text-xl font-black text-white mb-2">
@@ -81,7 +95,9 @@ export default function CommodityBoard() {
                     </span>
                   )}
                 </div>
-                {c.market && <p className="text-xs text-gray-700 mt-2 truncate">{c.market}</p>}
+                {c.market && (
+                  <p className="text-xs text-gray-700 mt-2 truncate">{c.market}</p>
+                )}
               </div>
             ))}
           </div>
