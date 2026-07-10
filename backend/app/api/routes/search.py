@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, desc
 from typing import Optional
+import httpx
 
 from app.core.database import get_db
 from app.core.dependencies import get_pagination, PaginationParams
@@ -96,3 +97,29 @@ async def autocomplete(
     ).distinct().limit(8).all()
 
     return success_response(data=[p[0] for p in products])
+
+
+@router.get("/news", summary="Get agricultural market news")
+async def get_market_news():
+    """Proxy NewsAPI request through backend to avoid CORS on production"""
+    try:
+        api_key = "0c20cfce6dc144e89a61b5884bf9b867"
+        url = (
+            f"https://newsapi.org/v2/everything"
+            f"?q=agriculture+africa+farming+commodities"
+            f"&language=en"
+            f"&sortBy=publishedAt"
+            f"&pageSize=6"
+            f"&apiKey={api_key}"
+        )
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            res = await client.get(url)
+            data = res.json()
+            if data.get("status") == "ok":
+                return success_response(
+                    data=data.get("articles", []),
+                    message="Market news fetched successfully"
+                )
+            return success_response(data=[], message="No news available")
+    except Exception as e:
+        return success_response(data=[], message="News temporarily unavailable")

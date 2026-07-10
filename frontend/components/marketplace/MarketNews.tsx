@@ -15,12 +15,10 @@ export default function MarketNews() {
   const { data, isLoading, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["market-news"],
     queryFn: async () => {
-      const key = process.env.NEXT_PUBLIC_NEWS_API_KEY;
       const res = await fetch(
-        `https://newsapi.org/v2/everything?q=agriculture+africa+farming+commodities&language=en&sortBy=publishedAt&pageSize=6&apiKey=${key}`
+        "https://afritide-agriculture-marketplace.onrender.com/api/v1/search/news"
       );
       const json = await res.json();
-      if (json.status !== "ok") throw new Error(json.message);
       return json.articles as NewsArticle[];
     },
     staleTime: 30 * 60 * 1000,
