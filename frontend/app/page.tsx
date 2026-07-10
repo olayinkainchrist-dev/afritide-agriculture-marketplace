@@ -7,6 +7,7 @@ import FeaturedFarmers from "@/components/marketplace/FeaturedFarmers";
 import CategoryGrid from "@/components/marketplace/CategoryGrid";
 import WhyAfritide from "@/components/marketplace/WhyAfritide";
 import CTASection from "@/components/marketplace/CTASection";
+import MarketNews from "@/components/marketplace/MarketNews";
 
 export default function HomePage() {
   return (
@@ -17,6 +18,7 @@ export default function HomePage() {
       <FeaturedProducts />
       <FeaturedFarmers />
       <CommodityBoard />
+      <MarketNews />
       <WhyAfritide />
       <CTASection />
       <Footer />
