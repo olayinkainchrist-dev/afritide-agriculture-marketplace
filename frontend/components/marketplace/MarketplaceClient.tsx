@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "@/lib/api/products.api";
@@ -70,9 +70,24 @@ export default function MarketplaceClient() {
     country:  searchParams.get("country") || undefined,
   });
 
+  // Sync URL search params when they change
+  useEffect(() => {
+    const q        = searchParams.get("q") || "";
+    const category = searchParams.get("category") as ProductCategory || undefined;
+    const country  = searchParams.get("country") || undefined;
+    setSearchQuery(q);
+    setFilters(prev => ({ ...prev, category, country }));
+    setPage(1);
+  }, [searchParams]);
+
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["products", filters, page, searchQuery],
-    queryFn:  () => productsApi.list({ ...filters, page, page_size: 20 }),
+    queryFn:  () => productsApi.list({
+      ...filters,
+      page,
+      page_size: 20,
+      search: searchQuery || undefined,
+    }),
     staleTime: 30_000,
   });
 
@@ -106,6 +121,8 @@ export default function MarketplaceClient() {
   const currentCategoryLabel = filters.category
     ? (CATEGORIES.find(c => c.id === filters.category)?.emoji ?? "") + " " +
       (CATEGORIES.find(c => c.id === filters.category)?.label ?? "")
+    : searchQuery
+    ? `Search: "${searchQuery}"`
     : "All Products";
 
   return (
@@ -125,7 +142,12 @@ export default function MarketplaceClient() {
               </h1>
               {totalCount > 0 && (
                 <p className="text-gray-600 text-sm mt-1">
-                  {totalCount.toLocaleString()} products available
+                  {totalCount.toLocaleString()} products found
+                </p>
+              )}
+              {totalCount === 0 && !isLoading && searchQuery && (
+                <p className="text-gray-600 text-sm mt-1">
+                  No products found for &quot;{searchQuery}&quot;
                 </p>
               )}
             </div>
@@ -136,13 +158,19 @@ export default function MarketplaceClient() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(1);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setPage(1);
+                }}
                 placeholder="Search products..."
                 className="w-full pl-10 pr-10 py-3 bg-white/[0.04] border border-white/[0.08] focus:border-green-700/50 rounded-xl text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => { setSearchQuery(""); setPage(1); }}
                   className="absolute right-3 top-1/2 -translate-y-1/2"
                 >
                   <X className="w-4 h-4 text-gray-600 hover:text-white transition-colors" />
@@ -273,7 +301,10 @@ export default function MarketplaceClient() {
                 </div>
                 <h3 className="text-white font-bold text-lg mb-2">No products found</h3>
                 <p className="text-gray-600 text-sm mb-6 max-w-xs">
-                  Try adjusting your filters or search terms.
+                  {searchQuery
+                    ? `No results for "${searchQuery}". Try different keywords.`
+                    : "Try adjusting your filters or search terms."
+                  }
                 </p>
                 <button
                   onClick={clearFilters}
