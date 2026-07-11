@@ -419,7 +419,7 @@ export default function ProfilePage() {
                       { label: "My Products",     href: "/dashboard/farmer/products", show: isFarmer },
                       { label: "My Orders",       href: isFarmer ? "/dashboard/farmer/orders" : "/dashboard/buyer/orders" },
                       { label: "Settings",        href: "/settings" },
-                      { label: "Add Commodity",   href: "/dashboard/admin/commodities", show: user.role === "admin" },
+                      { label: "Commodities",     href: "/dashboard/admin/commodities", show: user.role === "admin" },
                       { label: "Support Tickets", href: "/dashboard/admin/support",     show: user.role === "admin" },
                       { label: "View Reports",    href: "/dashboard/admin/reports",     show: user.role === "admin" },
                     ].filter(l => l.show !== false).map(({ label, href }) => (
