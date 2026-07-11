@@ -15,7 +15,7 @@ export const useAuth = () => {
         toast.success("Welcome back!");
         const role = res.data.user.role;
         if (role === "admin") router.push("/dashboard/admin");
-        else if (["farmer", "cooperative", "exporter"].includes(role)) router.push("/dashboard/farmer");
+        else if (["farmer", "cooperative", "exporter", "processing_company", "logistics_provider", "warehouse_operator"].includes(role)) router.push("/dashboard/farmer");
         else router.push("/dashboard/buyer");
       }
     } catch (err: any) {

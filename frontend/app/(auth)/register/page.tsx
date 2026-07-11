@@ -9,23 +9,26 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { useSearchParams } from "next/navigation";
 
 const schema = z.object({
-  first_name: z.string().min(2, "First name is required"),
-  last_name: z.string().min(2, "Last name is required"),
-  email: z.string().email("Enter a valid email"),
-  phone: z.string().optional(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["buyer", "farmer", "cooperative", "exporter", "processing_company", "logistics_provider", "warehouse_operator"]),
+  first_name:    z.string().min(2, "First name is required"),
+  last_name:     z.string().min(2, "Last name is required"),
+  email:         z.string().email("Enter a valid email"),
+  phone:         z.string().optional(),
+  password:      z.string().min(8, "Password must be at least 8 characters"),
+  role:          z.enum(["buyer", "farmer", "cooperative", "exporter", "processing_company", "logistics_provider", "warehouse_operator"]),
   business_name: z.string().optional(),
-  country: z.string().optional(),
+  country:       z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
 const roles = [
-  { value: "buyer", label: "Buyer", desc: "Source agricultural products", icon: "🛒" },
-  { value: "farmer", label: "Farmer", desc: "List and sell your produce", icon: "🌾" },
-  { value: "exporter", label: "Exporter", desc: "Export African commodities", icon: "🚢" },
-  { value: "cooperative", label: "Cooperative", desc: "Group of farmers trading together", icon: "🤝" },
+  { value: "buyer",               label: "Buyer",               desc: "Source agricultural products",       icon: "🛒" },
+  { value: "farmer",              label: "Farmer",              desc: "List and sell your produce",         icon: "🌾" },
+  { value: "exporter",            label: "Exporter",            desc: "Export African commodities",         icon: "🚢" },
+  { value: "cooperative",         label: "Cooperative",         desc: "Group of farmers trading together",  icon: "🤝" },
+  { value: "processing_company",  label: "Processing Company",  desc: "Mill, process or package produce",   icon: "🏭" },
+  { value: "logistics_provider",  label: "Logistics Provider",  desc: "Freight, shipping and delivery",     icon: "🚛" },
+  { value: "warehouse_operator",  label: "Warehouse Operator",  desc: "Storage and warehousing services",   icon: "🏪" },
 ];
 
 export default function RegisterPage() {
@@ -38,7 +41,7 @@ export default function RegisterPage() {
 
 function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading,      setLoading]      = useState(false);
   const { register: registerUser } = useAuth();
   const searchParams = useSearchParams();
   const defaultRole = (searchParams.get("role") as any) || "buyer";
@@ -56,6 +59,26 @@ function RegisterForm() {
       await registerUser(data);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getBusinessLabel = () => {
+    switch (selectedRole) {
+      case "farmer":             return "Farm name";
+      case "processing_company": return "Company name";
+      case "logistics_provider": return "Company name";
+      case "warehouse_operator": return "Warehouse name";
+      default:                   return "Business name";
+    }
+  };
+
+  const getBusinessPlaceholder = () => {
+    switch (selectedRole) {
+      case "farmer":             return "e.g. Israel Farms";
+      case "processing_company": return "e.g. AgroMill Nigeria Ltd";
+      case "logistics_provider": return "e.g. Swift Cargo Services";
+      case "warehouse_operator": return "e.g. SafeStore Warehousing";
+      default:                   return "e.g. Global Agro Exports Ltd";
     }
   };
 
@@ -88,7 +111,6 @@ function RegisterForm() {
           <p className="text-gray-500 text-base leading-relaxed mb-10">
             Whether you&apos;re a farmer in Kano, an exporter in Accra, or a buyer in London — Afritide connects you to the whole chain.
           </p>
-
           <div className="space-y-3">
             {[
               "Free to join — no setup fees",
@@ -112,9 +134,10 @@ function RegisterForm() {
         </div>
       </div>
 
-      {/* Right panel - form */}
+      {/* Right panel */}
       <div className="flex-1 flex items-start justify-center px-6 py-12 overflow-y-auto">
         <div className="w-full max-w-lg">
+
           {/* Mobile logo */}
           <div className="flex lg:hidden items-center gap-2 mb-8">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
@@ -160,24 +183,19 @@ function RegisterForm() {
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
             {/* Name row */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">First name</label>
-                <input
-                  {...register("first_name")}
-                  placeholder="Olayinka"
-                  className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-                />
+                <input {...register("first_name")} placeholder="Olayinka"
+                  className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
                 {errors.first_name && <p className="text-red-400 text-xs mt-1">{errors.first_name.message}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Last name</label>
-                <input
-                  {...register("last_name")}
-                  placeholder="Israel"
-                  className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-                />
+                <input {...register("last_name")} placeholder="Israel"
+                  className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
                 {errors.last_name && <p className="text-red-400 text-xs mt-1">{errors.last_name.message}</p>}
               </div>
             </div>
@@ -185,66 +203,48 @@ function RegisterForm() {
             {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">Email address</label>
-              <input
-                {...register("email")}
-                type="email"
-                placeholder="you@example.com"
-                className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-              />
+              <input {...register("email")} type="email" placeholder="you@example.com"
+                className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
               {errors.email && <p className="text-red-400 text-xs mt-1.5">{errors.email.message}</p>}
             </div>
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Phone number <span className="text-gray-600">(optional)</span></label>
-              <input
-                {...register("phone")}
-                type="tel"
-                placeholder="+2348023148419"
-                className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-              />
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Phone number <span className="text-gray-600">(optional)</span>
+              </label>
+              <input {...register("phone")} type="tel" placeholder="+2348023148419"
+                className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
             </div>
 
-            {/* Business name - show for non-buyers */}
+            {/* Business name — hide for buyers */}
             {selectedRole !== "buyer" && (
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  {selectedRole === "farmer" ? "Farm name" : "Business name"}{" "}
-                  <span className="text-gray-600">(optional)</span>
+                  {getBusinessLabel()} <span className="text-gray-600">(optional)</span>
                 </label>
-                <input
-                  {...register("business_name")}
-                  placeholder={selectedRole === "farmer" ? "e.g. Israel Farms" : "e.g. Global Agro Exports Ltd"}
-                  className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-                />
+                <input {...register("business_name")} placeholder={getBusinessPlaceholder()}
+                  className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
               </div>
             )}
 
             {/* Country */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">Country</label>
-              <input
-                {...register("country")}
-                placeholder="e.g. Nigeria"
-                className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-              />
+              <input {...register("country")} placeholder="e.g. Nigeria"
+                className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
             </div>
 
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">Password</label>
               <div className="relative">
-                <input
-                  {...register("password")}
+                <input {...register("password")}
                   type={showPassword ? "text" : "password"}
                   placeholder="Min. 8 characters"
-                  className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors pr-12"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 transition-colors"
-                >
+                  className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors pr-12" />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400 transition-colors">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -252,16 +252,12 @@ function RegisterForm() {
             </div>
 
             {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-green-500 hover:bg-green-400 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30 mt-2"
-            >
-              {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</>
-              ) : (
-                <>Create Free Account <ArrowRight className="w-4 h-4" /></>
-              )}
+            <button type="submit" disabled={loading}
+              className="w-full bg-green-500 hover:bg-green-400 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30 mt-2">
+              {loading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account...</>
+                : <>Create Free Account <ArrowRight className="w-4 h-4" /></>
+              }
             </button>
           </form>
 
