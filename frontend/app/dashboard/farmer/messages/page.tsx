@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: "Overview",    href: "/dashboard/farmer",          icon: LayoutDashboard },
   { label: "My Products", href: "/dashboard/farmer/products", icon: Package },
   { label: "Orders",      href: "/dashboard/farmer/orders",   icon: ShoppingCart },
-  { label: "Messages",    href: "/dashboard/farmer/messages", icon: MessageSquare, badge: 3 },
+  { label: "Messages",    href: "/dashboard/farmer/messages", icon: MessageSquare },
   { label: "RFQs",        href: "/dashboard/farmer/rfqs",     icon: FileText },
   { label: "Analytics",   href: "/dashboard/farmer/analytics",icon: BarChart3 },
 ];

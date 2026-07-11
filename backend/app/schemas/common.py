@@ -9,7 +9,7 @@ from uuid import UUID
 
 from app.models.order import OrderStatus
 from app.models.rfq import RFQStatus
-from app.models.commodity import PriceTrend
+from app.models.commodity import PriceTrend, PriceType
 from app.models.payment import PaymentMethod
 
 
@@ -46,10 +46,10 @@ class OrderResponseSchema(BaseModel):
     tax_amount: float
     total_amount: float
     currency: str
-    tracking_number: Optional[str]
-    estimated_delivery: Optional[datetime]
-    buyer_notes: Optional[str]
-    seller_notes: Optional[str]
+    tracking_number: Optional[str] = None
+    estimated_delivery: Optional[datetime] = None
+    buyer_notes: Optional[str] = None
+    seller_notes: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -85,17 +85,21 @@ class RFQResponseSchema(BaseModel):
     id: UUID
     rfq_number: str
     buyer_id: UUID
-    seller_id: Optional[UUID]
+    seller_id: Optional[UUID] = None
     product_name: str
     quantity: float
     unit: str
-    target_price: Optional[float]
+    target_price: Optional[float] = None
     currency: str
     status: RFQStatus
-    quoted_price: Optional[float]
-    quote_valid_until: Optional[datetime]
-    delivery_country: Optional[str]
-    delivery_date: Optional[datetime]
+    quoted_price: Optional[float] = None
+    quoted_quantity: Optional[float] = None
+    quote_valid_until: Optional[datetime] = None
+    quote_notes: Optional[str] = None
+    delivery_country: Optional[str] = None
+    delivery_date: Optional[datetime] = None
+    specifications: Optional[str] = None
+    additional_requirements: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -116,10 +120,10 @@ class MessageResponseSchema(BaseModel):
     conversation_id: UUID
     sender_id: UUID
     receiver_id: UUID
-    content: Optional[str]
-    attachments: Optional[List[Dict]]
+    content: Optional[str] = None
+    attachments: Optional[List[Dict]] = None
     is_read: bool
-    read_at: Optional[datetime]
+    read_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:
@@ -130,8 +134,8 @@ class ConversationResponseSchema(BaseModel):
     id: UUID
     participant_1_id: UUID
     participant_2_id: UUID
-    product_id: Optional[UUID]
-    last_message_at: Optional[datetime]
+    product_id: Optional[UUID] = None
+    last_message_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:
@@ -141,44 +145,55 @@ class ConversationResponseSchema(BaseModel):
 # ── COMMODITY SCHEMAS ─────────────────────────────────────────────────────────
 
 class CommodityCreateSchema(BaseModel):
-    commodity_name: str = Field(..., min_length=2)
-    category: Optional[str] = None
-    price: float = Field(..., gt=0)
-    currency: str = "USD"
-    unit: str
-    market: Optional[str] = None
-    country: Optional[str] = None
-    is_export_price: bool = False
+    commodity_name:    str   = Field(..., min_length=2)
+    category:          Optional[str] = None
+    price_type:        PriceType = PriceType.WHOLESALE
+    price:             float = Field(..., gt=0)
+    currency:          str = "USD"
+    unit:              str
+    market:            Optional[str] = None
+    region:            Optional[str] = None
+    country:           Optional[str] = None
+    is_export_price:   bool = False
     is_domestic_price: bool = True
-    source: Optional[str] = None
-    notes: Optional[str] = None
+    source:            Optional[str] = None
+    notes:             Optional[str] = None
 
 
 class CommodityUpdateSchema(BaseModel):
-    price: Optional[float] = None
-    currency: Optional[str] = None
-    unit: Optional[str] = None
-    market: Optional[str] = None
-    notes: Optional[str] = None
-    is_active: Optional[bool] = None
+    price:             Optional[float] = None
+    price_type:        Optional[PriceType] = None
+    currency:          Optional[str] = None
+    unit:              Optional[str] = None
+    market:            Optional[str] = None
+    region:            Optional[str] = None
+    country:           Optional[str] = None
+    notes:             Optional[str] = None
+    is_active:         Optional[bool] = None
+    is_export_price:   Optional[bool] = None
+    is_domestic_price: Optional[bool] = None
 
 
 class CommodityResponseSchema(BaseModel):
-    id: UUID
-    commodity_name: str
-    category: Optional[str]
-    price: float
-    previous_price: Optional[float]
-    currency: str
-    unit: str
-    trend: PriceTrend
-    change_percentage: Optional[float]
-    market: Optional[str]
-    country: Optional[str]
-    is_export_price: bool
+    id:                UUID
+    commodity_name:    str
+    category:          Optional[str] = None
+    price_type:        Optional[PriceType] = PriceType.WHOLESALE
+    price:             float
+    previous_price:    Optional[float] = None
+    currency:          str
+    unit:              str
+    trend:             PriceTrend
+    change_percentage: Optional[float] = None
+    market:            Optional[str] = None
+    region:            Optional[str] = None
+    country:           Optional[str] = None
+    is_export_price:   bool
     is_domestic_price: bool
-    is_active: bool
-    updated_at: datetime
+    is_active:         bool
+    source:            Optional[str] = None
+    notes:             Optional[str] = None
+    updated_at:        datetime
 
     class Config:
         from_attributes = True
@@ -187,32 +202,32 @@ class CommodityResponseSchema(BaseModel):
 # ── REVIEW SCHEMAS ────────────────────────────────────────────────────────────
 
 class ReviewCreateSchema(BaseModel):
-    product_id: Optional[UUID] = None
-    reviewee_id: Optional[UUID] = None
-    order_id: Optional[UUID] = None
-    overall_rating: float = Field(..., ge=1, le=5)
-    quality_rating: Optional[float] = Field(None, ge=1, le=5)
-    delivery_rating: Optional[float] = Field(None, ge=1, le=5)
+    product_id:           Optional[UUID] = None
+    reviewee_id:          Optional[UUID] = None
+    order_id:             Optional[UUID] = None
+    overall_rating:       float = Field(..., ge=1, le=5)
+    quality_rating:       Optional[float] = Field(None, ge=1, le=5)
+    delivery_rating:      Optional[float] = Field(None, ge=1, le=5)
     communication_rating: Optional[float] = Field(None, ge=1, le=5)
-    packaging_rating: Optional[float] = Field(None, ge=1, le=5)
-    title: Optional[str] = None
-    comment: Optional[str] = None
+    packaging_rating:     Optional[float] = Field(None, ge=1, le=5)
+    title:                Optional[str] = None
+    comment:              Optional[str] = None
 
 
 class ReviewResponseSchema(BaseModel):
-    id: UUID
-    reviewer_id: UUID
-    reviewee_id: Optional[UUID]
-    product_id: Optional[UUID]
-    overall_rating: float
-    quality_rating: Optional[float]
-    delivery_rating: Optional[float]
-    communication_rating: Optional[float]
-    title: Optional[str]
-    comment: Optional[str]
+    id:                   UUID
+    reviewer_id:          UUID
+    reviewee_id:          Optional[UUID] = None
+    product_id:           Optional[UUID] = None
+    overall_rating:       float
+    quality_rating:       Optional[float] = None
+    delivery_rating:      Optional[float] = None
+    communication_rating: Optional[float] = None
+    title:                Optional[str] = None
+    comment:              Optional[str] = None
     is_verified_purchase: bool
-    seller_reply: Optional[str]
-    created_at: datetime
+    seller_reply:         Optional[str] = None
+    created_at:           datetime
 
     class Config:
         from_attributes = True
@@ -221,12 +236,12 @@ class ReviewResponseSchema(BaseModel):
 # ── NOTIFICATION SCHEMAS ──────────────────────────────────────────────────────
 
 class NotificationResponseSchema(BaseModel):
-    id: UUID
-    type: str
-    title: str
-    message: str
-    is_read: bool
-    action_url: Optional[str]
+    id:         UUID
+    type:       str
+    title:      str
+    message:    str
+    is_read:    bool
+    action_url: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -235,26 +250,14 @@ class NotificationResponseSchema(BaseModel):
 
 # ── CERTIFICATE SCHEMAS ───────────────────────────────────────────────────────
 
-class CertificateCreateSchema(BaseModel):
-    type: str
-    certificate_number: Optional[str] = None
-    issuing_authority: Optional[str] = None
-    issue_date: Optional[datetime] = None
-    expiry_date: Optional[datetime] = None
-    document_url: str
-    notes: Optional[str] = None
-
-
 class CertificateResponseSchema(BaseModel):
-    id: UUID
-    type: str
-    status: str
-    certificate_number: Optional[str]
-    issuing_authority: Optional[str]
-    issue_date: Optional[datetime]
-    expiry_date: Optional[datetime]
-    document_url: str
-    created_at: datetime
+    id:             UUID
+    user_id:        UUID
+    type:           str
+    document_url:   Optional[str] = None
+    notes:          Optional[str] = None
+    status:         str
+    created_at:     datetime
 
     class Config:
         from_attributes = True
