@@ -10,25 +10,41 @@ import { Plus, Edit2, Trash2, TrendingUp, Loader2, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-const CATEGORIES = ["Grains", "Livestock", "Cash Crops", "Fruits", "Vegetables", "Fishery", "Dairy", "Oils"];
-const UNITS = ["kg", "tonne", "litre", "piece", "bag", "head"];
-const CURRENCIES = ["USD", "NGN", "GBP", "EUR", "GHS"];
-const MARKETS = ["Lagos", "Kano", "Accra", "Nairobi", "London", "New York", "Rotterdam", "Dubai"];
+const CATEGORIES  = ["Grains", "Livestock", "Cash Crops", "Fruits", "Vegetables", "Fishery", "Dairy", "Oils"];
+const UNITS       = ["kg", "tonne", "litre", "piece", "bag", "head"];
+const CURRENCIES  = ["USD", "NGN", "GBP", "EUR", "GHS", "CFA"];
+const MARKETS     = ["Lagos", "Kano", "Kaduna", "Abuja", "Accra", "Nairobi", "London", "New York", "Rotterdam", "Dubai"];
+const PRICE_TYPES = [
+  { value: "farm_gate",     label: "Farm Gate" },
+  { value: "wholesale",     label: "Wholesale" },
+  { value: "retail",        label: "Retail" },
+  { value: "export",        label: "Export" },
+  { value: "international", label: "International" },
+];
 
 const EMPTY_FORM = {
-  commodity_name: "", category: "Cash Crops", price: "",
-  currency: "USD", unit: "tonne", market: "Lagos",
-  country: "Nigeria", is_export_price: false, is_domestic_price: true,
-  source: "", notes: "",
+  commodity_name:    "",
+  category:          "Cash Crops",
+  price_type:        "wholesale",
+  price:             "",
+  currency:          "NGN",
+  unit:              "tonne",
+  market:            "Lagos",
+  region:            "",
+  country:           "Nigeria",
+  is_export_price:   false,
+  is_domestic_price: true,
+  source:            "",
+  notes:             "",
 };
 
 export default function AdminCommoditiesPage() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [showForm,   setShowForm]   = useState(false);
+  const [editingId,  setEditingId]  = useState<string | null>(null);
+  const [saving,     setSaving]     = useState(false);
+  const [form,       setForm]       = useState({ ...EMPTY_FORM });
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
@@ -53,7 +69,12 @@ export default function AdminCommoditiesPage() {
     }
     setSaving(true);
     try {
-      const payload = { ...form, price: Number(form.price) };
+      const payload = {
+        ...form,
+        price: Number(form.price),
+        is_export_price:   form.price_type === "export" || form.price_type === "international",
+        is_domestic_price: form.price_type !== "export" && form.price_type !== "international",
+      };
       if (editingId) {
         await apiClient.put(`/commodities/${editingId}`, payload);
         toast.success("Commodity updated");
@@ -74,11 +95,19 @@ export default function AdminCommoditiesPage() {
 
   const handleEdit = (c: any) => {
     setForm({
-      commodity_name: c.commodity_name, category: c.category || "Cash Crops",
-      price: c.price.toString(), currency: c.currency, unit: c.unit,
-      market: c.market || "Lagos", country: c.country || "Nigeria",
-      is_export_price: c.is_export_price, is_domestic_price: c.is_domestic_price,
-      source: c.source || "", notes: c.notes || "",
+      commodity_name:    c.commodity_name,
+      category:          c.category || "Cash Crops",
+      price_type:        c.price_type || "wholesale",
+      price:             c.price.toString(),
+      currency:          c.currency,
+      unit:              c.unit,
+      market:            c.market || "Lagos",
+      region:            c.region || "",
+      country:           c.country || "Nigeria",
+      is_export_price:   c.is_export_price,
+      is_domestic_price: c.is_domestic_price,
+      source:            c.source || "",
+      notes:             c.notes || "",
     });
     setEditingId(c.id);
     setShowForm(true);
@@ -116,20 +145,25 @@ export default function AdminCommoditiesPage() {
           <div className="bg-white/[0.03] border border-green-800/40 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-white font-bold">{editingId ? "Edit Commodity" : "Add New Commodity"}</h3>
-              <button onClick={() => setShowForm(false)}><X className="w-5 h-5 text-gray-500 hover:text-white transition-colors" /></button>
+              <button onClick={() => setShowForm(false)}>
+                <X className="w-5 h-5 text-gray-500 hover:text-white transition-colors" />
+              </button>
             </div>
+
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-              {[
-                { key: "commodity_name", label: "Commodity Name *", placeholder: "e.g. Cocoa Beans" },
-                { key: "source",         label: "Source",           placeholder: "e.g. CBOT, FAO" },
-              ].map(({ key, label, placeholder }) => (
-                <div key={key} className="col-span-2 md:col-span-1">
-                  <label className="text-xs text-gray-500 mb-1.5 block">{label}</label>
-                  <input value={(form as any)[key]} onChange={e => setForm({ ...form, [key]: e.target.value })}
-                    placeholder={placeholder}
-                    className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
-                </div>
-              ))}
+
+              {/* Commodity Name */}
+              <div className="col-span-2 md:col-span-1">
+                <label className="text-xs text-gray-500 mb-1.5 block">Commodity Name *</label>
+                <input
+                  value={form.commodity_name}
+                  onChange={e => setForm({ ...form, commodity_name: e.target.value })}
+                  placeholder="e.g. Cocoa Beans"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Category */}
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Category</label>
                 <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
@@ -137,12 +171,29 @@ export default function AdminCommoditiesPage() {
                   {CATEGORIES.map(c => <option key={c} value={c} className="bg-[#0a1a0f]">{c}</option>)}
                 </select>
               </div>
+
+              {/* Price Type */}
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">Price Type *</label>
+                <select value={form.price_type} onChange={e => setForm({ ...form, price_type: e.target.value })}
+                  className="w-full bg-white/[0.05] border border-white/[0.08] text-white text-sm rounded-xl px-4 py-3 focus:outline-none appearance-none">
+                  {PRICE_TYPES.map(p => <option key={p.value} value={p.value} className="bg-[#0a1a0f]">{p.label}</option>)}
+                </select>
+              </div>
+
+              {/* Price */}
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Price *</label>
-                <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })}
+                <input
+                  type="number" step="0.01"
+                  value={form.price}
+                  onChange={e => setForm({ ...form, price: e.target.value })}
                   placeholder="0.00"
-                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
+                />
               </div>
+
+              {/* Currency */}
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Currency</label>
                 <select value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}
@@ -150,6 +201,8 @@ export default function AdminCommoditiesPage() {
                   {CURRENCIES.map(c => <option key={c} value={c} className="bg-[#0a1a0f]">{c}</option>)}
                 </select>
               </div>
+
+              {/* Unit */}
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Unit</label>
                 <select value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}
@@ -157,6 +210,8 @@ export default function AdminCommoditiesPage() {
                   {UNITS.map(u => <option key={u} value={u} className="bg-[#0a1a0f]">{u}</option>)}
                 </select>
               </div>
+
+              {/* Market */}
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Market</label>
                 <select value={form.market} onChange={e => setForm({ ...form, market: e.target.value })}
@@ -164,23 +219,60 @@ export default function AdminCommoditiesPage() {
                   {MARKETS.map(m => <option key={m} value={m} className="bg-[#0a1a0f]">{m}</option>)}
                 </select>
               </div>
+
+              {/* Region */}
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">Region</label>
+                <input
+                  value={form.region}
+                  onChange={e => setForm({ ...form, region: e.target.value })}
+                  placeholder="e.g. North West, South West"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Country */}
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Country</label>
-                <input value={form.country} onChange={e => setForm({ ...form, country: e.target.value })}
+                <input
+                  value={form.country}
+                  onChange={e => setForm({ ...form, country: e.target.value })}
                   placeholder="e.g. Nigeria"
-                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
+                />
               </div>
+
+              {/* Source */}
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">Source</label>
+                <input
+                  value={form.source}
+                  onChange={e => setForm({ ...form, source: e.target.value })}
+                  placeholder="e.g. CBOT, FAO"
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
+                />
+              </div>
+
             </div>
+
+            {/* Notes */}
             <div className="mb-4">
               <label className="text-xs text-gray-500 mb-1.5 block">Notes</label>
-              <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
+              <input
+                value={form.notes}
+                onChange={e => setForm({ ...form, notes: e.target.value })}
                 placeholder="Optional notes about this price..."
-                className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
+              />
             </div>
+
             <div className="flex gap-3">
               <button onClick={handleSave} disabled={saving}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-green-900 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm">
-                {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : editingId ? "Update Price" : "Add to Board"}
+                {saving
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                  : editingId ? "Update Price" : "Add to Board"
+                }
               </button>
               <button onClick={() => setShowForm(false)}
                 className="text-gray-400 hover:text-white font-medium px-4 py-3 rounded-xl hover:bg-white/[0.05] transition-all text-sm">
@@ -210,9 +302,9 @@ export default function AdminCommoditiesPage() {
             <>
               <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-white/[0.06] text-xs text-gray-600 font-medium uppercase tracking-wide">
                 <div className="col-span-3">Commodity</div>
-                <div className="col-span-2">Category</div>
+                <div className="col-span-2">Type</div>
                 <div className="col-span-2">Price</div>
-                <div className="col-span-2">Market</div>
+                <div className="col-span-2">Market / Region</div>
                 <div className="col-span-1">Trend</div>
                 <div className="col-span-2">Actions</div>
               </div>
@@ -221,9 +313,19 @@ export default function AdminCommoditiesPage() {
                   <div key={c.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors items-center">
                     <div className="col-span-3">
                       <p className="text-white font-semibold text-sm">{c.commodity_name}</p>
+                      <p className="text-gray-600 text-[10px]">{c.category}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-gray-500 text-xs">{c.category}</p>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
+                        c.price_type === "farm_gate"     ? "bg-green-500/20 text-green-400 border-green-700/40" :
+                        c.price_type === "wholesale"     ? "bg-blue-500/20 text-blue-400 border-blue-700/40" :
+                        c.price_type === "retail"        ? "bg-amber-500/20 text-amber-400 border-amber-700/40" :
+                        c.price_type === "export"        ? "bg-violet-500/20 text-violet-400 border-violet-700/40" :
+                        c.price_type === "international" ? "bg-sky-500/20 text-sky-400 border-sky-700/40" :
+                        "bg-gray-500/20 text-gray-400 border-gray-700/40"
+                      }`}>
+                        {c.price_type?.replace("_", " ") || "wholesale"}
+                      </span>
                     </div>
                     <div className="col-span-2">
                       <p className="text-green-400 font-black text-sm">{formatPrice(c.price, c.currency)}</p>
@@ -231,13 +333,12 @@ export default function AdminCommoditiesPage() {
                     </div>
                     <div className="col-span-2">
                       <p className="text-gray-400 text-xs">{c.market || "—"}</p>
-                      <p className="text-gray-600 text-[10px]">{c.country || "—"}</p>
+                      <p className="text-gray-600 text-[10px]">{c.region ? `${c.region}, ` : ""}{c.country || "—"}</p>
                     </div>
                     <div className="col-span-1">
                       <span className={`text-sm font-black ${
-                        c.trend === "up" ? "text-green-400"
-                        : c.trend === "down" ? "text-red-400"
-                        : "text-gray-500"
+                        c.trend === "up"   ? "text-green-400" :
+                        c.trend === "down" ? "text-red-400"   : "text-gray-500"
                       }`}>
                         {c.trend === "up" ? "▲" : c.trend === "down" ? "▼" : "—"}
                         {c.change_percentage ? ` ${Math.abs(c.change_percentage).toFixed(1)}%` : ""}
