@@ -62,6 +62,7 @@ export default function FullCommodityBoard() {
       return res.data;
     },
     staleTime: 0,
+    gcTime: 0,
     refetchOnMount: true,
   });
 
@@ -170,7 +171,10 @@ export default function FullCommodityBoard() {
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {PRICE_TYPES.map(pt => (
-            <button key={pt.value} onClick={() => setActiveType(pt.value)}
+            <button key={pt.value} onClick={() => {
+              setActiveType(pt.value);
+              setExpandedId(null);
+            }}
               className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
                 activeType === pt.value
                   ? "bg-green-600 text-white"
