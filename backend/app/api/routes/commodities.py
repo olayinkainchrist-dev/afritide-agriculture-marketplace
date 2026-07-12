@@ -24,7 +24,7 @@ async def get_commodity_board(
     category:   Optional[str] = None,
     country:    Optional[str] = None,
     region:     Optional[str] = None,
-    price_type: Optional[PriceType] = None,
+    price_type: Optional[str] = None,
     search:     Optional[str] = None,
     sort_by:    str = Query(default="commodity_name", enum=["commodity_name", "price", "change_percentage"]),
     pagination: PaginationParams = Depends(get_pagination),
@@ -39,7 +39,12 @@ async def get_commodity_board(
     if region:
         query = query.filter(CommodityPrice.region.ilike(f"%{region}%"))
     if price_type:
-        query = query.filter(CommodityPrice.price_type == price_type.value)
+        from app.models.commodity import PriceType
+        try:
+            pt = PriceType(price_type.upper())
+            query = query.filter(CommodityPrice.price_type == pt)
+        except ValueError:
+            pass
     if search:
         query = query.filter(CommodityPrice.commodity_name.ilike(f"%{search}%"))
 
