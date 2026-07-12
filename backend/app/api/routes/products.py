@@ -299,6 +299,29 @@ async def upload_product_images(
     )
 
 
+@router.post("/upload-video", summary="Upload product video")
+async def upload_product_video(
+    file:         UploadFile = File(...),
+    current_user= Depends(get_current_user),
+):
+    if not file.content_type.startswith("video/"):
+        raise HTTPException(status_code=400, detail="File must be a video")
+
+    contents = await file.read()
+    if len(contents) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Video must be under 50MB")
+
+    import cloudinary.uploader
+    result = cloudinary.uploader.upload(
+        contents,
+        resource_type="video",
+        folder="afritide/products/videos",
+        public_id=f"product_video_{uuid.uuid4().hex[:8]}",
+    )
+
+    return success_response(data={"url": result["secure_url"]})
+
+
 # ── WISHLIST ──────────────────────────────────────────────────────────────────
 
 @router.post("/{product_id}/wishlist", summary="Toggle product wishlist")
