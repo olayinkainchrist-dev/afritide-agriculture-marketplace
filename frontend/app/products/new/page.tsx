@@ -205,7 +205,8 @@ export default function NewProductPage() {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        {/* ── KEY FIX: form does NOT have onSubmit — all submission is manual ── */}
+        <form onSubmit={(e) => e.preventDefault()}>
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-3xl p-6 sm:p-8 space-y-6">
 
             {/* Step 1 — Basic Info */}
@@ -432,15 +433,9 @@ export default function NewProductPage() {
                               <span className="text-gray-600 text-xs group-hover:text-green-400 transition-colors">Add Image</span>
                             </>
                         }
-                        <input
-                          id="image-upload"
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                          disabled={uploadingImage}
-                          onClick={e => e.stopPropagation()}
-                        />
+                        <input id="image-upload" type="file" accept="image/*" className="hidden"
+                          onChange={handleImageUpload} disabled={uploadingImage}
+                          onClick={e => e.stopPropagation()} />
                       </div>
                     )}
                   </div>
@@ -449,7 +444,7 @@ export default function NewProductPage() {
 
                 {/* Video upload */}
                 <div>
-                  <p className="block text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
                     <Video className="w-4 h-4 text-green-500" />
                     Product Video <span className="text-gray-600 ml-1">(optional, max 50MB)</span>
                   </p>
@@ -476,22 +471,16 @@ export default function NewProductPage() {
                             <span className="text-gray-700 text-xs mt-1">MP4, MOV, AVI — max 50MB</span>
                           </>
                       }
-                      <input
-                        id="video-upload"
-                        type="file"
-                        accept="video/*"
-                        className="hidden"
-                        onChange={handleVideoUpload}
-                        disabled={uploadingVideo}
-                        onClick={e => e.stopPropagation()}
-                      />
+                      <input id="video-upload" type="file" accept="video/*" className="hidden"
+                        onChange={handleVideoUpload} disabled={uploadingVideo}
+                        onClick={e => e.stopPropagation()} />
                     </div>
                   )}
                 </div>
 
                 {/* Delivery options */}
                 <div>
-                  <p className="block text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
                     <Truck className="w-4 h-4 text-green-500" />
                     Delivery Options <span className="text-gray-600 ml-1">(select all that apply)</span>
                   </p>
@@ -540,7 +529,10 @@ export default function NewProductPage() {
                 Next <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
-              <button type="submit" disabled={loading}
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => handleSubmit(onSubmit)()}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold px-8 py-3 rounded-xl transition-all text-sm shadow-xl shadow-green-900/30">
                 {loading
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
