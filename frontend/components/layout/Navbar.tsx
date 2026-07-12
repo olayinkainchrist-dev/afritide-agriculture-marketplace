@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, Search, ChevronDown, Leaf, TrendingUp } from "lucide-react";
+import { Menu, X, Search, ChevronDown, Leaf, TrendingUp, ShoppingCart } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { getInitials } from "@/lib/utils";
 import NotificationBell from "@/components/shared/NotificationBell";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api/client";
+import { useCartStore } from "@/lib/store/cart.store";
 
 const categories = [
   { label: "🐄 Livestock",   href: "/marketplace?category=livestock" },
@@ -25,12 +26,12 @@ export default function Navbar() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showDrop,   setShowDrop]     = useState(false);
   const [loading,    setLoading]      = useState(false);
-  const searchRef  = useRef<HTMLDivElement>(null);
+  const searchRef   = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const { itemCount } = useCartStore();
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -41,7 +42,6 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Debounced autocomplete
   const handleSearchChange = (value: string) => {
     setQuery(value);
     clearTimeout(debounceRef.current);
@@ -112,10 +112,8 @@ export default function Navbar() {
                 className="w-full pl-10 pr-10 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:border-green-700/60 focus:bg-white/[0.07] transition-all"
               />
               {query && (
-                <button
-                  onClick={() => { setQuery(""); setSuggestions([]); setShowDrop(false); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                >
+                <button onClick={() => { setQuery(""); setSuggestions([]); setShowDrop(false); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2">
                   <X className="w-3.5 h-3.5 text-gray-600 hover:text-white transition-colors" />
                 </button>
               )}
@@ -133,20 +131,14 @@ export default function Navbar() {
                         Suggestions
                       </p>
                       {suggestions.map((s, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleSearch(s)}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/[0.05] transition-colors text-left"
-                        >
-                          <Search className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
-                          {s}
+                        <button key={i} onClick={() => handleSearch(s)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/[0.05] transition-colors text-left">
+                          <Search className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />{s}
                         </button>
                       ))}
                       <div className="border-t border-white/[0.06] mt-1 pt-1">
-                        <button
-                          onClick={() => handleSearch()}
-                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-green-400 hover:text-green-300 hover:bg-green-950/30 transition-colors text-left font-medium"
-                        >
+                        <button onClick={() => handleSearch()}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-green-400 hover:text-green-300 hover:bg-green-950/30 transition-colors text-left font-medium">
                           <Search className="w-3.5 h-3.5 flex-shrink-0" />
                           Search for &quot;{query}&quot;
                         </button>
@@ -187,7 +179,18 @@ export default function Navbar() {
           <div className="flex items-center gap-2 ml-auto">
             {isAuthenticated && user ? (
               <>
+                {/* Cart icon */}
+                <Link href="/cart" className="relative p-2 text-gray-500 hover:text-white transition-colors">
+                  <ShoppingCart className="w-5 h-5" />
+                  {itemCount() > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+                      {itemCount()}
+                    </span>
+                  )}
+                </Link>
+
                 <NotificationBell />
+
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/[0.05] transition-colors">
                     <div className="w-8 h-8 rounded-full bg-green-700 flex items-center justify-center text-white text-xs font-black overflow-hidden">
@@ -213,6 +216,9 @@ export default function Navbar() {
                     </Link>
                     <Link href="/profile" className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
                       Profile
+                    </Link>
+                    <Link href="/cart" className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
+                      🛒 Cart {itemCount() > 0 && `(${itemCount()})`}
                     </Link>
                     <hr className="my-1 border-white/[0.06]" />
                     <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-950/30 transition-colors">
@@ -243,22 +249,18 @@ export default function Navbar() {
         <div className="lg:hidden border-t border-white/[0.06] bg-[#080f09] px-4 py-4 space-y-1">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-            <input
-              type="text"
-              value={query}
+            <input type="text" value={query}
               onChange={(e) => handleSearchChange(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Search..."
-              className="w-full pl-10 pr-4 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none"
-            />
+              className="w-full pl-10 pr-4 py-2.5 bg-white/[0.05] border border-white/[0.08] rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none" />
           </div>
           {suggestions.length > 0 && showDrop && (
             <div className="bg-[#0a1a0f] border border-white/[0.08] rounded-xl py-2 mb-2">
               {suggestions.map((s, i) => (
                 <button key={i} onClick={() => { handleSearch(s); setMobileOpen(false); }}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-white/[0.05] transition-colors text-left">
-                  <Search className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
-                  {s}
+                  <Search className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />{s}
                 </button>
               ))}
             </div>
@@ -269,6 +271,10 @@ export default function Navbar() {
               {c.label}
             </Link>
           ))}
+          <Link href="/cart" onClick={() => setMobileOpen(false)}
+            className="block py-2.5 px-3 text-gray-400 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors text-sm">
+            🛒 Cart {itemCount() > 0 && `(${itemCount()})`}
+          </Link>
           <Link href="/support" onClick={() => setMobileOpen(false)}
             className="block py-2.5 px-3 text-gray-400 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors text-sm">
             🆘 Support
