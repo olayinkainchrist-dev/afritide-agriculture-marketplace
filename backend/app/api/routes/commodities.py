@@ -39,7 +39,7 @@ async def get_commodity_board(
     if region:
         query = query.filter(CommodityPrice.region.ilike(f"%{region}%"))
     if price_type:
-        query = query.filter(CommodityPrice.price_type == price_type)
+        query = query.filter(CommodityPrice.price_type == price_type.value)
     if search:
         query = query.filter(CommodityPrice.commodity_name.ilike(f"%{search}%"))
 
