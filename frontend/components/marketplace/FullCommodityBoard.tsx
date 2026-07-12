@@ -5,12 +5,15 @@ import apiClient from "@/lib/api/client";
 import {
   TrendingUp, RefreshCw, ArrowUpRight, ArrowDownRight,
   Search, X, ChevronUp, BarChart3, Minus, GitCompare,
+  Bell, BellOff,
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
 import { formatPrice } from "@/lib/utils";
+import toast from "react-hot-toast";
+import { useAuthStore } from "@/lib/store/auth.store";
 
 const PRICE_TYPES = [
   { value: "all",           label: "All Prices" },
@@ -38,13 +41,17 @@ const TYPE_COLORS: Record<string, string> = {
 const CHART_COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#a855f7", "#06b6d4"];
 
 export default function FullCommodityBoard() {
-  const [activeType,       setActiveType]       = useState("all");
-  const [search,           setSearch]           = useState("");
-  const [displayCurrency,  setDisplayCurrency]  = useState("NGN");
-  const [expandedId,       setExpandedId]       = useState<string | null>(null);
-  const [chartDays,        setChartDays]        = useState(30);
-  const [compareMode,      setCompareMode]      = useState(false);
-  const [compareIds,       setCompareIds]       = useState<string[]>([]);
+  const [activeType,      setActiveType]      = useState("all");
+  const [search,          setSearch]          = useState("");
+  const [displayCurrency, setDisplayCurrency] = useState("NGN");
+  const [expandedId,      setExpandedId]      = useState<string | null>(null);
+  const [chartDays,       setChartDays]       = useState(30);
+  const [compareMode,     setCompareMode]     = useState(false);
+  const [compareIds,      setCompareIds]      = useState<string[]>([]);
+  const [subscribedIds,   setSubscribedIds]   = useState<string[]>([]);
+  const [alertLoading,    setAlertLoading]    = useState<string | null>(null);
+
+  const { isAuthenticated } = useAuthStore();
 
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["full-commodities", activeType],
@@ -66,12 +73,6 @@ export default function FullCommodityBoard() {
     },
     enabled: !!expandedId && !compareMode,
   });
-
-  // Fetch history for all compare items
-  const compareQueries = compareIds.map(id => ({
-    id,
-    commodity: (data?.data || []).find((c: any) => c.id === id),
-  }));
 
   const { data: compareHistories } = useQuery({
     queryKey: ["compare-histories", compareIds, chartDays],
@@ -114,21 +115,52 @@ export default function FullCommodityBoard() {
     );
   };
 
-  // Build comparison chart data
   const buildCompareData = () => {
     if (!compareHistories) return [];
-    const maxLen = Math.max(...compareHistories.map((ch: any) => ch.history.length));
+    const maxLen = Math.max(...(compareHistories as any[]).map((ch: any) => ch.history.length));
+    if (!maxLen) return [];
     return Array.from({ length: maxLen }, (_, i) => {
       const point: any = { index: i };
-      compareHistories.forEach((ch: any) => {
+      (compareHistories as any[]).forEach((ch: any) => {
         const h = ch.history[i];
         const commodity = allCommodities.find((c: any) => c.id === ch.id);
-        if (h && commodity) {
-          point[commodity.commodity_name] = h.price;
-        }
+        if (h && commodity) point[commodity.commodity_name] = h.price;
       });
       return point;
     });
+  };
+
+  const handleAlert = async (c: any) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to set price alerts");
+      return;
+    }
+    setAlertLoading(c.id);
+    try {
+      if (subscribedIds.includes(c.id)) {
+        const res = await apiClient.get("/price-alerts");
+        const alert = res.data?.data?.find((a: any) =>
+          a.commodity_name.toLowerCase() === c.commodity_name.toLowerCase()
+        );
+        if (alert) {
+          await apiClient.delete(`/price-alerts/${alert.id}`);
+          setSubscribedIds(prev => prev.filter(x => x !== c.id));
+          toast.success("Price alert removed");
+        }
+      } else {
+        await apiClient.post("/price-alerts", {
+          commodity_name: c.commodity_name,
+          alert_type: "any_change",
+          currency: c.currency,
+        });
+        setSubscribedIds(prev => [...prev, c.id]);
+        toast.success(`Price alert set for ${c.commodity_name} 🔔`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to update alert");
+    } finally {
+      setAlertLoading(null);
+    }
   };
 
   return (
@@ -150,7 +182,6 @@ export default function FullCommodityBoard() {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Compare mode toggle */}
           <button
             onClick={() => { setCompareMode(!compareMode); setCompareIds([]); setExpandedId(null); }}
             className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl transition-all border ${
@@ -162,7 +193,6 @@ export default function FullCommodityBoard() {
             {compareMode ? `Comparing (${compareIds.length}/4)` : "Compare"}
           </button>
 
-          {/* Currency */}
           <div className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2">
             <span className="text-gray-600 text-xs">Display in:</span>
             <select value={displayCurrency} onChange={e => setDisplayCurrency(e.target.value)}
@@ -171,7 +201,6 @@ export default function FullCommodityBoard() {
             </select>
           </div>
 
-          {/* Refresh */}
           <button onClick={() => refetch()} disabled={isFetching}
             className="flex items-center gap-2 text-sm text-green-500 bg-green-950/40 border border-green-900/60 px-4 py-2 rounded-xl transition-colors disabled:opacity-50">
             <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
@@ -196,7 +225,7 @@ export default function FullCommodityBoard() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total",   value: allCommodities.length,                                                                              color: "text-white" },
+          { label: "Total",   value: allCommodities.length, color: "text-white" },
           { label: "Rising",  value: allCommodities.filter((c: any) => c.trend === "UP"     || c.trend === "up").length,     color: "text-green-400" },
           { label: "Falling", value: allCommodities.filter((c: any) => c.trend === "DOWN"   || c.trend === "down").length,   color: "text-red-400" },
           { label: "Stable",  value: allCommodities.filter((c: any) => c.trend === "STABLE" || c.trend === "stable").length, color: "text-gray-400" },
@@ -213,8 +242,7 @@ export default function FullCommodityBoard() {
         <div className="bg-white/[0.03] border border-violet-800/30 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white font-bold flex items-center gap-2">
-              <GitCompare className="w-4 h-4 text-violet-400" />
-              Price Comparison
+              <GitCompare className="w-4 h-4 text-violet-400" /> Price Comparison
             </h3>
             <div className="flex gap-2">
               {[7, 30, 90].map(d => (
@@ -228,7 +256,6 @@ export default function FullCommodityBoard() {
             </div>
           </div>
 
-          {/* Selected commodities */}
           <div className="flex gap-2 mb-4 flex-wrap">
             {compareIds.map((id, idx) => {
               const commodity = allCommodities.find((c: any) => c.id === id);
@@ -260,8 +287,7 @@ export default function FullCommodityBoard() {
                   const commodity = allCommodities.find((c: any) => c.id === id);
                   return commodity ? (
                     <Line key={id} type="monotone" dataKey={commodity.commodity_name}
-                      stroke={CHART_COLORS[idx]} strokeWidth={2} dot={false}
-                      activeDot={{ r: 4 }} />
+                      stroke={CHART_COLORS[idx]} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
                   ) : null;
                 })}
               </LineChart>
@@ -312,13 +338,10 @@ export default function FullCommodityBoard() {
                         : "hover:bg-white/[0.03]"
                     }`}
                   >
-                    {/* Compare checkbox */}
                     {compareMode && (
                       <div className="col-span-1">
                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                          compareIds.includes(c.id)
-                            ? "bg-violet-500 border-violet-500"
-                            : "border-white/[0.2]"
+                          compareIds.includes(c.id) ? "bg-violet-500 border-violet-500" : "border-white/[0.2]"
                         }`}>
                           {compareIds.includes(c.id) && (
                             <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -408,7 +431,9 @@ export default function FullCommodityBoard() {
                         </div>
 
                         {history.length === 0 ? (
-                          <p className="text-gray-600 text-sm py-8 text-center">No price history available yet. Update this commodity price to start tracking.</p>
+                          <p className="text-gray-600 text-sm py-8 text-center">
+                            No price history available yet. Update this commodity price to start tracking.
+                          </p>
                         ) : (
                           <>
                             <div className="h-48 w-full mb-4">
@@ -461,6 +486,34 @@ export default function FullCommodityBoard() {
                         {c.notes && (
                           <p className="text-gray-500 text-xs mt-3 bg-white/[0.02] rounded-xl p-3">📝 {c.notes}</p>
                         )}
+
+                        {/* Price Alert Button */}
+                        <div className="mt-4 flex items-center gap-3">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleAlert(c); }}
+                            disabled={alertLoading === c.id}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all border ${
+                              subscribedIds.includes(c.id)
+                                ? "bg-amber-500/20 text-amber-400 border-amber-700/40 hover:bg-amber-500/30"
+                                : "bg-white/[0.04] text-gray-400 hover:text-green-400 hover:border-green-700/40 border-white/[0.07]"
+                            }`}
+                          >
+                            {alertLoading === c.id ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : subscribedIds.includes(c.id) ? (
+                              <BellOff className="w-4 h-4" />
+                            ) : (
+                              <Bell className="w-4 h-4" />
+                            )}
+                            {subscribedIds.includes(c.id) ? "Remove Alert" : "Set Price Alert"}
+                          </button>
+                          <p className="text-gray-600 text-xs">
+                            {subscribedIds.includes(c.id)
+                              ? "You will be emailed when this price changes"
+                              : "Get emailed when this price changes"
+                            }
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}

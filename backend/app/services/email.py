@@ -167,3 +167,38 @@ def send_support_reply(to_email: str, name: str, topic: str, reply: str):
         </div>
     """
     _send_email(to_email, f"Re: {topic} — Afritide Support", _email_wrapper(content))
+
+def send_price_alert_email(to_email: str, first_name: str, commodity_name: str, old_price: float, new_price: float, currency: str, change_percentage: float):
+    """Send price alert email to subscriber"""
+    direction = "increased" if new_price > old_price else "decreased"
+    color = "#2E7D32" if new_price > old_price else "#c62828"
+    arrow = "📈" if new_price > old_price else "📉"
+
+    content = f"""
+        <h2 style="color: #1A1A1A;">{arrow} Price Alert: {commodity_name}</h2>
+        <p style="color: #555; font-size: 15px;">Hi {first_name}, the price of <strong>{commodity_name}</strong> has {direction}.</p>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: #555; font-size: 14px;">Previous Price:</span>
+                <span style="color: #555; font-size: 14px; font-weight: bold;">{currency} {old_price:,.2f}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: #555; font-size: 14px;">New Price:</span>
+                <span style="color: {color}; font-size: 18px; font-weight: bold;">{currency} {new_price:,.2f}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #555; font-size: 14px;">Change:</span>
+                <span style="color: {color}; font-size: 14px; font-weight: bold;">{change_percentage:+.1f}%</span>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:20px;">
+            <a href="https://www.afritidegroup.com/commodities"
+               style="background:#2E7D32; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold;">
+               View Price Board
+            </a>
+        </div>
+        <p style="color:#888; font-size:12px; margin-top:16px;">
+            To stop receiving alerts, go to your dashboard and manage your price alerts.
+        </p>
+    """
+    _send_email(to_email, f"Price Alert: {commodity_name} {direction} {abs(change_percentage):.1f}%", _email_wrapper(content))

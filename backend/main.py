@@ -17,7 +17,8 @@ from app.core.config import settings
 from app.models import (
     user, product, order, payment,
     message, rfq, commodity, review, notification,
-    logistics, warehouse, certificate, advertisement, analytics, support
+    logistics, warehouse, certificate, advertisement, analytics, support,
+    price_alert
 )
 
 # Import all routers
@@ -26,7 +27,8 @@ from app.api.routes import (
     payments, messages, rfqs, commodities, reviews,
     notifications, logistics as logistics_router,
     warehouses, certificates, advertisements,
-    analytics as analytics_router, admin, search, support
+    analytics as analytics_router, admin, search, support,
+    price_alerts
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -116,6 +118,7 @@ app.include_router(analytics_router.router, prefix=f"{API_PREFIX}/analytics",   
 app.include_router(admin.router,            prefix=f"{API_PREFIX}/admin",           tags=["⚙️ Admin"])
 app.include_router(search.router,           prefix=f"{API_PREFIX}/search",          tags=["🔍 Search"])
 app.include_router(support.router,          prefix=f"{API_PREFIX}/support",         tags=["🆘 Support"])
+app.include_router(price_alerts.router, prefix=f"{API_PREFIX}/price-alerts", tags=["🔔 Price Alerts"])
 
 
 # ── HEALTH CHECK ────────────────────────────────────────────────────────────
