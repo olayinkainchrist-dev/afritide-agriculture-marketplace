@@ -2,7 +2,9 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsApi } from "@/lib/api/products.api";
+import { cartApi } from "@/lib/api/cart.api";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { useCartStore } from "@/lib/store/cart.store";
 import Link from "next/link";
 import {
   MapPin, Star, Heart, Share2, MessageSquare,
@@ -10,6 +12,7 @@ import {
   ChevronLeft, ChevronRight, BadgeCheck, Clock,
   TrendingUp, Shield, Globe, Phone, Mail,
   AlertCircle, Truck, Award, Users, Loader2, X,
+  ShoppingCart,
 } from "lucide-react";
 import { formatPrice, getCategoryLabel, formatDate, formatNumber } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -24,8 +27,10 @@ export default function ProductDetailClient({ id }: Props) {
   const [quantity,    setQuantity]    = useState(1);
   const [wishlisted,  setWishlisted]  = useState(false);
   const [showRFQModal, setShowRFQModal] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   const { user, isAuthenticated } = useAuthStore();
+  const { setItems } = useCartStore();
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError } = useQuery({
@@ -100,6 +105,23 @@ export default function ProductDetailClient({ id }: Props) {
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast.success("Link copied to clipboard");
+  };
+
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to add items to cart");
+      return;
+    }
+    setAddingToCart(true);
+    try {
+      const res = await cartApi.addItem(product.id, quantity);
+      setItems(res.data?.items || []);
+      toast.success("Added to cart!");
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to add to cart");
+    } finally {
+      setAddingToCart(false);
+    }
   };
 
   return (
@@ -354,7 +376,19 @@ export default function ProductDetailClient({ id }: Props) {
 
             {/* Action buttons */}
             <div className="flex flex-col gap-3">
-              
+
+              {/* Add to Cart */}
+              <button
+                onClick={handleAddToCart}
+                disabled={addingToCart}
+                className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
+              >
+                {addingToCart
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding...</>
+                  : <><ShoppingCart className="w-4 h-4" /> Add to Cart</>
+                }
+              </button>
+
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleRFQ}
