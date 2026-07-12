@@ -14,9 +14,8 @@ import {
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
-import { usePaystackPayment } from "react-paystack";
 
-const PLATFORM_FEE = 0.05; // 5%
+const PLATFORM_FEE = 0.05;
 
 export default function CheckoutPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -42,6 +41,17 @@ export default function CheckoutPage() {
     loadCart();
   }, [isAuthenticated]);
 
+  // Load Paystack inline script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   const loadCart = async () => {
     try {
       const res = await cartApi.get();
@@ -53,37 +63,17 @@ export default function CheckoutPage() {
     }
   };
 
-  const subtotal     = items.reduce((sum, item) => sum + item.item_total, 0);
-  const platformFee  = subtotal * PLATFORM_FEE;
-  const total        = subtotal + platformFee;
-  const currency     = items[0]?.currency || "NGN";
-
-  // Convert to kobo for Paystack (NGN only)
-  const amountInKobo = Math.round(total * 100);
-
-  const paystackConfig = {
-    reference:  `AFR-${Date.now()}`,
-    email:      user?.email || "",
-    amount:     amountInKobo,
-    publicKey:  process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
-    currency:   "NGN",
-    metadata:   {
-      custom_fields: [
-        { display_name: "Buyer Name",  variable_name: "buyer_name",  value: `${user?.first_name} ${user?.last_name}` },
-        { display_name: "Platform",    variable_name: "platform",     value: "Afritide" },
-      ],
-    },
-  };
-
-  const initializePayment = usePaystackPayment(paystackConfig);
+  const subtotal    = items.reduce((sum, item) => sum + item.item_total, 0);
+  const platformFee = subtotal * PLATFORM_FEE;
+  const total       = subtotal + platformFee;
+  const currency    = items[0]?.currency || "NGN";
 
   const handlePaystackSuccess = async (response: any) => {
     setProcessing(true);
     try {
-      // Verify payment and create order on backend
       const res = await apiClient.post("/payments/paystack/verify", {
-        reference:       response.reference,
-        cart_items:      items,
+        reference:        response.reference,
+        cart_items:       items,
         shipping_address: {
           address: form.shipping_address,
           city:    form.shipping_city,
@@ -108,10 +98,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const handlePaystackClose = () => {
-    toast("Payment cancelled");
-  };
-
   const handleCheckout = () => {
     if (!form.shipping_address || !form.shipping_city) {
       toast.error("Please enter your shipping address");
@@ -121,10 +107,26 @@ export default function CheckoutPage() {
       toast.error("Your cart is empty");
       return;
     }
-    initializePayment({
-      onSuccess: handlePaystackSuccess,
-      onClose:   handlePaystackClose,
+
+    const reference = `AFR-${Date.now()}`;
+
+    const handler = (window as any).PaystackPop.setup({
+      key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+      email:    user?.email,
+      amount:   Math.round(total * 100),
+      currency: "NGN",
+      reference,
+      metadata: {
+        custom_fields: [
+          { display_name: "Buyer Name", variable_name: "buyer_name", value: `${user?.first_name} ${user?.last_name}` },
+          { display_name: "Platform",   variable_name: "platform",   value: "Afritide" },
+        ],
+      },
+      callback: (response: any) => handlePaystackSuccess(response),
+      onClose:  () => toast("Payment cancelled"),
     });
+
+    handler.openIframe();
   };
 
   // Order success screen
@@ -243,9 +245,9 @@ export default function CheckoutPage() {
                 </h2>
                 <div className="space-y-3">
                   {[
-                    { value: "standard", label: "Standard Delivery", desc: "7-14 business days", price: "Free" },
-                    { value: "express",  label: "Express Delivery",  desc: "3-5 business days",  price: "Negotiated with seller" },
-                    { value: "pickup",   label: "Farm Pickup",       desc: "Pick up directly from farm", price: "Free" },
+                    { value: "standard", label: "Standard Delivery", desc: "7-14 business days",          price: "Free" },
+                    { value: "express",  label: "Express Delivery",  desc: "3-5 business days",           price: "Negotiated with seller" },
+                    { value: "pickup",   label: "Farm Pickup",       desc: "Pick up directly from farm",  price: "Free" },
                   ].map(method => (
                     <label key={method.value}
                       className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
@@ -253,14 +255,10 @@ export default function CheckoutPage() {
                           ? "border-green-600/60 bg-green-950/30"
                           : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]"
                       }`}>
-                      <input
-                        type="radio"
-                        name="shipping_method"
-                        value={method.value}
+                      <input type="radio" name="shipping_method" value={method.value}
                         checked={form.shipping_method === method.value}
                         onChange={e => setForm({ ...form, shipping_method: e.target.value })}
-                        className="accent-green-500"
-                      />
+                        className="accent-green-500" />
                       <div className="flex-1">
                         <p className="text-white font-medium text-sm">{method.label}</p>
                         <p className="text-gray-500 text-xs">{method.desc}</p>
@@ -329,20 +327,13 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Security badges */}
                 <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-3 flex items-center gap-2">
                   <Shield className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <p className="text-gray-400 text-xs">
-                    Secured by Paystack. Your payment is protected.
-                  </p>
+                  <p className="text-gray-400 text-xs">Secured by Paystack. Your payment is protected.</p>
                 </div>
 
-                {/* Pay button */}
-                <button
-                  onClick={handleCheckout}
-                  disabled={processing}
-                  className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
-                >
+                <button onClick={handleCheckout} disabled={processing}
+                  className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30">
                   {processing
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
                     : <>Pay {formatPrice(total, currency)}</>
