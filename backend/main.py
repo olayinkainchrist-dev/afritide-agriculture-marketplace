@@ -17,8 +17,8 @@ from app.core.config import settings
 from app.models import (
     user, product, order, payment,
     message, rfq, commodity, review, notification,
-    logistics, warehouse, certificate, advertisement, analytics, support,
-    price_alert
+    logistics, warehouse, certificate, advertisement, analytics,
+    support, price_alert, cart as cart_model
 )
 
 # Import all routers
@@ -28,7 +28,7 @@ from app.api.routes import (
     notifications, logistics as logistics_router,
     warehouses, certificates, advertisements,
     analytics as analytics_router, admin, search, support,
-    price_alerts
+    price_alerts, cart
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -37,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan - startup and shutdown events"""
     logger.info("🌱 Afritide Agriculture Marketplace starting up...")
     Base.metadata.create_all(bind=engine)
     logger.info("✅ Database tables created/verified")
@@ -74,9 +73,7 @@ app = FastAPI(
         "url": "https://superilmtech.com",
         "email": "superilmtech@gmail.com",
     },
-    license_info={
-        "name": "Proprietary",
-    },
+    license_info={"name": "Proprietary"},
     lifespan=lifespan,
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -99,27 +96,27 @@ app.add_middleware(
 
 API_PREFIX = "/api/v1"
 
-app.include_router(auth.router,             prefix=f"{API_PREFIX}/auth",            tags=["🔐 Authentication"])
-app.include_router(users.router,            prefix=f"{API_PREFIX}/users",           tags=["👤 Users"])
-app.include_router(products.router,         prefix=f"{API_PREFIX}/products",        tags=["📦 Products"])
-app.include_router(categories.router,       prefix=f"{API_PREFIX}/categories",      tags=["🗂️ Categories"])
-app.include_router(orders.router,           prefix=f"{API_PREFIX}/orders",          tags=["🛒 Orders"])
-app.include_router(payments.router,         prefix=f"{API_PREFIX}/payments",        tags=["💳 Payments"])
-app.include_router(messages.router,         prefix=f"{API_PREFIX}/messages",        tags=["💬 Messages"])
-app.include_router(rfqs.router,             prefix=f"{API_PREFIX}/rfqs",            tags=["📋 RFQs"])
-app.include_router(commodities.router,      prefix=f"{API_PREFIX}/commodities",     tags=["📈 Commodities"])
-app.include_router(reviews.router,          prefix=f"{API_PREFIX}/reviews",         tags=["⭐ Reviews"])
-app.include_router(notifications.router,    prefix=f"{API_PREFIX}/notifications",   tags=["🔔 Notifications"])
-app.include_router(logistics_router.router, prefix=f"{API_PREFIX}/logistics",       tags=["🚚 Logistics"])
-app.include_router(warehouses.router,       prefix=f"{API_PREFIX}/warehouses",      tags=["🏭 Warehouses"])
-app.include_router(certificates.router,     prefix=f"{API_PREFIX}/certificates",    tags=["📜 Certificates"])
-app.include_router(advertisements.router,   prefix=f"{API_PREFIX}/advertisements",  tags=["📢 Advertisements"])
-app.include_router(analytics_router.router, prefix=f"{API_PREFIX}/analytics",       tags=["📊 Analytics"])
-app.include_router(admin.router,            prefix=f"{API_PREFIX}/admin",           tags=["⚙️ Admin"])
-app.include_router(search.router,           prefix=f"{API_PREFIX}/search",          tags=["🔍 Search"])
-app.include_router(support.router,          prefix=f"{API_PREFIX}/support",         tags=["🆘 Support"])
-app.include_router(price_alerts.router, prefix=f"{API_PREFIX}/price-alerts", tags=["🔔 Price Alerts"])
-
+app.include_router(auth.router,             prefix=f"{API_PREFIX}/auth",           tags=["🔐 Authentication"])
+app.include_router(users.router,            prefix=f"{API_PREFIX}/users",          tags=["👤 Users"])
+app.include_router(products.router,         prefix=f"{API_PREFIX}/products",       tags=["📦 Products"])
+app.include_router(categories.router,       prefix=f"{API_PREFIX}/categories",     tags=["🗂️ Categories"])
+app.include_router(orders.router,           prefix=f"{API_PREFIX}/orders",         tags=["🛒 Orders"])
+app.include_router(payments.router,         prefix=f"{API_PREFIX}/payments",       tags=["💳 Payments"])
+app.include_router(messages.router,         prefix=f"{API_PREFIX}/messages",       tags=["💬 Messages"])
+app.include_router(rfqs.router,             prefix=f"{API_PREFIX}/rfqs",           tags=["📋 RFQs"])
+app.include_router(commodities.router,      prefix=f"{API_PREFIX}/commodities",    tags=["📈 Commodities"])
+app.include_router(reviews.router,          prefix=f"{API_PREFIX}/reviews",        tags=["⭐ Reviews"])
+app.include_router(notifications.router,    prefix=f"{API_PREFIX}/notifications",  tags=["🔔 Notifications"])
+app.include_router(logistics_router.router, prefix=f"{API_PREFIX}/logistics",      tags=["🚚 Logistics"])
+app.include_router(warehouses.router,       prefix=f"{API_PREFIX}/warehouses",     tags=["🏭 Warehouses"])
+app.include_router(certificates.router,     prefix=f"{API_PREFIX}/certificates",   tags=["📜 Certificates"])
+app.include_router(advertisements.router,   prefix=f"{API_PREFIX}/advertisements", tags=["📢 Advertisements"])
+app.include_router(analytics_router.router, prefix=f"{API_PREFIX}/analytics",      tags=["📊 Analytics"])
+app.include_router(admin.router,            prefix=f"{API_PREFIX}/admin",          tags=["⚙️ Admin"])
+app.include_router(search.router,           prefix=f"{API_PREFIX}/search",         tags=["🔍 Search"])
+app.include_router(support.router,          prefix=f"{API_PREFIX}/support",        tags=["🆘 Support"])
+app.include_router(price_alerts.router,     prefix=f"{API_PREFIX}/price-alerts",   tags=["🔔 Price Alerts"])
+app.include_router(cart.router,             prefix=f"{API_PREFIX}/cart",           tags=["🛒 Cart"])
 
 # ── HEALTH CHECK ────────────────────────────────────────────────────────────
 
