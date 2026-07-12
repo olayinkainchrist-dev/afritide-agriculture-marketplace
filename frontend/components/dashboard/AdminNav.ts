@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
   TrendingUp, Shield, Megaphone, BarChart3, MessageSquare, FileDown,
+  Search,
 } from "lucide-react";
 
 export const ADMIN_NAV = [
@@ -14,4 +15,5 @@ export const ADMIN_NAV = [
   { label: "Analytics",     href: "/dashboard/admin/analytics",    icon: BarChart3 },
   { label: "Support",       href: "/dashboard/admin/support",      icon: MessageSquare },
   { label: "Reports",       href: "/dashboard/admin/reports",      icon: FileDown },
+  { label: "Sourcing",      href: "/dashboard/admin/sourcing",     icon: Search },
 ];

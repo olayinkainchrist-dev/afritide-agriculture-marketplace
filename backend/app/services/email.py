@@ -202,3 +202,26 @@ def send_price_alert_email(to_email: str, first_name: str, commodity_name: str, 
         </p>
     """
     _send_email(to_email, f"Price Alert: {commodity_name} {direction} {abs(change_percentage):.1f}%", _email_wrapper(content))
+
+def send_order_confirmation_email(
+    to_email: str, first_name: str,
+    order_number: str, amount: float, currency: str
+):
+    content = f"""
+        <h2 style="color:#1A1A1A;">✅ Order Confirmed!</h2>
+        <p style="color:#555;">Hi {first_name}, your payment was successful and your order has been confirmed.</p>
+        <div style="background:#f5f5f5;padding:20px;border-radius:8px;margin:20px 0;">
+            <p style="color:#555;margin:0 0 8px;">Order Number: <strong>{order_number}</strong></p>
+            <p style="color:#2E7D32;font-size:20px;font-weight:bold;margin:0;">
+                {currency} {amount:,.2f}
+            </p>
+        </div>
+        <p style="color:#555;">Your seller has been notified and will process your order shortly.</p>
+        <div style="text-align:center;margin-top:20px;">
+            <a href="https://www.afritidegroup.com/dashboard/buyer/orders"
+               style="background:#2E7D32;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">
+               Track My Order
+            </a>
+        </div>
+    """
+    _send_email(to_email, f"Order Confirmed — {order_number}", _email_wrapper(content))
