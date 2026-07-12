@@ -15,8 +15,6 @@ import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-const PLATFORM_FEE = 0.05;
-
 export default function CheckoutPage() {
   const { user, isAuthenticated } = useAuthStore();
   const { items, setItems, clearCart } = useCartStore();
@@ -64,8 +62,8 @@ export default function CheckoutPage() {
   };
 
   const subtotal    = items.reduce((sum, item) => sum + item.item_total, 0);
-  const platformFee = subtotal * PLATFORM_FEE;
-  const total       = subtotal + platformFee;
+  const total       = subtotal; // Buyer pays subtotal only
+  const platformFee = subtotal * 0.05; // Deducted from seller — not added to buyer
   const currency    = items[0]?.currency || "NGN";
 
   const handlePaystackSuccess = async (response: any) => {
@@ -314,8 +312,8 @@ export default function CheckoutPage() {
                     <span className="text-white">{formatPrice(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Platform fee (5%)</span>
-                    <span className="text-white">{formatPrice(platformFee, currency)}</span>
+                    <span className="text-gray-500">Service fee</span>
+                    <span className="text-green-400">Included</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Shipping</span>

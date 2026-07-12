@@ -77,9 +77,10 @@ async def verify_paystack_payment(
     created_orders = []
 
     for seller_id, seller_items in seller_groups.items():
-        subtotal     = sum(i.item_total for i in seller_items)
-        platform_fee = subtotal * PLATFORM_FEE
-        total        = subtotal + platform_fee
+        subtotal      = sum(i.item_total for i in seller_items)
+        platform_fee  = subtotal * PLATFORM_FEE
+        total         = subtotal  # Buyer paid subtotal only
+        seller_payout = subtotal - platform_fee  # Seller gets 95%
 
         # Generate order number
         order_number = f"AFR-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
@@ -93,7 +94,7 @@ async def verify_paystack_payment(
             shipping_cost=    0.0,
             tax_amount=       0.0,
             platform_fee=     platform_fee,
-            total_amount=     total,
+            total_amount=     total,  # What buyer paid
             currency=         seller_items[0].currency,
             shipping_address= payload.shipping_address,
             shipping_method=  payload.shipping_method,

@@ -18,7 +18,7 @@ export default function CartPage() {
   const { isAuthenticated } = useAuthStore();
   const { items, setItems } = useCartStore();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading,  setLoading]  = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
@@ -112,7 +112,6 @@ export default function CartPage() {
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
                 <div key={item.id} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 flex gap-4">
-                  {/* Image */}
                   <div className="w-20 h-20 rounded-xl overflow-hidden bg-white/[0.04] flex-shrink-0">
                     {item.main_image ? (
                       <img src={item.main_image} alt={item.title} className="w-full h-full object-cover" />
@@ -123,18 +122,14 @@ export default function CartPage() {
                     )}
                   </div>
 
-                  {/* Details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h3 className="text-white font-bold text-sm truncate">{item.title}</h3>
                         <p className="text-gray-500 text-xs mt-0.5">{item.country || "—"}</p>
                       </div>
-                      <button
-                        onClick={() => handleRemove(item.id)}
-                        disabled={updating === item.id}
-                        className="text-gray-600 hover:text-red-400 transition-colors p-1 flex-shrink-0"
-                      >
+                      <button onClick={() => handleRemove(item.id)} disabled={updating === item.id}
+                        className="text-gray-600 hover:text-red-400 transition-colors p-1 flex-shrink-0">
                         {updating === item.id
                           ? <Loader2 className="w-4 h-4 animate-spin" />
                           : <Trash2 className="w-4 h-4" />
@@ -143,13 +138,11 @@ export default function CartPage() {
                     </div>
 
                     <div className="flex items-center justify-between mt-3">
-                      {/* Quantity */}
                       <div className="flex items-center bg-white/[0.04] border border-white/[0.08] rounded-xl overflow-hidden">
                         <button
                           onClick={() => handleUpdateQuantity(item.id, Math.max(item.min_order, item.quantity - 1))}
                           disabled={updating === item.id || item.quantity <= item.min_order}
-                          className="px-3 py-2 text-gray-400 hover:text-white disabled:opacity-30 transition-colors"
-                        >
+                          className="px-3 py-2 text-gray-400 hover:text-white disabled:opacity-30 transition-colors">
                           <Minus className="w-3 h-3" />
                         </button>
                         <span className="px-3 py-2 text-white text-sm font-bold min-w-[40px] text-center">
@@ -158,13 +151,11 @@ export default function CartPage() {
                         <button
                           onClick={() => handleUpdateQuantity(item.id, Math.min(item.max_order, item.quantity + 1))}
                           disabled={updating === item.id || item.quantity >= item.max_order}
-                          className="px-3 py-2 text-gray-400 hover:text-white disabled:opacity-30 transition-colors"
-                        >
+                          className="px-3 py-2 text-gray-400 hover:text-white disabled:opacity-30 transition-colors">
                           <Plus className="w-3 h-3" />
                         </button>
                       </div>
 
-                      {/* Price */}
                       <div className="text-right">
                         <p className="text-green-400 font-black">{formatPrice(item.item_total, item.currency)}</p>
                         <p className="text-gray-600 text-xs">{formatPrice(item.price, item.currency)} / {item.unit}</p>
@@ -191,8 +182,8 @@ export default function CartPage() {
                     <span className="text-white font-medium">{formatPrice(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Platform fee (5%)</span>
-                    <span className="text-white font-medium">{formatPrice(subtotal * 0.05, currency)}</span>
+                    <span className="text-gray-500">Service fee</span>
+                    <span className="text-green-400">Included</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Shipping</span>
@@ -201,15 +192,13 @@ export default function CartPage() {
                   <div className="border-t border-white/[0.07] pt-3 flex justify-between">
                     <span className="text-white font-bold">Total</span>
                     <span className="text-green-400 font-black text-lg">
-                      {formatPrice(subtotal * 1.05, currency)}
+                      {formatPrice(subtotal, currency)}
                     </span>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => router.push("/checkout")}
-                  className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
-                >
+                <button onClick={() => router.push("/checkout")}
+                  className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30">
                   Proceed to Checkout <ArrowRight className="w-4 h-4" />
                 </button>
 
