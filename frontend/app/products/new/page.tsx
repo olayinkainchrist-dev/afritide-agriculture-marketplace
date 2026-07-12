@@ -422,7 +422,9 @@ export default function NewProductPage() {
                       </div>
                     ))}
                     {images.length < 5 && (
-                      <label className="aspect-square rounded-xl border-2 border-dashed border-white/[0.12] hover:border-green-700/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                      <div
+                        onClick={() => document.getElementById("image-upload")?.click()}
+                        className="aspect-square rounded-xl border-2 border-dashed border-white/[0.12] hover:border-green-700/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
                         {uploadingImage
                           ? <Loader2 className="w-6 h-6 text-green-500 animate-spin" />
                           : <>
@@ -430,9 +432,16 @@ export default function NewProductPage() {
                               <span className="text-gray-600 text-xs group-hover:text-green-400 transition-colors">Add Image</span>
                             </>
                         }
-                        <input type="file" accept="image/*" className="hidden"
-                          onChange={handleImageUpload} disabled={uploadingImage} />
-                      </label>
+                        <input
+                          id="image-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                          disabled={uploadingImage}
+                          onClick={e => e.stopPropagation()}
+                        />
+                      </div>
                     )}
                   </div>
                   <p className="text-gray-600 text-xs">First image will be the main product photo. Max 5MB each.</p>
@@ -453,7 +462,9 @@ export default function NewProductPage() {
                       </button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/[0.12] hover:border-green-700/50 rounded-xl cursor-pointer transition-colors group">
+                    <div
+                      onClick={() => document.getElementById("video-upload")?.click()}
+                      className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/[0.12] hover:border-green-700/50 rounded-xl cursor-pointer transition-colors group">
                       {uploadingVideo
                         ? <>
                             <Loader2 className="w-8 h-8 text-green-500 animate-spin mb-2" />
@@ -465,9 +476,16 @@ export default function NewProductPage() {
                             <span className="text-gray-700 text-xs mt-1">MP4, MOV, AVI — max 50MB</span>
                           </>
                       }
-                      <input type="file" accept="video/*" className="hidden"
-                        onChange={handleVideoUpload} disabled={uploadingVideo} />
-                    </label>
+                      <input
+                        id="video-upload"
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        onChange={handleVideoUpload}
+                        disabled={uploadingVideo}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </div>
                   )}
                 </div>
 
