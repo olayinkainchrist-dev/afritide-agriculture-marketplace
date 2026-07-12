@@ -354,15 +354,7 @@ export default function ProductDetailClient({ id }: Props) {
 
             {/* Action buttons */}
             <div className="flex flex-col gap-3">
-              {seller && (
-                <ContactSellerButton
-                  sellerId={seller.id}
-                  sellerName={sellerName}
-                  productId={product.id}
-                  className="w-full group bg-green-500 hover:bg-green-400 text-white font-bold py-4 rounded-2xl transition-all shadow-xl shadow-green-900/30 flex items-center justify-center gap-2"
-                  label="Contact Seller"
-                />
-              )}
+              
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={handleRFQ}

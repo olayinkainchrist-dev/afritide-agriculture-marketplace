@@ -129,20 +129,14 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
                       {[farmer.city, farmer.state, farmer.country].filter(Boolean).join(", ")}
                     </div>
                   )}
-                  {farmer.website && (
-                    <a href={farmer.website} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-green-400 hover:text-green-300 transition-colors">
-                      <Globe className="w-3.5 h-3.5 flex-shrink-0" />
-                      Website
-                    </a>
-                  )}
+                  
                   <div className="flex items-center gap-2 text-gray-600">
                     <Clock className="w-3.5 h-3.5 text-green-700 flex-shrink-0" />
                     Member since {formatDate(farmer.created_at)}
                   </div>
                 </div>
 
-                <ContactSellerButton sellerId={farmer.id} sellerName={displayName} />
+                
               </div>
             </div>
 
