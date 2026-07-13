@@ -4,7 +4,7 @@ Afritide - Users Routes
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 from typing import Optional
 from datetime import datetime
 import uuid
@@ -30,13 +30,12 @@ async def get_user_profile(user_id: uuid.UUID, db: Session = Depends(get_db)):
 
 @router.put("/me", summary="Update my profile")
 async def update_profile(
-    payload: UserUpdateSchema,
+    payload:      UserUpdateSchema,
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db:           Session = Depends(get_db),
 ):
     update_data = payload.model_dump(exclude_unset=True)
 
-    # Stamp submission time when KYC is first submitted
     if update_data.get("kyc_submitted") is True and not current_user.kyc_submitted:
         update_data["kyc_submitted_at"] = datetime.utcnow()
 
@@ -52,9 +51,9 @@ async def update_profile(
 
 @router.post("/me/avatar", summary="Upload profile avatar")
 async def upload_avatar(
-    file: UploadFile = File(...),
+    file:         UploadFile = File(...),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db:           Session = Depends(get_db),
 ):
     url = await upload_image(file, folder="avatars")
     if not url:
@@ -66,9 +65,9 @@ async def upload_avatar(
 
 @router.get("/me/wishlist", summary="Get my wishlisted products")
 async def get_my_wishlist(
-    pagination: PaginationParams = Depends(get_pagination),
+    pagination:   PaginationParams = Depends(get_pagination),
     current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db:           Session = Depends(get_db),
 ):
     from app.models.user import Wishlist
     from app.schemas.product import ProductResponseSchema
@@ -79,7 +78,7 @@ async def get_my_wishlist(
         Product.status == ProductStatus.ACTIVE,
     ).order_by(desc(Wishlist.created_at))
 
-    total = query.count()
+    total    = query.count()
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
 
     return paginated_response(
@@ -88,20 +87,45 @@ async def get_my_wishlist(
     )
 
 
-@router.get("/farmers", summary="List verified farmers")
+@router.get("/farmers", summary="List verified suppliers")
 async def list_farmers(
-    country: Optional[str] = None,
+    country:     Optional[str]  = None,
+    role:        Optional[str]  = None,
+    search:      Optional[str]  = None,
     is_featured: Optional[bool] = None,
-    pagination: PaginationParams = Depends(get_pagination),
-    db: Session = Depends(get_db),
+    pagination:  PaginationParams = Depends(get_pagination),
+    db:          Session = Depends(get_db),
 ):
     from app.models.user import UserRole
-    query = db.query(User).filter(
-        User.role.in_([UserRole.FARMER, UserRole.COOPERATIVE, UserRole.EXPORTER]),
-        User.status == UserStatus.ACTIVE,
-    )
+
+    all_supplier_roles = [
+        UserRole.FARMER,
+        UserRole.COOPERATIVE,
+        UserRole.EXPORTER,
+        UserRole.PROCESSING_COMPANY,
+        UserRole.LOGISTICS_PROVIDER,
+        UserRole.WAREHOUSE_OPERATOR,
+    ]
+
+    query = db.query(User).filter(User.status == UserStatus.ACTIVE)
+
+    if role and role != "all":
+        try:
+            role_enum = UserRole(role)
+            query = query.filter(User.role == role_enum)
+        except ValueError:
+            query = query.filter(User.role.in_(all_supplier_roles))
+    else:
+        query = query.filter(User.role.in_(all_supplier_roles))
+
     if country:
         query = query.filter(User.country.ilike(f"%{country}%"))
+    if search:
+        query = query.filter(or_(
+            User.first_name.ilike(f"%{search}%"),
+            User.last_name.ilike(f"%{search}%"),
+            User.business_name.ilike(f"%{search}%"),
+        ))
     if is_featured is not None:
         query = query.filter(User.is_featured == is_featured)
 
@@ -127,7 +151,7 @@ async def get_following(
     ).all()
 
     supplier_ids = [f.supplier_id for f in follows]
-    suppliers = db.query(User).filter(User.id.in_(supplier_ids)).all()
+    suppliers    = db.query(User).filter(User.id.in_(supplier_ids)).all()
 
     return success_response(data=[{
         "id":              str(s.id),
