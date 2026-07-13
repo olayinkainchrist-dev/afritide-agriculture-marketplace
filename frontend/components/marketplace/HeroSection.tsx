@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Search, ArrowRight, TrendingUp, Users, Package, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/lib/store/auth.store";
 
 const stats = [
   { icon: Users,     label: "Verified Farmers", value: "10,000+", color: "text-emerald-400" },
@@ -19,6 +20,7 @@ const tags = [
 export default function HeroSection() {
   const [query, setQuery] = useState("");
   const router = useRouter();
+  const { user, isAuthenticated } = useAuthStore();
 
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -111,15 +113,37 @@ export default function HeroSection() {
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-20">
-            <Link href="/register?role=buyer"
-              className="group bg-green-500 hover:bg-green-400 active:bg-green-600 text-white font-bold px-9 py-4 rounded-2xl transition-all shadow-xl shadow-green-900/40 flex items-center justify-center gap-2 text-[0.95rem]">
-              Start Sourcing
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link href="/register?role=farmer"
-              className="bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.1] hover:border-green-700/50 text-white font-bold px-9 py-4 rounded-2xl transition-all backdrop-blur-sm flex items-center justify-center text-[0.95rem]">
-              List Your Farm
-            </Link>
+            {isAuthenticated && user ? (
+              <>
+                <Link
+                  href={user.role === "buyer" ? "/marketplace" : "/dashboard/farmer/products"}
+                  className="group bg-green-500 hover:bg-green-400 active:bg-green-600 text-white font-bold px-9 py-4 rounded-2xl transition-all shadow-xl shadow-green-900/40 flex items-center justify-center gap-2 text-[0.95rem]">
+                  {user.role === "buyer" ? "Browse Marketplace" : "My Products"}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link
+                  href={
+                    user.role === "admin"  ? "/dashboard/admin" :
+                    user.role === "buyer"  ? "/dashboard/buyer" :
+                    "/dashboard/farmer"
+                  }
+                  className="bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.1] hover:border-green-700/50 text-white font-bold px-9 py-4 rounded-2xl transition-all backdrop-blur-sm flex items-center justify-center text-[0.95rem]">
+                  My Dashboard
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/register?role=buyer"
+                  className="group bg-green-500 hover:bg-green-400 active:bg-green-600 text-white font-bold px-9 py-4 rounded-2xl transition-all shadow-xl shadow-green-900/40 flex items-center justify-center gap-2 text-[0.95rem]">
+                  Start Sourcing
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link href="/register?role=farmer"
+                  className="bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.1] hover:border-green-700/50 text-white font-bold px-9 py-4 rounded-2xl transition-all backdrop-blur-sm flex items-center justify-center text-[0.95rem]">
+                  List Your Farm
+                </Link>
+              </>
+            )}
             <Link href="/marketplace"
               className="text-gray-600 hover:text-gray-300 font-semibold px-9 py-4 rounded-2xl transition-all flex items-center justify-center gap-1 text-[0.95rem] underline-offset-4 hover:underline">
               Explore Market →
