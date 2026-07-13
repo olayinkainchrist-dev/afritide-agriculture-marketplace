@@ -9,8 +9,7 @@ import {
   LayoutDashboard, Users, Package, ShoppingCart,
   TrendingUp, Shield, Megaphone, BarChart3,
   CheckCircle2, XCircle, Eye, Loader2,
-  ChevronDown, ChevronUp, Sourcing,
-  FileText,
+  ChevronUp,
 } from "lucide-react";
 import { formatDate, formatPrice, getCategoryLabel } from "@/lib/utils";
 import toast from "react-hot-toast";
