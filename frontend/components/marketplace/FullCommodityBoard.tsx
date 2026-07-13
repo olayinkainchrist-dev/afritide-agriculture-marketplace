@@ -10,6 +10,7 @@ import {
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, Legend,
+  ReferenceLine,
 } from "recharts";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -40,6 +41,42 @@ const TYPE_COLORS: Record<string, string> = {
 
 const CHART_COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#a855f7", "#06b6d4"];
 
+const TIME_FILTERS = [
+  { days: 7,   label: "1W" },
+  { days: 30,  label: "1M" },
+  { days: 90,  label: "3M" },
+  { days: 365, label: "1Y" },
+];
+
+// Professional Bloomberg-style tooltip
+const ProfessionalTooltip = ({ active, payload, label, commodityName, currency }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  const data = payload[0]?.payload;
+  const price = payload[0]?.value;
+  const pct   = data?.pct_change;
+
+  return (
+    <div className="bg-[#0a1a0f] border border-white/[0.12] rounded-xl p-3 shadow-2xl min-w-[160px]">
+      <p className="text-gray-500 text-[10px] font-medium mb-1.5">{label}</p>
+      {payload.map((p: any, i: number) => (
+        <div key={i} className="mb-1">
+          <p className="text-gray-400 text-[10px]">{p.name || commodityName}</p>
+          <p className="text-white font-black text-sm">{formatPrice(p.value, currency)}</p>
+          {p.payload?.pct_change != null && (
+            <p className={`text-[10px] font-bold mt-0.5 ${
+              p.payload.pct_change > 0 ? "text-green-400" :
+              p.payload.pct_change < 0 ? "text-red-400" : "text-gray-500"
+            }`}>
+              {p.payload.pct_change > 0 ? "▲" : p.payload.pct_change < 0 ? "▼" : "—"}
+              {" "}{Math.abs(p.payload.pct_change).toFixed(2)}%
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function FullCommodityBoard() {
   const [activeType,      setActiveType]      = useState("all");
   const [search,          setSearch]          = useState("");
@@ -66,7 +103,7 @@ export default function FullCommodityBoard() {
     refetchOnMount: true,
   });
 
-  const { data: historyData } = useQuery({
+  const { data: historyData, isLoading: historyLoading } = useQuery({
     queryKey: ["commodity-history", expandedId, chartDays],
     queryFn: async () => {
       const res = await apiClient.get(`/commodities/${expandedId}/history?days=${chartDays}`);
@@ -81,8 +118,14 @@ export default function FullCommodityBoard() {
       const results = await Promise.all(
         compareIds.map(id =>
           apiClient.get(`/commodities/${id}/history?days=${chartDays}`)
-            .then(r => ({ id, history: r.data?.data?.history || [] }))
-            .catch(() => ({ id, history: [] }))
+            .then(r => ({
+              id,
+              commodity_name: r.data?.data?.commodity_name || "",
+              currency:       r.data?.data?.currency || "NGN",
+              history:        r.data?.data?.history || [],
+              has_history:    r.data?.data?.has_history || false,
+            }))
+            .catch(() => ({ id, commodity_name: "", currency: "NGN", history: [], has_history: false }))
         )
       );
       return results;
@@ -108,7 +151,9 @@ export default function FullCommodityBoard() {
     }).format(converted);
   };
 
-  const history = historyData?.data?.history || [];
+  const historyInfo    = historyData?.data;
+  const history        = historyInfo?.history || [];
+  const hasHistory     = historyInfo?.has_history || false;
 
   const toggleCompare = (id: string) => {
     setCompareIds(prev =>
@@ -116,26 +161,38 @@ export default function FullCommodityBoard() {
     );
   };
 
+  // Build comparison chart — align by date
   const buildCompareData = () => {
-    if (!compareHistories) return [];
-    const maxLen = Math.max(...(compareHistories as any[]).map((ch: any) => ch.history.length));
-    if (!maxLen) return [];
-    return Array.from({ length: maxLen }, (_, i) => {
-      const point: any = { index: i };
+    if (!compareHistories || (compareHistories as any[]).length === 0) return [];
+
+    // Collect all unique dates
+    const dateSet = new Set<string>();
+    (compareHistories as any[]).forEach((ch: any) => {
+      ch.history.forEach((h: any) => {
+        const d = new Date(h.recorded_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        dateSet.add(d);
+      });
+    });
+
+    const dates = Array.from(dateSet).sort();
+
+    return dates.map(date => {
+      const point: any = { date };
       (compareHistories as any[]).forEach((ch: any) => {
-        const h = ch.history[i];
-        const commodity = allCommodities.find((c: any) => c.id === ch.id);
-        if (h && commodity) point[commodity.commodity_name] = h.price;
+        const match = ch.history.find((h: any) =>
+          new Date(h.recorded_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) === date
+        );
+        if (match) {
+          point[ch.commodity_name] = match.price;
+          point[`${ch.commodity_name}_pct`] = match.pct_change;
+        }
       });
       return point;
     });
   };
 
   const handleAlert = async (c: any) => {
-    if (!isAuthenticated) {
-      toast.error("Please login to set price alerts");
-      return;
-    }
+    if (!isAuthenticated) { toast.error("Please login to set price alerts"); return; }
     setAlertLoading(c.id);
     try {
       if (subscribedIds.includes(c.id)) {
@@ -151,8 +208,8 @@ export default function FullCommodityBoard() {
       } else {
         await apiClient.post("/price-alerts", {
           commodity_name: c.commodity_name,
-          alert_type: "any_change",
-          currency: c.currency,
+          alert_type:     "any_change",
+          currency:       c.currency,
         });
         setSubscribedIds(prev => [...prev, c.id]);
         toast.success(`Price alert set for ${c.commodity_name} 🔔`);
@@ -171,10 +228,7 @@ export default function FullCommodityBoard() {
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {PRICE_TYPES.map(pt => (
-            <button key={pt.value} onClick={() => {
-              setActiveType(pt.value);
-              setExpandedId(null);
-            }}
+            <button key={pt.value} onClick={() => { setActiveType(pt.value); setExpandedId(null); }}
               className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
                 activeType === pt.value
                   ? "bg-green-600 text-white"
@@ -186,8 +240,7 @@ export default function FullCommodityBoard() {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={() => { setCompareMode(!compareMode); setCompareIds([]); setExpandedId(null); }}
+          <button onClick={() => { setCompareMode(!compareMode); setCompareIds([]); setExpandedId(null); }}
             className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl transition-all border ${
               compareMode
                 ? "bg-violet-600 text-white border-violet-600"
@@ -241,34 +294,44 @@ export default function FullCommodityBoard() {
         ))}
       </div>
 
-      {/* Compare chart */}
+      {/* Compare chart — Bloomberg style */}
       {compareMode && compareIds.length >= 2 && (
-        <div className="bg-white/[0.03] border border-violet-800/30 rounded-2xl p-6">
+        <div className="bg-[#080f0a] border border-white/[0.08] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-bold flex items-center gap-2">
-              <GitCompare className="w-4 h-4 text-violet-400" /> Price Comparison
-            </h3>
+            <div>
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <GitCompare className="w-4 h-4 text-violet-400" /> Historical Price Comparison
+              </h3>
+              <p className="text-gray-600 text-xs mt-0.5">Price movement over selected period</p>
+            </div>
             <div className="flex gap-2">
-              {[7, 30, 90].map(d => (
-                <button key={d} onClick={() => setChartDays(d)}
-                  className={`text-xs px-3 py-1 rounded-lg transition-all ${
-                    chartDays === d ? "bg-green-600 text-white" : "bg-white/[0.04] text-gray-500 border border-white/[0.06]"
+              {TIME_FILTERS.map(f => (
+                <button key={f.days} onClick={() => setChartDays(f.days)}
+                  className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+                    chartDays === f.days
+                      ? "bg-green-600 text-white"
+                      : "bg-white/[0.04] text-gray-500 border border-white/[0.06] hover:text-white"
                   }`}>
-                  {d === 7 ? "1W" : d === 30 ? "1M" : "3M"}
+                  {f.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex gap-2 mb-4 flex-wrap">
+          {/* Legend */}
+          <div className="flex gap-3 mb-4 flex-wrap">
             {compareIds.map((id, idx) => {
               const commodity = allCommodities.find((c: any) => c.id === id);
+              const ch = (compareHistories as any[])?.find((x: any) => x.id === id);
               return commodity ? (
                 <div key={id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl border"
                   style={{ borderColor: CHART_COLORS[idx] + "60", backgroundColor: CHART_COLORS[idx] + "15" }}>
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS[idx] }} />
                   <span className="text-white text-xs font-medium">{commodity.commodity_name}</span>
-                  <button onClick={() => toggleCompare(id)} className="text-gray-500 hover:text-white">
+                  {ch && !ch.has_history && (
+                    <span className="text-[10px] text-amber-400">no history</span>
+                  )}
+                  <button onClick={() => toggleCompare(id)} className="text-gray-500 hover:text-white ml-1">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
@@ -276,39 +339,77 @@ export default function FullCommodityBoard() {
             })}
           </div>
 
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={buildCompareData()}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="index" tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} width={60} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#0a1a0f", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", color: "#fff", fontSize: "12px" }}
-                  labelStyle={{ color: "#6b7280" }}
-                />
-                <Legend wrapperStyle={{ fontSize: "11px", color: "#9ca3af" }} />
-                {compareIds.map((id, idx) => {
-                  const commodity = allCommodities.find((c: any) => c.id === id);
-                  return commodity ? (
-                    <Line key={id} type="monotone" dataKey={commodity.commodity_name}
-                      stroke={CHART_COLORS[idx]} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  ) : null;
-                })}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Check if any commodity has history */}
+          {(compareHistories as any[])?.every((ch: any) => !ch.has_history) ? (
+            <div className="h-48 flex items-center justify-center">
+              <div className="text-center">
+                <BarChart3 className="w-8 h-8 text-gray-700 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">Not enough historical data to display a trend.</p>
+                <p className="text-gray-700 text-xs mt-1">Update commodity prices to start building history.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={buildCompareData()} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fill: "#6b7280", fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={70}
+                    tickFormatter={(v: number) => {
+                      if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+                      if (v >= 1_000)     return `${(v / 1_000).toFixed(0)}K`;
+                      return `${v}`;
+                    }}
+                  />
+                  <Tooltip
+                    content={(props: any) => (
+                      <ProfessionalTooltip {...props} currency="NGN" />
+                    )}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: "11px", color: "#9ca3af", paddingTop: "8px" }}
+                  />
+                  {compareIds.map((id, idx) => {
+                    const ch = (compareHistories as any[])?.find((x: any) => x.id === id);
+                    if (!ch || !ch.has_history) return null;
+                    return (
+                      <Line
+                        key={id}
+                        type="monotone"
+                        dataKey={ch.commodity_name}
+                        stroke={CHART_COLORS[idx]}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 5, fill: CHART_COLORS[idx], stroke: "#0a1a0f", strokeWidth: 2 }}
+                      />
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
 
       {compareMode && compareIds.length < 2 && (
         <div className="bg-violet-950/20 border border-violet-800/30 rounded-2xl p-4 text-center">
           <p className="text-violet-300 text-sm">
-            Select {2 - compareIds.length} more {compareIds.length === 0 ? "commodities" : "commodity"} to compare prices
+            Select {2 - compareIds.length} more {compareIds.length === 0 ? "commodities" : "commodity"} to compare historical prices
           </p>
         </div>
       )}
 
-      {/* Price board */}
+      {/* Price board table */}
       <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
         {isLoading ? (
           <div className="p-6 space-y-3">
@@ -325,10 +426,10 @@ export default function FullCommodityBoard() {
               {compareMode && <div className="col-span-1">Select</div>}
               <div className={compareMode ? "col-span-2" : "col-span-3"}>Commodity</div>
               <div className="col-span-2">Type</div>
-              <div className="col-span-2">Price</div>
+              <div className="col-span-2">Current Price</div>
               <div className="col-span-2">Market</div>
               <div className="col-span-2">Change</div>
-              {!compareMode && <div className="col-span-1">Chart</div>}
+              {!compareMode && <div className="col-span-1">Trend</div>}
             </div>
 
             <div className="divide-y divide-white/[0.04]">
@@ -414,71 +515,165 @@ export default function FullCommodityBoard() {
                     )}
                   </div>
 
-                  {/* Expanded history */}
+                  {/* Expanded — Historical Price Trend */}
                   {!compareMode && expandedId === c.id && (
-                    <div className="px-5 pb-5 bg-white/[0.01] border-t border-white/[0.04]">
-                      <div className="pt-4">
+                    <div className="px-5 pb-6 bg-[#080f0a] border-t border-white/[0.04]">
+                      <div className="pt-5">
+
+                        {/* Chart header */}
                         <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-white font-bold text-sm flex items-center gap-2">
-                            <BarChart3 className="w-4 h-4 text-green-500" /> Price Trend
-                          </h4>
+                          <div>
+                            <h4 className="text-white font-bold text-sm flex items-center gap-2">
+                              <BarChart3 className="w-4 h-4 text-green-500" />
+                              {c.commodity_name} — Historical Price Trend
+                            </h4>
+                            <p className="text-gray-600 text-[10px] mt-0.5">
+                              {c.market} · {c.price_type?.replace("_", " ")} · per {c.unit}
+                            </p>
+                          </div>
                           <div className="flex gap-2">
-                            {[7, 30, 90].map(d => (
-                              <button key={d} onClick={(e) => { e.stopPropagation(); setChartDays(d); }}
-                                className={`text-xs px-3 py-1 rounded-lg transition-all ${
-                                  chartDays === d ? "bg-green-600 text-white" : "bg-white/[0.04] text-gray-500 border border-white/[0.06]"
+                            {TIME_FILTERS.map(f => (
+                              <button key={f.days}
+                                onClick={(e) => { e.stopPropagation(); setChartDays(f.days); }}
+                                className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-all ${
+                                  chartDays === f.days
+                                    ? "bg-green-600 text-white"
+                                    : "bg-white/[0.04] text-gray-500 border border-white/[0.06] hover:text-white"
                                 }`}>
-                                {d === 7 ? "1W" : d === 30 ? "1M" : "3M"}
+                                {f.label}
                               </button>
                             ))}
                           </div>
                         </div>
 
-                        {history.length === 0 ? (
-                          <p className="text-gray-600 text-sm py-8 text-center">
-                            No price history available yet. Update this commodity price to start tracking.
-                          </p>
-                        ) : (
-                          <>
-                            <div className="h-48 w-full mb-4">
-                              <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={history.map((h: any) => ({
-                                  date: new Date(h.recorded_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-                                  price: h.price,
-                                }))}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                  <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                                  <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false}
-                                    tickFormatter={(v: number) => formatPrice(v, c.currency).replace(/[^0-9.,KMB]/g, "")} width={60} />
-                                  <Tooltip
-                                    contentStyle={{ backgroundColor: "#0a1a0f", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", color: "#fff", fontSize: "12px" }}
-                                    formatter={(value: any) => [formatPrice(value, c.currency), "Price"]}
-                                    labelStyle={{ color: "#6b7280" }}
-                                  />
-                                  <Line type="monotone" dataKey="price" stroke="#22c55e" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: "#22c55e" }} />
-                                </LineChart>
-                              </ResponsiveContainer>
+                        {/* Current price highlight */}
+                        <div className="flex items-center gap-6 mb-5 p-4 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                          <div>
+                            <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-0.5">Current Price</p>
+                            <p className="text-green-400 font-black text-2xl">{formatPrice(c.price, c.currency)}</p>
+                          </div>
+                          {c.previous_price && (
+                            <div>
+                              <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-0.5">Previous</p>
+                              <p className="text-gray-400 font-bold text-sm">{formatPrice(c.previous_price, c.currency)}</p>
                             </div>
+                          )}
+                          {c.change_percentage != null && (
+                            <div>
+                              <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-0.5">Change</p>
+                              <p className={`font-black text-sm ${
+                                c.change_percentage > 0 ? "text-green-400" :
+                                c.change_percentage < 0 ? "text-red-400" : "text-gray-400"
+                              }`}>
+                                {c.change_percentage > 0 ? "▲" : c.change_percentage < 0 ? "▼" : "—"}
+                                {" "}{Math.abs(c.change_percentage).toFixed(2)}%
+                              </p>
+                            </div>
+                          )}
+                        </div>
 
+                        {/* Chart */}
+                        {historyLoading ? (
+                          <div className="h-56 flex items-center justify-center">
+                            <RefreshCw className="w-6 h-6 text-green-500 animate-spin" />
+                          </div>
+                        ) : !hasHistory || history.length < 2 ? (
+                          <div className="h-56 flex flex-col items-center justify-center border border-white/[0.05] rounded-xl">
+                            <BarChart3 className="w-8 h-8 text-gray-700 mb-2" />
+                            <p className="text-gray-500 text-sm font-medium">Not enough historical data to display a trend.</p>
+                            <p className="text-gray-700 text-xs mt-1">Update this commodity price to start building history.</p>
+                          </div>
+                        ) : (
+                          <div className="h-56 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart
+                                data={history.map((h: any) => ({
+                                  date:        new Date(h.recorded_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+                                  price:       h.price,
+                                  pct_change:  h.pct_change,
+                                }))}
+                                margin={{ top: 5, right: 10, bottom: 5, left: 10 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                                <XAxis
+                                  dataKey="date"
+                                  tick={{ fill: "#6b7280", fontSize: 10 }}
+                                  tickLine={false}
+                                  axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
+                                  interval="preserveStartEnd"
+                                />
+                                <YAxis
+                                  tick={{ fill: "#6b7280", fontSize: 10 }}
+                                  tickLine={false}
+                                  axisLine={false}
+                                  width={70}
+                                  tickFormatter={(v: number) => {
+                                    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+                                    if (v >= 1_000)     return `${(v / 1_000).toFixed(0)}K`;
+                                    return `${v}`;
+                                  }}
+                                />
+                                <Tooltip
+                                  content={(props: any) => (
+                                    <ProfessionalTooltip
+                                      {...props}
+                                      commodityName={c.commodity_name}
+                                      currency={c.currency}
+                                    />
+                                  )}
+                                />
+                                <ReferenceLine
+                                  y={c.price}
+                                  stroke="rgba(34,197,94,0.3)"
+                                  strokeDasharray="4 4"
+                                  label={{ value: "Current", fill: "#22c55e", fontSize: 9, position: "right" }}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="price"
+                                  stroke="#22c55e"
+                                  strokeWidth={2}
+                                  dot={history.length <= 10 ? { fill: "#22c55e", r: 3, strokeWidth: 0 } : false}
+                                  activeDot={{ r: 5, fill: "#22c55e", stroke: "#0a1a0f", strokeWidth: 2 }}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        )}
+
+                        {/* History table — last 6 records */}
+                        {history.length >= 2 && (
+                          <div className="mt-4">
+                            <p className="text-gray-600 text-[10px] uppercase tracking-widest font-bold mb-2">Recent Records</p>
                             <div className="grid grid-cols-3 gap-2">
                               {history.slice(-6).reverse().map((h: any, i: number) => (
                                 <div key={i} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
                                   <p className="text-green-400 font-bold text-sm">{formatPrice(h.price, h.currency)}</p>
+                                  {h.pct_change != null && (
+                                    <p className={`text-[10px] font-bold ${
+                                      h.pct_change > 0 ? "text-green-400" :
+                                      h.pct_change < 0 ? "text-red-400" : "text-gray-500"
+                                    }`}>
+                                      {h.pct_change > 0 ? "▲" : h.pct_change < 0 ? "▼" : "—"}
+                                      {" "}{Math.abs(h.pct_change).toFixed(1)}%
+                                    </p>
+                                  )}
                                   <p className="text-gray-600 text-[10px] mt-0.5">
                                     {new Date(h.recorded_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                                   </p>
                                 </div>
                               ))}
                             </div>
-                          </>
+                          </div>
                         )}
 
+                        {/* Details grid */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
                           {[
-                            { label: "Current Price", value: formatPrice(c.price, c.currency) },
-                            { label: "Market",        value: c.market || "—" },
-                            { label: "Region",        value: c.region || "—" },
-                            { label: "Source",        value: c.source || "—" },
+                            { label: "Market",  value: c.market  || "—" },
+                            { label: "Region",  value: c.region  || "—" },
+                            { label: "Source",  value: c.source  || "—" },
+                            { label: "Updated", value: c.updated_at ? new Date(c.updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—" },
                           ].map(({ label, value }) => (
                             <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
                               <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-1">{label}</p>
@@ -488,10 +683,12 @@ export default function FullCommodityBoard() {
                         </div>
 
                         {c.notes && (
-                          <p className="text-gray-500 text-xs mt-3 bg-white/[0.02] rounded-xl p-3">📝 {c.notes}</p>
+                          <p className="text-gray-500 text-xs mt-3 bg-white/[0.02] rounded-xl p-3">
+                            📝 {c.notes}
+                          </p>
                         )}
 
-                        {/* Price Alert Button */}
+                        {/* Price Alert */}
                         <div className="mt-4 flex items-center gap-3">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleAlert(c); }}
@@ -500,15 +697,13 @@ export default function FullCommodityBoard() {
                               subscribedIds.includes(c.id)
                                 ? "bg-amber-500/20 text-amber-400 border-amber-700/40 hover:bg-amber-500/30"
                                 : "bg-white/[0.04] text-gray-400 hover:text-green-400 hover:border-green-700/40 border-white/[0.07]"
-                            }`}
-                          >
-                            {alertLoading === c.id ? (
-                              <RefreshCw className="w-4 h-4 animate-spin" />
-                            ) : subscribedIds.includes(c.id) ? (
-                              <BellOff className="w-4 h-4" />
-                            ) : (
-                              <Bell className="w-4 h-4" />
-                            )}
+                            }`}>
+                            {alertLoading === c.id
+                              ? <RefreshCw className="w-4 h-4 animate-spin" />
+                              : subscribedIds.includes(c.id)
+                              ? <BellOff className="w-4 h-4" />
+                              : <Bell className="w-4 h-4" />
+                            }
                             {subscribedIds.includes(c.id) ? "Remove Alert" : "Set Price Alert"}
                           </button>
                           <p className="text-gray-600 text-xs">

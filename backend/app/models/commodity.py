@@ -20,37 +20,37 @@ class PriceTrend(str, enum.Enum):
 
 
 class PriceType(str, enum.Enum):
-    FARM_GATE     = "farm_gate"
-    WHOLESALE     = "wholesale"
-    RETAIL        = "retail"
-    EXPORT        = "export"
-    INTERNATIONAL = "international"
+    FARM_GATE     = "FARM_GATE"
+    WHOLESALE     = "WHOLESALE"
+    RETAIL        = "RETAIL"
+    EXPORT        = "EXPORT"
+    INTERNATIONAL = "INTERNATIONAL"
 
 
 class CommodityPrice(Base):
     __tablename__ = "commodity_prices"
 
-    id               = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    commodity_name   = Column(String(255), nullable=False, index=True)
-    category         = Column(String(100), nullable=True)
-    price_type       = Column(Enum(PriceType), default=PriceType.WHOLESALE, nullable=False)
-    price            = Column(Float, nullable=False)
-    previous_price   = Column(Float, nullable=True)
-    currency         = Column(String(10), default="USD", nullable=False)
-    unit             = Column(String(50), nullable=False)
-    trend            = Column(Enum(PriceTrend), default=PriceTrend.STABLE, nullable=False)
-    change_percentage= Column(Float, nullable=True)
-    market           = Column(String(100), nullable=True)
-    region           = Column(String(100), nullable=True)
-    country          = Column(String(100), nullable=True)
-    is_export_price  = Column(Boolean, default=False)
-    is_domestic_price= Column(Boolean, default=True)
-    source           = Column(String(255), nullable=True)
-    notes            = Column(Text, nullable=True)
-    is_active        = Column(Boolean, default=True, nullable=False)
-    updated_by       = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_at       = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at       = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    id                = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    commodity_name    = Column(String(255), nullable=False, index=True)
+    category          = Column(String(100), nullable=True)
+    price_type        = Column(Enum(PriceType), default=PriceType.WHOLESALE, nullable=False)
+    price             = Column(Float, nullable=False)
+    previous_price    = Column(Float, nullable=True)
+    currency          = Column(String(10), default="NGN", nullable=False)
+    unit              = Column(String(50), nullable=False)
+    trend             = Column(Enum(PriceTrend), default=PriceTrend.STABLE, nullable=False)
+    change_percentage = Column(Float, nullable=True)
+    market            = Column(String(100), nullable=True)
+    region            = Column(String(100), nullable=True)
+    country           = Column(String(100), nullable=True)
+    is_export_price   = Column(Boolean, default=False)
+    is_domestic_price = Column(Boolean, default=True)
+    source            = Column(String(255), nullable=True)
+    notes             = Column(Text, nullable=True)
+    is_active         = Column(Boolean, default=True, nullable=False)
+    updated_by        = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at        = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at        = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     price_history = relationship("CommodityPriceHistory", back_populates="commodity", lazy="dynamic")
 
@@ -64,7 +64,10 @@ class CommodityPriceHistory(Base):
     id           = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     commodity_id = Column(UUID(as_uuid=True), ForeignKey("commodity_prices.id", ondelete="CASCADE"), nullable=False)
     price        = Column(Float, nullable=False)
-    currency     = Column(String(10), default="USD", nullable=False)
+    currency     = Column(String(10), default="NGN", nullable=False)
+    market       = Column(String(100), nullable=True)
+    region       = Column(String(100), nullable=True)
+    price_type   = Column(String(50), nullable=True)
     recorded_at  = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     commodity = relationship("CommodityPrice", back_populates="price_history")

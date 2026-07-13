@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 
 from app.core.database import get_db
@@ -32,21 +32,16 @@ async def get_commodity_board(
 ):
     query = db.query(CommodityPrice).filter(CommodityPrice.is_active == True)
 
-    if category:
-        query = query.filter(CommodityPrice.category == category)
-    if country:
-        query = query.filter(CommodityPrice.country.ilike(f"%{country}%"))
-    if region:
-        query = query.filter(CommodityPrice.region.ilike(f"%{region}%"))
+    if category:   query = query.filter(CommodityPrice.category == category)
+    if country:    query = query.filter(CommodityPrice.country.ilike(f"%{country}%"))
+    if region:     query = query.filter(CommodityPrice.region.ilike(f"%{region}%"))
     if price_type:
-        from app.models.commodity import PriceType
         try:
             pt = PriceType(price_type.upper())
             query = query.filter(CommodityPrice.price_type == pt)
         except ValueError:
             pass
-    if search:
-        query = query.filter(CommodityPrice.commodity_name.ilike(f"%{search}%"))
+    if search:     query = query.filter(CommodityPrice.commodity_name.ilike(f"%{search}%"))
 
     sort_col = {
         "commodity_name":    CommodityPrice.commodity_name,
@@ -55,7 +50,7 @@ async def get_commodity_board(
     }.get(sort_by, CommodityPrice.commodity_name)
     query = query.order_by(asc(sort_col))
 
-    total = query.count()
+    total      = query.count()
     commodities = query.offset(pagination.offset).limit(pagination.page_size).all()
 
     return paginated_response(
@@ -79,7 +74,7 @@ async def get_commodity_by_name(
 
     grouped: dict = {}
     for c in commodities:
-        pt = c.price_type.value if c.price_type else "wholesale"
+        pt = c.price_type.value if c.price_type else "WHOLESALE"
         if pt not in grouped:
             grouped[pt] = []
         grouped[pt].append({
@@ -122,7 +117,7 @@ async def get_commodity_summary(
             }
         grouped[name]["price_count"] += 1
         grouped[name]["prices"].append({
-            "price_type": c.price_type.value if c.price_type else "wholesale",
+            "price_type": c.price_type.value if c.price_type else "WHOLESALE",
             "price":      c.price,
             "currency":   c.currency,
             "unit":       c.unit,
@@ -145,26 +140,66 @@ async def get_commodity_history(
     if not commodity:
         raise HTTPException(status_code=404, detail="Commodity not found")
 
-    history = commodity.price_history.order_by(
-        desc(CommodityPriceHistory.recorded_at)
-    ).limit(days).all()
+    # Filter by date range
+    since = datetime.utcnow() - timedelta(days=days)
+    history = commodity.price_history.filter(
+        CommodityPriceHistory.recorded_at >= since
+    ).order_by(asc(CommodityPriceHistory.recorded_at)).all()
+
+    # Build history points with % change between each point
+    history_points = []
+    for i, h in enumerate(history):
+        prev_price = history[i - 1].price if i > 0 else None
+        if prev_price and prev_price > 0:
+            pct_change = round(((h.price - prev_price) / prev_price) * 100, 2)
+        else:
+            pct_change = None
+
+        history_points.append({
+            "price":          h.price,
+            "currency":       h.currency,
+            "market":         h.market or commodity.market,
+            "price_type":     h.price_type or (commodity.price_type.value if commodity.price_type else "WHOLESALE"),
+            "pct_change":     pct_change,
+            "recorded_at":    h.recorded_at.isoformat() if h.recorded_at else None,
+        })
+
+    # Always ensure last point equals current price
+    if history_points:
+        last = history_points[-1]
+        if last["price"] != commodity.price:
+            prev = last["price"]
+            pct  = round(((commodity.price - prev) / prev) * 100, 2) if prev > 0 else None
+            history_points.append({
+                "price":       commodity.price,
+                "currency":    commodity.currency,
+                "market":      commodity.market,
+                "price_type":  commodity.price_type.value if commodity.price_type else "WHOLESALE",
+                "pct_change":  pct,
+                "recorded_at": datetime.utcnow().isoformat(),
+            })
+    else:
+        # No history — return single point with current price
+        history_points = [{
+            "price":       commodity.price,
+            "currency":    commodity.currency,
+            "market":      commodity.market,
+            "price_type":  commodity.price_type.value if commodity.price_type else "WHOLESALE",
+            "pct_change":  None,
+            "recorded_at": commodity.updated_at.isoformat() if commodity.updated_at else datetime.utcnow().isoformat(),
+        }]
 
     return success_response(data={
+        "commodity_id":   str(commodity.id),
         "commodity_name": commodity.commodity_name,
-        "price_type":     commodity.price_type.value if commodity.price_type else "wholesale",
+        "price_type":     commodity.price_type.value if commodity.price_type else "WHOLESALE",
         "market":         commodity.market,
         "region":         commodity.region,
         "current_price":  commodity.price,
         "currency":       commodity.currency,
         "unit":           commodity.unit,
-        "history": [
-            {
-                "price":       h.price,
-                "currency":    h.currency,
-                "recorded_at": h.recorded_at.isoformat() if h.recorded_at else None,
-            }
-            for h in reversed(history)
-        ],
+        "has_history":    len(history_points) >= 2,
+        "history":        history_points,
     })
 
 
@@ -190,14 +225,13 @@ async def create_commodity(
 
 
 def _trigger_price_alerts(
-    db: Session,
-    commodity_name: str,
-    previous_price: float,
-    new_price: float,
-    currency: str,
+    db:                Session,
+    commodity_name:    str,
+    previous_price:    float,
+    new_price:         float,
+    currency:          str,
     change_percentage: float,
 ):
-    """Send price alert emails to all subscribers of this commodity."""
     try:
         from app.models.price_alert import PriceAlert, AlertType
         from app.models.user import User
@@ -223,13 +257,9 @@ def _trigger_price_alerts(
 
             if should_trigger:
                 send_price_alert_email(
-                    user.email,
-                    user.first_name,
-                    commodity_name,
-                    previous_price,
-                    new_price,
-                    currency,
-                    change_percentage,
+                    user.email, user.first_name,
+                    commodity_name, previous_price,
+                    new_price, currency, change_percentage,
                 )
                 alert.last_triggered = datetime.utcnow()
 
@@ -253,15 +283,19 @@ async def update_commodity(
 
     # Archive current price to history before updating
     history_entry = CommodityPriceHistory(
-        commodity_id=commodity.id,
-        price=commodity.price,
-        currency=commodity.currency,
+        commodity_id = commodity.id,
+        price        = commodity.price,
+        currency     = commodity.currency,
+        market       = commodity.market,
+        region       = commodity.region,
+        price_type   = commodity.price_type.value if commodity.price_type else "WHOLESALE",
+        recorded_at  = datetime.utcnow(),
     )
     db.add(history_entry)
 
-    previous_price     = commodity.price
-    price_changed      = False
-    change_percentage  = 0.0
+    previous_price    = commodity.price
+    price_changed     = False
+    change_percentage = 0.0
 
     if payload.price is not None and payload.price != commodity.price:
         commodity.previous_price    = commodity.price
@@ -285,7 +319,6 @@ async def update_commodity(
     db.commit()
     db.refresh(commodity)
 
-    # Trigger alerts in background if price changed by 1%+
     if price_changed and abs(change_percentage) >= 1:
         background_tasks.add_task(
             _trigger_price_alerts,
