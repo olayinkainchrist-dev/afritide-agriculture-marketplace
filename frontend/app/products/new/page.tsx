@@ -398,7 +398,13 @@ export default function NewProductPage() {
                       </div>
                     ))}
                     {images.length < 5 && (
-                      <label className="aspect-square rounded-xl border-2 border-dashed border-white/[0.12] hover:border-green-700/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          document.getElementById("img-upload-input")?.click();
+                        }}
+                        className="aspect-square rounded-xl border-2 border-dashed border-white/[0.12] hover:border-green-700/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
                         {uploadingImage
                           ? <Loader2 className="w-6 h-6 text-green-500 animate-spin" />
                           : <>
@@ -406,9 +412,7 @@ export default function NewProductPage() {
                               <span className="text-gray-600 text-xs group-hover:text-green-400 transition-colors">Add Image</span>
                             </>
                         }
-                        <input type="file" accept="image/*" className="hidden"
-                          onChange={handleImageUpload} disabled={uploadingImage} />
-                      </label>
+                      </div>
                     )}
                   </div>
                   <p className="text-gray-600 text-xs">First image will be the main product photo. Max 5MB each.</p>
@@ -476,6 +480,16 @@ export default function NewProductPage() {
           </div>
         </form>
       </div>
+
+      <input
+        id="img-upload-input"
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+        disabled={uploadingImage}
+      />
+
       <Footer />
     </main>
   );
