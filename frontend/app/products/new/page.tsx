@@ -99,7 +99,12 @@ export default function NewProductPage() {
       const res = await apiClient.post("/products/upload-image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setImages(prev => [...prev, res.data?.data?.url]);
+      const url = res.data?.data?.url;
+      if (url) {
+        setImages(prev => [...prev, url]);
+      } else {
+        toast.error("Upload succeeded but no URL returned");
+      }
       toast.success("Image uploaded");
     } catch {
       toast.error("Failed to upload image");

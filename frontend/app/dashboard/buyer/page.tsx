@@ -6,19 +6,24 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import apiClient from "@/lib/api/client";
-import { LayoutDashboard, ShoppingCart, Heart, MessageSquare, FileText, Bell } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import {
+  LayoutDashboard, ShoppingCart, Heart,
+  MessageSquare, FileText, Bell, Users,
+  Package, TrendingUp, ArrowRight, Clock,
+} from "lucide-react";
+import { formatPrice, formatDate } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { label: "Overview",  href: "/dashboard/buyer",          icon: LayoutDashboard },
-  { label: "My Orders", href: "/dashboard/buyer/orders",   icon: ShoppingCart },
-  { label: "Wishlist",  href: "/dashboard/buyer/wishlist", icon: Heart },
-  { label: "Messages",  href: "/dashboard/buyer/messages", icon: MessageSquare, badge: 2 },
-  { label: "My RFQs",   href: "/dashboard/buyer/rfqs",     icon: FileText },
-  { label: "Alerts",    href: "/dashboard/buyer/alerts",   icon: Bell },
+  { label: "Overview",          href: "/dashboard/buyer",           icon: LayoutDashboard },
+  { label: "My Orders",         href: "/dashboard/buyer/orders",    icon: ShoppingCart },
+  { label: "Wishlist",          href: "/dashboard/buyer/wishlist",  icon: Heart },
+  { label: "My Suppliers",      href: "/dashboard/buyer/suppliers", icon: Users },
+  { label: "Messages",          href: "/dashboard/buyer/messages",  icon: MessageSquare },
+  { label: "Sourcing Requests", href: "/dashboard/buyer/rfqs",      icon: FileText },
+  { label: "Alerts",            href: "/dashboard/buyer/alerts",    icon: Bell },
 ];
 
-export default function BuyerMessagesPage() {
+export default function BuyerDashboardPage() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
 
@@ -26,71 +31,196 @@ export default function BuyerMessagesPage() {
     if (!isAuthenticated) router.push("/login");
   }, [isAuthenticated, router]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["buyer-conversations"],
+  const { data: ordersData } = useQuery({
+    queryKey: ["buyer-recent-orders"],
     queryFn: async () => {
-      const res = await apiClient.get("/messages/conversations");
+      const res = await apiClient.get("/orders?page_size=5");
       return res.data;
     },
     enabled: isAuthenticated,
   });
 
-  const conversations = data?.data || [];
+  const { data: rfqData } = useQuery({
+    queryKey: ["buyer-recent-rfqs"],
+    queryFn: async () => {
+      const res = await apiClient.get("/rfqs?role=buyer&page_size=5");
+      return res.data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  const { data: cartData } = useQuery({
+    queryKey: ["buyer-cart"],
+    queryFn: async () => {
+      const res = await apiClient.get("/cart");
+      return res.data;
+    },
+    enabled: isAuthenticated,
+  });
+
+  const orders       = ordersData?.data || [];
+  const rfqs         = rfqData?.data || [];
+  const cartItems    = cartData?.data?.items || [];
+  const cartSubtotal = cartData?.data?.subtotal || 0;
 
   if (!isAuthenticated || !user) return null;
 
   return (
-    <DashboardLayout navItems={NAV_ITEMS} title="Messages">
+    <DashboardLayout navItems={NAV_ITEMS} title="Dashboard">
       <div className="space-y-6">
+
+        {/* Welcome */}
         <div>
-          <h2 className="text-2xl font-black text-white">Messages</h2>
-          <p className="text-gray-500 text-sm mt-1">{conversations.length} conversations</p>
+          <h2 className="text-2xl font-black text-white">
+            Welcome back, {user.first_name}! 👋
+          </h2>
+          <p className="text-gray-500 text-sm mt-1">
+            Here&apos;s what&apos;s happening with your account
+          </p>
         </div>
-        <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
-          {isLoading ? (
-            <div className="p-6 space-y-3">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-white/[0.03] rounded-xl animate-pulse" />)}
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Total Orders",     value: orders.length,    icon: ShoppingCart, color: "text-green-400",  href: "/dashboard/buyer/orders" },
+            { label: "Active RFQs",      value: rfqs.filter((r: any) => r.status === "open").length, icon: FileText, color: "text-blue-400", href: "/dashboard/buyer/rfqs" },
+            { label: "Cart Items",       value: cartItems.length, icon: Package,      color: "text-amber-400", href: "/cart" },
+            { label: "Pending Quotes",   value: rfqs.filter((r: any) => r.status === "quoted").length, icon: TrendingUp, color: "text-violet-400", href: "/dashboard/buyer/rfqs" },
+          ].map(({ label, value, icon: Icon, color, href }) => (
+            <Link key={label} href={href}
+              className="bg-white/[0.03] border border-white/[0.07] hover:border-green-700/40 rounded-2xl p-5 transition-all group">
+              <Icon className={`w-5 h-5 ${color} mb-3 group-hover:scale-110 transition-transform`} />
+              <p className={`text-2xl font-black ${color}`}>{value}</p>
+              <p className="text-gray-600 text-xs mt-0.5">{label}</p>
+            </Link>
+          ))}
+        </div>
+
+        {/* Cart summary */}
+        {cartItems.length > 0 && (
+          <div className="bg-green-950/30 border border-green-800/30 rounded-2xl p-5 flex items-center justify-between">
+            <div>
+              <p className="text-green-400 font-bold text-sm">You have items in your cart</p>
+              <p className="text-gray-400 text-xs mt-0.5">
+                {cartItems.length} item{cartItems.length !== 1 ? "s" : ""} —
+                Total: <span className="text-white font-bold">{formatPrice(cartSubtotal, cartItems[0]?.currency || "NGN")}</span>
+              </p>
             </div>
-          ) : conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <MessageSquare className="w-12 h-12 text-gray-700 mb-3" />
-              <h3 className="text-white font-bold mb-1">No messages yet</h3>
-              <p className="text-gray-600 text-sm">Contact a seller from a product page to start a conversation</p>
+            <Link href="/checkout"
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-colors">
+              Checkout <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* Recent orders */}
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+              <h3 className="text-white font-bold text-sm">Recent Orders</h3>
+              <Link href="/dashboard/buyer/orders" className="text-green-400 hover:text-green-300 text-xs transition-colors">
+                View all →
+              </Link>
             </div>
-          ) : (
-            <div className="divide-y divide-white/[0.04]">
-              {conversations.map((convo: any) => (
-                <Link
-                  key={convo.conversation_id}
-                  href={`/dashboard/buyer/messages/${convo.conversation_id}`}
-                  className="flex items-center gap-4 px-5 py-4 hover:bg-white/[0.04] transition-colors cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-green-900/40 border border-green-800/30 flex items-center justify-center text-green-400 font-black text-sm flex-shrink-0">
-                    {convo.other_user_id?.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-white font-semibold text-sm">
-                        Seller {convo.other_user_id?.slice(0, 8)}...
-                      </p>
-                      {convo.last_message_at && (
-                        <p className="text-gray-600 text-xs">{formatDate(convo.last_message_at)}</p>
-                      )}
-                    </div>
-                    <p className="text-gray-500 text-xs truncate">
-                      {convo.last_message || "Start a conversation"}
-                    </p>
-                  </div>
-                  {convo.unread_count > 0 && (
-                    <span className="w-5 h-5 bg-green-500 text-white text-[10px] font-black rounded-full flex items-center justify-center flex-shrink-0">
-                      {convo.unread_count}
-                    </span>
-                  )}
+            {orders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <ShoppingCart className="w-8 h-8 text-gray-700 mb-2" />
+                <p className="text-gray-600 text-sm">No orders yet</p>
+                <Link href="/marketplace" className="text-green-400 text-xs mt-2 hover:text-green-300">
+                  Browse marketplace →
                 </Link>
-              ))}
+              </div>
+            ) : (
+              <div className="divide-y divide-white/[0.04]">
+                {orders.slice(0, 5).map((order: any) => (
+                  <div key={order.id} className="px-5 py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm font-medium">{order.order_number}</p>
+                      <p className="text-gray-600 text-xs">{formatDate(order.created_at)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-green-400 font-bold text-sm">{formatPrice(order.total_amount, order.currency)}</p>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                        order.status === "confirmed"  ? "bg-green-500/20 text-green-400" :
+                        order.status === "pending"    ? "bg-amber-500/20 text-amber-400" :
+                        order.status === "delivered"  ? "bg-blue-500/20 text-blue-400"   :
+                        "bg-gray-500/20 text-gray-400"
+                      }`}>
+                        {order.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Recent sourcing requests */}
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+              <h3 className="text-white font-bold text-sm">Sourcing Requests</h3>
+              <Link href="/dashboard/buyer/rfqs" className="text-green-400 hover:text-green-300 text-xs transition-colors">
+                View all →
+              </Link>
             </div>
-          )}
+            {rfqs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <FileText className="w-8 h-8 text-gray-700 mb-2" />
+                <p className="text-gray-600 text-sm">No sourcing requests yet</p>
+                <Link href="/dashboard/buyer/rfqs" className="text-green-400 text-xs mt-2 hover:text-green-300">
+                  Submit a request →
+                </Link>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/[0.04]">
+                {rfqs.slice(0, 5).map((rfq: any) => (
+                  <div key={rfq.id} className="px-5 py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm font-medium truncate max-w-[160px]">{rfq.product_name}</p>
+                      <p className="text-gray-600 text-xs">{rfq.quantity} {rfq.unit}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {rfq.status === "quoted" && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 animate-pulse">
+                          Quote Ready!
+                        </span>
+                      )}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
+                        rfq.status === "open"     ? "bg-green-500/20 text-green-400" :
+                        rfq.status === "quoted"   ? "bg-blue-500/20 text-blue-400"   :
+                        rfq.status === "accepted" ? "bg-emerald-500/20 text-emerald-400" :
+                        "bg-gray-500/20 text-gray-400"
+                      }`}>
+                        {rfq.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Quick actions */}
+        <div>
+          <h3 className="text-white font-bold text-sm mb-3">Quick Actions</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: "Browse Marketplace", href: "/marketplace",          icon: Package,       color: "text-green-400" },
+              { label: "My Suppliers",       href: "/dashboard/buyer/suppliers", icon: Users,    color: "text-blue-400" },
+              { label: "Price Board",        href: "/commodities",           icon: TrendingUp,    color: "text-amber-400" },
+              { label: "My Alerts",          href: "/dashboard/buyer/alerts",icon: Bell,          color: "text-violet-400" },
+            ].map(({ label, href, icon: Icon, color }) => (
+              <Link key={label} href={href}
+                className="bg-white/[0.03] border border-white/[0.07] hover:border-green-700/40 rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all group">
+                <Icon className={`w-6 h-6 ${color} group-hover:scale-110 transition-transform`} />
+                <p className="text-gray-400 text-xs font-medium group-hover:text-white transition-colors">{label}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
       </div>
     </DashboardLayout>
   );
