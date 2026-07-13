@@ -54,7 +54,7 @@ class ProductCreateSchema(BaseModel):
     main_image:             Optional[str]       = None
     video_url:              Optional[str]       = None
     delivery_options:       Optional[List[str]] = None
-
+    price_tiers:            Optional[List[dict]] = None
 
 class ProductUpdateSchema(BaseModel):
     title:                  Optional[str]           = None
@@ -92,7 +92,7 @@ class ProductUpdateSchema(BaseModel):
     main_image:             Optional[str]           = None
     video_url:              Optional[str]           = None
     delivery_options:       Optional[List[str]]     = None
-
+    price_tiers:            Optional[List[dict]] = None
 
 class SellerSummarySchema(BaseModel):
     id:                  UUID
@@ -171,6 +171,7 @@ class ProductResponseSchema(BaseModel):
     storage_condition:      Optional[str]       = None
     expiry_date:            Optional[datetime]  = None
     shelf_life_days:        Optional[int]       = None
+    price_tiers:            Optional[List[dict]] = None
 
     class Config:
         from_attributes = True

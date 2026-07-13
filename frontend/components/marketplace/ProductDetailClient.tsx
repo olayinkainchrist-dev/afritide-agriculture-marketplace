@@ -80,6 +80,17 @@ export default function ProductDetailClient({ id }: Props) {
   const seller = product.seller;
   const sellerName = seller ? (seller.business_name || `${seller.first_name} ${seller.last_name}`) : "the seller";
 
+  // Calculate effective price based on tiers
+  const getEffectivePrice = () => {
+    if (!product.price_tiers || product.price_tiers.length === 0) return product.price;
+    const tier = product.price_tiers.find((t: any) =>
+      quantity >= t.min_qty && (t.max_qty === null || quantity <= t.max_qty)
+    );
+    return tier ? tier.price : product.price;
+  };
+
+  const effectivePrice = getEffectivePrice();
+
   const handleRFQ = () => {
     if (!isAuthenticated) {
       toast.error("Please login to send an RFQ");
@@ -310,6 +321,34 @@ export default function ProductDetailClient({ id }: Props) {
                 </p>
               )}
 
+              {/* Bulk pricing tiers */}
+              {product.price_tiers && product.price_tiers.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                  <p className="text-gray-600 text-xs uppercase tracking-wide mb-2 font-bold">Bulk Pricing</p>
+                  <div className="space-y-1.5">
+                    {product.price_tiers.map((tier: any, i: number) => {
+                      const isActive = quantity >= tier.min_qty &&
+                        (tier.max_qty === null || quantity <= tier.max_qty);
+                      return (
+                        <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all ${
+                          isActive
+                            ? "bg-green-500/20 border border-green-700/40"
+                            : "bg-white/[0.02] border border-white/[0.05]"
+                        }`}>
+                          <span className="text-gray-400">
+                            {tier.min_qty}{tier.max_qty ? `–${tier.max_qty}` : "+"} {product.unit}
+                          </span>
+                          <span className={`font-black ${isActive ? "text-green-400" : "text-white"}`}>
+                            {formatPrice(tier.price, product.currency)}/{product.unit}
+                            {isActive && <span className="text-green-500 ml-1">← your tier</span>}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/[0.06]">
                 <div>
                   <p className="text-gray-600 text-xs uppercase tracking-wide mb-1">Available Stock</p>
@@ -370,7 +409,7 @@ export default function ProductDetailClient({ id }: Props) {
                 </button>
               </div>
               <span className="text-gray-500 text-sm">
-                Total: <span className="text-green-400 font-bold">{formatPrice(product.price * quantity, product.currency)}</span>
+                Total: <span className="text-green-400 font-bold">{formatPrice(effectivePrice * quantity, product.currency)}</span>
               </span>
             </div>
 

@@ -69,6 +69,7 @@ export default function NewProductPage() {
   const [images,          setImages]          = useState<string[]>([]);
   const [uploadingImage,  setUploadingImage]  = useState(false);
   const [deliveryOptions, setDeliveryOptions] = useState<string[]>(["standard"]);
+  const [priceTiers,      setPriceTiers]      = useState<{min_qty: number, max_qty: number | null, price: number}[]>([]);
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
@@ -119,6 +120,18 @@ export default function NewProductPage() {
     );
   };
 
+  const addTier = () => {
+    setPriceTiers(prev => [...prev, { min_qty: 1, max_qty: null, price: 0 }]);
+  };
+
+  const removeTier = (i: number) => {
+    setPriceTiers(prev => prev.filter((_, idx) => idx !== i));
+  };
+
+  const updateTier = (i: number, field: string, value: any) => {
+    setPriceTiers(prev => prev.map((t, idx) => idx === i ? { ...t, [field]: value } : t));
+  };
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
@@ -128,6 +141,7 @@ export default function NewProductPage() {
         images,
         main_image:       images[0] || undefined,
         delivery_options: deliveryOptions,
+        price_tiers:      priceTiers.length > 0 ? priceTiers : undefined,
       };
       const res = await productsApi.create(payload);
       if (res.success) {
@@ -296,6 +310,61 @@ export default function NewProductPage() {
                   <input {...register("minimum_order_quantity", { valueAsNumber: true })}
                     type="number" placeholder="1"
                     className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                </div>
+
+                {/* Bulk Pricing Tiers */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-400">
+                        Bulk Pricing Tiers <span className="text-gray-600">(optional)</span>
+                      </label>
+                      <p className="text-gray-700 text-xs mt-0.5">Set different prices for different order quantities</p>
+                    </div>
+                    <button type="button" onClick={addTier}
+                      className="text-xs font-bold px-3 py-1.5 bg-green-950/40 hover:bg-green-900/50 text-green-400 border border-green-800/40 rounded-xl transition-all">
+                      + Add Tier
+                    </button>
+                  </div>
+
+                  {priceTiers.length === 0 ? (
+                    <div className="border border-dashed border-white/[0.08] rounded-xl p-4 text-center">
+                      <p className="text-gray-600 text-xs">No bulk tiers set — single price applies to all quantities</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {priceTiers.map((tier, i) => (
+                        <div key={i} className="grid grid-cols-4 gap-2 items-center bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
+                          <div>
+                            <label className="text-[10px] text-gray-600 mb-1 block">Min Qty</label>
+                            <input type="number" value={tier.min_qty}
+                              onChange={e => updateTier(i, "min_qty", Number(e.target.value))}
+                              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-600 mb-1 block">Max Qty</label>
+                            <input type="number" value={tier.max_qty || ""}
+                              onChange={e => updateTier(i, "max_qty", e.target.value ? Number(e.target.value) : null)}
+                              placeholder="∞"
+                              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none placeholder-gray-700" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-600 mb-1 block">Price per {watch("unit")}</label>
+                            <input type="number" step="0.01" value={tier.price}
+                              onChange={e => updateTier(i, "price", Number(e.target.value))}
+                              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none" />
+                          </div>
+                          <div className="flex justify-end">
+                            <button type="button" onClick={() => removeTier(i)}
+                              className="p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-950/30 rounded-lg transition-all">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <p className="text-gray-700 text-[10px]">Leave Max Qty empty for the last tier to mean "and above"</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3 pt-2">

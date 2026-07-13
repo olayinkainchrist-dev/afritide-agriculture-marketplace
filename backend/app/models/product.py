@@ -111,7 +111,8 @@ class Product(Base):
     is_negotiable          = Column(Boolean, default=False, nullable=False)
     minimum_order_quantity = Column(Float, default=1.0, nullable=False)
     unit                   = Column(Enum(UnitOfMeasure), default=UnitOfMeasure.KG, nullable=False)
-
+    price_tiers = Column(JSON, nullable=True)  # [{min_qty, max_qty, price}]
+    
     # Stock
     quantity_available = Column(Float, nullable=False)
     quantity_unit      = Column(String(50), nullable=True)
