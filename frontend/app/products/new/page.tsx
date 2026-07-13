@@ -10,8 +10,7 @@ import Footer from "@/components/layout/Footer";
 import { productsApi } from "@/lib/api/products.api";
 import { ProductCategory } from "@/types";
 import {
-  ArrowLeft, ArrowRight, Loader2, Package,
-  Upload, X, Video, Truck,
+  ArrowLeft, ArrowRight, Loader2, Package, Upload, X, Truck,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -68,9 +67,7 @@ export default function NewProductPage() {
   const [loading,         setLoading]         = useState(false);
   const [step,            setStep]            = useState(1);
   const [images,          setImages]          = useState<string[]>([]);
-  const [videoUrl,        setVideoUrl]        = useState("");
   const [uploadingImage,  setUploadingImage]  = useState(false);
-  const [uploadingVideo,  setUploadingVideo]  = useState(false);
   const [deliveryOptions, setDeliveryOptions] = useState<string[]>(["standard"]);
 
   useEffect(() => {
@@ -111,26 +108,6 @@ export default function NewProductPage() {
     }
   };
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 50 * 1024 * 1024) { toast.error("Video must be under 50MB"); return; }
-    setUploadingVideo(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await apiClient.post("/products/upload-video", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setVideoUrl(res.data?.data?.url);
-      toast.success("Video uploaded");
-    } catch {
-      toast.error("Failed to upload video");
-    } finally {
-      setUploadingVideo(false);
-    }
-  };
-
   const toggleDelivery = (value: string) => {
     setDeliveryOptions(prev =>
       prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value]
@@ -145,7 +122,6 @@ export default function NewProductPage() {
         tags:             data.tags ? data.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
         images,
         main_image:       images[0] || undefined,
-        video_url:        videoUrl || undefined,
         delivery_options: deliveryOptions,
       };
       const res = await productsApi.create(payload);
@@ -166,7 +142,7 @@ export default function NewProductPage() {
     { n: 1, label: "Basic Info" },
     { n: 2, label: "Pricing & Stock" },
     { n: 3, label: "Location" },
-    { n: 4, label: "Media & Delivery" },
+    { n: 4, label: "Images & Delivery" },
   ];
 
   return (
@@ -205,8 +181,7 @@ export default function NewProductPage() {
           ))}
         </div>
 
-        {/* ── KEY FIX: form does NOT have onSubmit — all submission is manual ── */}
-        <form onSubmit={(e) => e.preventDefault()}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-3xl p-6 sm:p-8 space-y-6">
 
             {/* Step 1 — Basic Info */}
@@ -398,7 +373,7 @@ export default function NewProductPage() {
               </>
             )}
 
-            {/* Step 4 — Media & Delivery */}
+            {/* Step 4 — Images & Delivery */}
             {step === 4 && (
               <>
                 {/* Image upload */}
@@ -423,9 +398,7 @@ export default function NewProductPage() {
                       </div>
                     ))}
                     {images.length < 5 && (
-                      <div
-                        onClick={() => document.getElementById("image-upload")?.click()}
-                        className="aspect-square rounded-xl border-2 border-dashed border-white/[0.12] hover:border-green-700/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                      <label className="aspect-square rounded-xl border-2 border-dashed border-white/[0.12] hover:border-green-700/50 flex flex-col items-center justify-center cursor-pointer transition-colors group">
                         {uploadingImage
                           ? <Loader2 className="w-6 h-6 text-green-500 animate-spin" />
                           : <>
@@ -433,49 +406,12 @@ export default function NewProductPage() {
                               <span className="text-gray-600 text-xs group-hover:text-green-400 transition-colors">Add Image</span>
                             </>
                         }
-                        <input id="image-upload" type="file" accept="image/*" className="hidden"
-                          onChange={handleImageUpload} disabled={uploadingImage}
-                          onClick={e => e.stopPropagation()} />
-                      </div>
+                        <input type="file" accept="image/*" className="hidden"
+                          onChange={handleImageUpload} disabled={uploadingImage} />
+                      </label>
                     )}
                   </div>
                   <p className="text-gray-600 text-xs">First image will be the main product photo. Max 5MB each.</p>
-                </div>
-
-                {/* Video upload */}
-                <div>
-                  <p className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
-                    <Video className="w-4 h-4 text-green-500" />
-                    Product Video <span className="text-gray-600 ml-1">(optional, max 50MB)</span>
-                  </p>
-                  {videoUrl ? (
-                    <div className="relative rounded-xl overflow-hidden border border-white/[0.08] bg-black">
-                      <video src={videoUrl} controls className="w-full max-h-48 object-contain" />
-                      <button type="button" onClick={() => setVideoUrl("")}
-                        className="absolute top-2 right-2 w-7 h-7 bg-black/70 rounded-full flex items-center justify-center hover:bg-red-500/80 transition-colors">
-                        <X className="w-4 h-4 text-white" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => document.getElementById("video-upload")?.click()}
-                      className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/[0.12] hover:border-green-700/50 rounded-xl cursor-pointer transition-colors group">
-                      {uploadingVideo
-                        ? <>
-                            <Loader2 className="w-8 h-8 text-green-500 animate-spin mb-2" />
-                            <span className="text-gray-500 text-sm">Uploading video...</span>
-                          </>
-                        : <>
-                            <Video className="w-8 h-8 text-gray-600 group-hover:text-green-500 transition-colors mb-2" />
-                            <span className="text-gray-500 text-sm group-hover:text-green-400 transition-colors">Click to upload video</span>
-                            <span className="text-gray-700 text-xs mt-1">MP4, MOV, AVI — max 50MB</span>
-                          </>
-                      }
-                      <input id="video-upload" type="file" accept="video/*" className="hidden"
-                        onChange={handleVideoUpload} disabled={uploadingVideo}
-                        onClick={e => e.stopPropagation()} />
-                    </div>
-                  )}
                 </div>
 
                 {/* Delivery options */}
@@ -529,10 +465,7 @@ export default function NewProductPage() {
                 Next <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => handleSubmit(onSubmit)()}
+              <button type="submit" disabled={loading}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold px-8 py-3 rounded-xl transition-all text-sm shadow-xl shadow-green-900/30">
                 {loading
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
