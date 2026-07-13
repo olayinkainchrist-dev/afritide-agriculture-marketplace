@@ -181,7 +181,7 @@ export default function NewProductPage() {
           ))}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={(e) => e.preventDefault()}>
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-3xl p-6 sm:p-8 space-y-6">
 
             {/* Step 1 — Basic Info */}
@@ -469,7 +469,9 @@ export default function NewProductPage() {
                 Next <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
-              <button type="submit" disabled={loading}
+              <button type="button" 
+                disabled={loading}
+                onClick={() => handleSubmit(onSubmit)()}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold px-8 py-3 rounded-xl transition-all text-sm shadow-xl shadow-green-900/30">
                 {loading
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
