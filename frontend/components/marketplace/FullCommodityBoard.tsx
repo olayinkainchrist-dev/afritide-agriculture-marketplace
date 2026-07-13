@@ -48,12 +48,8 @@ const TIME_FILTERS = [
   { days: 365, label: "1Y" },
 ];
 
-// Professional Bloomberg-style tooltip
 const ProfessionalTooltip = ({ active, payload, label, commodityName, currency }: any) => {
   if (!active || !payload || !payload.length) return null;
-  const data = payload[0]?.payload;
-  const price = payload[0]?.value;
-  const pct   = data?.pct_change;
 
   return (
     <div className="bg-[#0a1a0f] border border-white/[0.12] rounded-xl p-3 shadow-2xl min-w-[160px]">
@@ -134,7 +130,7 @@ export default function FullCommodityBoard() {
   });
 
   const allCommodities = data?.data || [];
-  const commodities = allCommodities.filter((c: any) =>
+  const commodities    = allCommodities.filter((c: any) =>
     !search || c.commodity_name.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -151,9 +147,9 @@ export default function FullCommodityBoard() {
     }).format(converted);
   };
 
-  const historyInfo    = historyData?.data;
-  const history        = historyInfo?.history || [];
-  const hasHistory     = historyInfo?.has_history || false;
+  const historyInfo = historyData?.data;
+  const history     = historyInfo?.history || [];
+  const hasHistory  = historyInfo?.has_history || false;
 
   const toggleCompare = (id: string) => {
     setCompareIds(prev =>
@@ -161,11 +157,9 @@ export default function FullCommodityBoard() {
     );
   };
 
-  // Build comparison chart — align by date
   const buildCompareData = () => {
     if (!compareHistories || (compareHistories as any[]).length === 0) return [];
 
-    // Collect all unique dates
     const dateSet = new Set<string>();
     (compareHistories as any[]).forEach((ch: any) => {
       ch.history.forEach((h: any) => {
@@ -183,8 +177,8 @@ export default function FullCommodityBoard() {
           new Date(h.recorded_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) === date
         );
         if (match) {
-          point[ch.commodity_name] = match.price;
-          point[`${ch.commodity_name}_pct`] = match.pct_change;
+          point[ch.commodity_name]              = match.price;
+          point[`${ch.commodity_name}_pct`]     = match.pct_change;
         }
       });
       return point;
@@ -196,7 +190,7 @@ export default function FullCommodityBoard() {
     setAlertLoading(c.id);
     try {
       if (subscribedIds.includes(c.id)) {
-        const res = await apiClient.get("/price-alerts");
+        const res   = await apiClient.get("/price-alerts");
         const alert = res.data?.data?.find((a: any) =>
           a.commodity_name.toLowerCase() === c.commodity_name.toLowerCase()
         );
@@ -219,6 +213,22 @@ export default function FullCommodityBoard() {
     } finally {
       setAlertLoading(null);
     }
+  };
+
+  // Build chart data — deduplicate by date, keep last price per date
+  const buildChartData = (history: any[]) => {
+    const dateMap = new Map<string, any>();
+    history.forEach(h => {
+      const date = new Date(h.recorded_at).toLocaleDateString("en-US", {
+        month: "short", day: "numeric",
+      });
+      dateMap.set(date, {
+        date,
+        price:      h.price,
+        pct_change: h.pct_change,
+      });
+    });
+    return Array.from(dateMap.values());
   };
 
   return (
@@ -294,7 +304,7 @@ export default function FullCommodityBoard() {
         ))}
       </div>
 
-      {/* Compare chart — Bloomberg style */}
+      {/* Compare chart */}
       {compareMode && compareIds.length >= 2 && (
         <div className="bg-[#080f0a] border border-white/[0.08] rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
@@ -318,19 +328,16 @@ export default function FullCommodityBoard() {
             </div>
           </div>
 
-          {/* Legend */}
           <div className="flex gap-3 mb-4 flex-wrap">
             {compareIds.map((id, idx) => {
               const commodity = allCommodities.find((c: any) => c.id === id);
-              const ch = (compareHistories as any[])?.find((x: any) => x.id === id);
+              const ch        = (compareHistories as any[])?.find((x: any) => x.id === id);
               return commodity ? (
                 <div key={id} className="flex items-center gap-2 px-3 py-1.5 rounded-xl border"
                   style={{ borderColor: CHART_COLORS[idx] + "60", backgroundColor: CHART_COLORS[idx] + "15" }}>
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS[idx] }} />
                   <span className="text-white text-xs font-medium">{commodity.commodity_name}</span>
-                  {ch && !ch.has_history && (
-                    <span className="text-[10px] text-amber-400">no history</span>
-                  )}
+                  {ch && !ch.has_history && <span className="text-[10px] text-amber-400">no history</span>}
                   <button onClick={() => toggleCompare(id)} className="text-gray-500 hover:text-white ml-1">
                     <X className="w-3 h-3" />
                   </button>
@@ -339,7 +346,6 @@ export default function FullCommodityBoard() {
             })}
           </div>
 
-          {/* Check if any commodity has history */}
           {(compareHistories as any[])?.every((ch: any) => !ch.has_history) ? (
             <div className="h-48 flex items-center justify-center">
               <div className="text-center">
@@ -358,7 +364,7 @@ export default function FullCommodityBoard() {
                     tick={{ fill: "#6b7280", fontSize: 10 }}
                     tickLine={false}
                     axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-                    interval="preserveStartEnd"
+                    interval={0}
                   />
                   <YAxis
                     tick={{ fill: "#6b7280", fontSize: 10 }}
@@ -371,26 +377,20 @@ export default function FullCommodityBoard() {
                       return `${v}`;
                     }}
                   />
-                  <Tooltip
-                    content={(props: any) => (
-                      <ProfessionalTooltip {...props} currency="NGN" />
-                    )}
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: "11px", color: "#9ca3af", paddingTop: "8px" }}
-                  />
+                  <Tooltip content={(props: any) => <ProfessionalTooltip {...props} currency="NGN" />} />
+                  <Legend wrapperStyle={{ fontSize: "11px", color: "#9ca3af", paddingTop: "8px" }} />
                   {compareIds.map((id, idx) => {
                     const ch = (compareHistories as any[])?.find((x: any) => x.id === id);
                     if (!ch || !ch.has_history) return null;
                     return (
                       <Line
                         key={id}
-                        type="monotone"
+                        type="linear"
                         dataKey={ch.commodity_name}
                         stroke={CHART_COLORS[idx]}
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 5, fill: CHART_COLORS[idx], stroke: "#0a1a0f", strokeWidth: 2 }}
+                        strokeWidth={2.5}
+                        dot={{ fill: CHART_COLORS[idx], r: 4, strokeWidth: 0 }}
+                        activeDot={{ r: 6, fill: CHART_COLORS[idx], stroke: "#0a1a0f", strokeWidth: 2 }}
                       />
                     );
                   })}
@@ -520,7 +520,6 @@ export default function FullCommodityBoard() {
                     <div className="px-5 pb-6 bg-[#080f0a] border-t border-white/[0.04]">
                       <div className="pt-5">
 
-                        {/* Chart header */}
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <h4 className="text-white font-bold text-sm flex items-center gap-2">
@@ -587,11 +586,7 @@ export default function FullCommodityBoard() {
                           <div className="h-56 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                               <LineChart
-                                data={history.map((h: any) => ({
-                                  date:        new Date(h.recorded_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-                                  price:       h.price,
-                                  pct_change:  h.pct_change,
-                                }))}
+                                data={buildChartData(history)}
                                 margin={{ top: 5, right: 10, bottom: 5, left: 10 }}
                               >
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
@@ -600,7 +595,7 @@ export default function FullCommodityBoard() {
                                   tick={{ fill: "#6b7280", fontSize: 10 }}
                                   tickLine={false}
                                   axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-                                  interval="preserveStartEnd"
+                                  interval={0}
                                 />
                                 <YAxis
                                   tick={{ fill: "#6b7280", fontSize: 10 }}
@@ -629,19 +624,19 @@ export default function FullCommodityBoard() {
                                   label={{ value: "Current", fill: "#22c55e", fontSize: 9, position: "right" }}
                                 />
                                 <Line
-                                  type="monotone"
+                                  type="linear"
                                   dataKey="price"
                                   stroke="#22c55e"
-                                  strokeWidth={2}
-                                  dot={history.length <= 10 ? { fill: "#22c55e", r: 3, strokeWidth: 0 } : false}
-                                  activeDot={{ r: 5, fill: "#22c55e", stroke: "#0a1a0f", strokeWidth: 2 }}
+                                  strokeWidth={2.5}
+                                  dot={{ fill: "#22c55e", r: 4, strokeWidth: 0 }}
+                                  activeDot={{ r: 6, fill: "#22c55e", stroke: "#0a1a0f", strokeWidth: 2 }}
                                 />
                               </LineChart>
                             </ResponsiveContainer>
                           </div>
                         )}
 
-                        {/* History table — last 6 records */}
+                        {/* History table */}
                         {history.length >= 2 && (
                           <div className="mt-4">
                             <p className="text-gray-600 text-[10px] uppercase tracking-widest font-bold mb-2">Recent Records</p>
