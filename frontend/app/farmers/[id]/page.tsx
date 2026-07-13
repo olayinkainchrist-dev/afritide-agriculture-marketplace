@@ -18,6 +18,9 @@ import toast from "react-hot-toast";
 
 export default function FarmerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { isAuthenticated } = useAuthStore();
+  const [following,     setFollowing]     = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   const { data: userData, isLoading: userLoading } = useQuery({
     queryKey: ["farmer-profile", id],
@@ -38,6 +41,20 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
 
   const farmer = userData;
   const products = productsData?.data || [];
+
+  const handleFollow = async () => {
+    if (!isAuthenticated) { toast.error("Please login to follow suppliers"); return; }
+    setFollowLoading(true);
+    try {
+      const res = await apiClient.post(`/users/${farmer.id}/follow`);
+      setFollowing(res.data?.data?.following);
+      toast.success(res.data?.message);
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to follow");
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   if (userLoading) return (
     <main className="min-h-screen bg-[#060f08]">
@@ -136,7 +153,19 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
                   </div>
                 </div>
 
-                
+                <button
+                  onClick={handleFollow}
+                  disabled={followLoading}
+                  className={`mt-5 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all ${
+                    following
+                      ? "bg-green-950/40 text-green-400 border border-green-800/40"
+                      : "bg-green-600 hover:bg-green-500 text-white"
+                  }`}>
+                  {followLoading
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : following ? "✓ Following" : "+ Follow Supplier"
+                  }
+                </button>
               </div>
             </div>
 

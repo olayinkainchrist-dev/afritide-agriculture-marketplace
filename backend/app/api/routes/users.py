@@ -114,3 +114,63 @@ async def list_farmers(
         data=[UserPublicSchema.model_validate(u).model_dump(mode="json") for u in users],
         total=total, page=pagination.page, page_size=pagination.page_size,
     )
+
+
+@router.get("/following", summary="Get suppliers I follow")
+async def get_following(
+    current_user: User = Depends(get_current_user),
+    db:           Session = Depends(get_db),
+):
+    from app.models.user import FollowSupplier
+    follows = db.query(FollowSupplier).filter(
+        FollowSupplier.follower_id == current_user.id
+    ).all()
+
+    supplier_ids = [f.supplier_id for f in follows]
+    suppliers = db.query(User).filter(User.id.in_(supplier_ids)).all()
+
+    return success_response(data=[{
+        "id":              str(s.id),
+        "display_name":    s.display_name,
+        "role":            s.role.value,
+        "profile_image":   s.profile_image,
+        "country":         s.country,
+        "rating_average":  s.rating_average,
+        "badge":           s.badge.value,
+        "followers_count": s.followers_count,
+    } for s in suppliers])
+
+
+@router.post("/{user_id}/follow", summary="Follow/unfollow a supplier")
+async def toggle_follow(
+    user_id:      uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db:           Session = Depends(get_db),
+):
+    from app.models.user import FollowSupplier
+
+    if user_id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot follow yourself")
+
+    supplier = db.query(User).filter(User.id == user_id).first()
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+
+    existing = db.query(FollowSupplier).filter(
+        FollowSupplier.follower_id == current_user.id,
+        FollowSupplier.supplier_id == user_id,
+    ).first()
+
+    if existing:
+        db.delete(existing)
+        supplier.followers_count     = max(0, (supplier.followers_count or 0) - 1)
+        current_user.following_count = max(0, (current_user.following_count or 0) - 1)
+        db.commit()
+        return success_response(data={"following": False}, message="Unfollowed supplier")
+    else:
+        follow = FollowSupplier(follower_id=current_user.id, supplier_id=user_id)
+        db.add(follow)
+        supplier.followers_count     = (supplier.followers_count or 0) + 1
+        current_user.following_count = (current_user.following_count or 0) + 1
+        db.commit()
+        return success_response(data={"following": True}, message="Now following supplier")
