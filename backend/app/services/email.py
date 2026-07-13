@@ -30,9 +30,9 @@ def _send_email(to_email: str, subject: str, html_body: str) -> bool:
         resend.api_key = settings.RESEND_API_KEY
         resend.Emails.send({
             "from": f"{settings.EMAIL_FROM_NAME} <noreply@afritidegroup.com>",
-            "to": to_email,
+            "to":      to_email,
             "subject": subject,
-            "html": html_body,
+            "html":    html_body,
         })
         logger.info(f"Email sent to {to_email}: {subject}")
         return True
@@ -79,7 +79,10 @@ def send_welcome_email(to_email: str, first_name: str, role: str):
         </p>
         <p style="color: #555; font-size: 15px;">You can now browse products, connect with verified farmers and buyers, and start trading.</p>
         <div style="text-align: center; margin: 28px 0;">
-            <a href="https://www.afritidegroup.com/dashboard" style="background: #2E7D32; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold;">Go to Dashboard</a>
+            <a href="https://www.afritidegroup.com/dashboard"
+               style="background: #2E7D32; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+               Go to Dashboard
+            </a>
         </div>
     """
     _send_email(to_email, "Welcome to Afritide!", _email_wrapper(content))
@@ -91,7 +94,10 @@ def send_password_reset_email(to_email: str, first_name: str, token: str):
         <h2 style="color: #1A1A1A;">Reset your password, {first_name}</h2>
         <p style="color: #555; font-size: 15px;">We received a request to reset your password. This link expires in 1 hour.</p>
         <div style="text-align: center; margin: 28px 0;">
-            <a href="{reset_url}" style="background: #2E7D32; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold;">Reset Password</a>
+            <a href="{reset_url}"
+               style="background: #2E7D32; color: #fff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+               Reset Password
+            </a>
         </div>
         <p style="color: #888; font-size: 13px;">If you did not request this, you can safely ignore this email.</p>
     """
@@ -109,36 +115,150 @@ def send_order_notification_email(to_email: str, first_name: str, order_number: 
     _send_email(to_email, f"Order {order_number} - {status.title()}", _email_wrapper(content))
 
 
+def send_order_confirmation_email(
+    to_email:     str,
+    first_name:   str,
+    order_number: str,
+    amount:       float,
+    currency:     str,
+):
+    content = f"""
+        <h2 style="color: #1A1A1A;">✅ Order Confirmed!</h2>
+        <p style="color: #555; font-size: 15px;">Hi {first_name}, your payment was successful and your order has been confirmed.</p>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #555; margin: 0 0 8px;"><strong>Order Number:</strong> {order_number}</p>
+            <p style="color: #2E7D32; font-size: 22px; font-weight: bold; margin: 0;">
+                {currency} {amount:,.2f}
+            </p>
+        </div>
+        <p style="color: #555; font-size: 15px;">
+            Your seller has been notified and will process your order shortly.
+        </p>
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="https://www.afritidegroup.com/dashboard/buyer/orders"
+               style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+               Track My Order
+            </a>
+        </div>
+    """
+    _send_email(to_email, f"Order Confirmed — {order_number}", _email_wrapper(content))
+
+
+def send_price_alert_email(
+    to_email:          str,
+    first_name:        str,
+    commodity_name:    str,
+    old_price:         float,
+    new_price:         float,
+    currency:          str,
+    change_percentage: float,
+):
+    direction = "increased" if new_price > old_price else "decreased"
+    color     = "#2E7D32" if new_price > old_price else "#c62828"
+    arrow     = "📈" if new_price > old_price else "📉"
+    pct       = abs(change_percentage)
+
+    content = f"""
+        <h2 style="color: #1A1A1A;">{arrow} Price Alert: {commodity_name}</h2>
+        <p style="color: #555; font-size: 15px;">
+            Hi {first_name}, the price of <strong>{commodity_name}</strong> has {direction}.
+        </p>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; color: #555; font-size: 14px;">Previous Price:</td>
+                    <td style="padding: 8px 0; color: #555; font-size: 14px; font-weight: bold; text-align: right;">
+                        {currency} {old_price:,.2f}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #555; font-size: 14px;">New Price:</td>
+                    <td style="padding: 8px 0; font-size: 20px; font-weight: bold; color: {color}; text-align: right;">
+                        {currency} {new_price:,.2f}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #555; font-size: 14px;">Change:</td>
+                    <td style="padding: 8px 0; font-size: 14px; font-weight: bold; color: {color}; text-align: right;">
+                        {arrow} {pct:.1f}%
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="https://www.afritidegroup.com/commodities"
+               style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+               View Price Board
+            </a>
+        </div>
+        <p style="color: #888; font-size: 12px; margin-top: 16px; text-align: center;">
+            To stop receiving alerts, visit your dashboard and manage your price alerts.
+        </p>
+    """
+    _send_email(
+        to_email,
+        f"Price Alert: {commodity_name} {direction} {pct:.1f}%",
+        _email_wrapper(content)
+    )
+
+
 def send_kyc_status_email(to_email: str, first_name: str, approved: bool, reason: str = None):
     if approved:
         content = f"""
             <h2 style="color: #1A1A1A;">Verification Approved ✅</h2>
-            <p style="color: #555; font-size: 15px;">Hi {first_name}, your KYC documents have been verified. You now have a verified badge on your profile.</p>
+            <p style="color: #555; font-size: 15px;">
+                Hi {first_name}, your KYC documents have been verified.
+                You now have a verified badge on your profile.
+            </p>
+            <div style="text-align: center; margin-top: 24px;">
+                <a href="https://www.afritidegroup.com/dashboard"
+                   style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+                   Go to Dashboard
+                </a>
+            </div>
         """
     else:
         content = f"""
             <h2 style="color: #1A1A1A;">Verification Update</h2>
             <p style="color: #555; font-size: 15px;">Hi {first_name}, your KYC submission needs attention.</p>
-            <p style="color: #c62828; font-size: 14px;">Reason: {reason or 'Documents did not meet requirements'}</p>
+            <div style="background: #fdecea; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #c62828;">
+                <p style="color: #c62828; font-size: 14px; margin: 0;">
+                    Reason: {reason or 'Documents did not meet requirements'}
+                </p>
+            </div>
+            <div style="text-align: center; margin-top: 24px;">
+                <a href="https://www.afritidegroup.com/dashboard"
+                   style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+                   Resubmit Documents
+                </a>
+            </div>
         """
     _send_email(to_email, "Afritide Verification Update", _email_wrapper(content))
 
 
 def send_support_notification(name: str, email: str, topic: str, message: str, ticket_id: str):
-    """Notify admin of new support ticket"""
     content = f"""
         <h2 style="color: #1A1A1A;">New Support Ticket #{ticket_id[:8].upper()}</h2>
-        <table style="width:100%; border-collapse:collapse;">
-            <tr><td style="padding:8px; color:#555; font-size:14px;"><strong>From:</strong></td><td style="padding:8px; color:#333; font-size:14px;">{name}</td></tr>
-            <tr><td style="padding:8px; color:#555; font-size:14px;"><strong>Email:</strong></td><td style="padding:8px; color:#333; font-size:14px;">{email}</td></tr>
-            <tr><td style="padding:8px; color:#555; font-size:14px;"><strong>Topic:</strong></td><td style="padding:8px; color:#333; font-size:14px;">{topic}</td></tr>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 8px; color: #555; font-size: 14px;"><strong>From:</strong></td>
+                <td style="padding: 8px; color: #333; font-size: 14px;">{name}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; color: #555; font-size: 14px;"><strong>Email:</strong></td>
+                <td style="padding: 8px; color: #333; font-size: 14px;">{email}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; color: #555; font-size: 14px;"><strong>Topic:</strong></td>
+                <td style="padding: 8px; color: #333; font-size: 14px;">{topic}</td>
+            </tr>
         </table>
-        <div style="background:#f5f5f5; padding:16px; border-radius:8px; margin-top:16px;">
-            <p style="color:#333; font-size:14px; margin:0;">{message}</p>
+        <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 16px;">
+            <p style="color: #333; font-size: 14px; margin: 0;">{message}</p>
         </div>
-        <div style="text-align:center; margin-top:20px;">
+        <div style="text-align: center; margin-top: 20px;">
             <a href="https://www.afritidegroup.com/dashboard/admin/support"
-               style="background:#2E7D32; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold;">
+               style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
                View in Admin Dashboard
             </a>
         </div>
@@ -151,77 +271,20 @@ def send_support_notification(name: str, email: str, topic: str, message: str, t
 
 
 def send_support_reply(to_email: str, name: str, topic: str, reply: str):
-    """Send admin reply to user"""
     content = f"""
         <h2 style="color: #1A1A1A;">Response to your support request</h2>
-        <p style="color:#555; font-size:15px;">Hi {name}, we've responded to your request regarding: <strong>{topic}</strong></p>
-        <div style="background:#E8F5E9; padding:16px; border-radius:8px; margin:20px 0; border-left:4px solid #2E7D32;">
-            <p style="color:#1A1A1A; font-size:14px; margin:0; line-height:1.6;">{reply}</p>
+        <p style="color: #555; font-size: 15px;">
+            Hi {name}, we've responded to your request regarding: <strong>{topic}</strong>
+        </p>
+        <div style="background: #E8F5E9; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2E7D32;">
+            <p style="color: #1A1A1A; font-size: 14px; margin: 0; line-height: 1.6;">{reply}</p>
         </div>
-        <p style="color:#888; font-size:13px;">If you need further assistance, please visit our support page.</p>
-        <div style="text-align:center; margin-top:20px;">
+        <p style="color: #888; font-size: 13px;">If you need further assistance, please visit our support page.</p>
+        <div style="text-align: center; margin-top: 20px;">
             <a href="https://www.afritidegroup.com/support"
-               style="background:#2E7D32; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold;">
+               style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
                Visit Support Center
             </a>
         </div>
     """
     _send_email(to_email, f"Re: {topic} — Afritide Support", _email_wrapper(content))
-
-def send_price_alert_email(to_email: str, first_name: str, commodity_name: str, old_price: float, new_price: float, currency: str, change_percentage: float):
-    """Send price alert email to subscriber"""
-    direction = "increased" if new_price > old_price else "decreased"
-    color = "#2E7D32" if new_price > old_price else "#c62828"
-    arrow = "📈" if new_price > old_price else "📉"
-
-    content = f"""
-        <h2 style="color: #1A1A1A;">{arrow} Price Alert: {commodity_name}</h2>
-        <p style="color: #555; font-size: 15px;">Hi {first_name}, the price of <strong>{commodity_name}</strong> has {direction}.</p>
-        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span style="color: #555; font-size: 14px;">Previous Price:</span>
-                <span style="color: #555; font-size: 14px; font-weight: bold;">{currency} {old_price:,.2f}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span style="color: #555; font-size: 14px;">New Price:</span>
-                <span style="color: {color}; font-size: 18px; font-weight: bold;">{currency} {new_price:,.2f}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span style="color: #555; font-size: 14px;">Change:</span>
-                <span style="color: {color}; font-size: 14px; font-weight: bold;">{change_percentage:+.1f}%</span>
-            </div>
-        </div>
-        <div style="text-align:center; margin-top:20px;">
-            <a href="https://www.afritidegroup.com/commodities"
-               style="background:#2E7D32; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold;">
-               View Price Board
-            </a>
-        </div>
-        <p style="color:#888; font-size:12px; margin-top:16px;">
-            To stop receiving alerts, go to your dashboard and manage your price alerts.
-        </p>
-    """
-    _send_email(to_email, f"Price Alert: {commodity_name} {direction} {abs(change_percentage):.1f}%", _email_wrapper(content))
-
-def send_order_confirmation_email(
-    to_email: str, first_name: str,
-    order_number: str, amount: float, currency: str
-):
-    content = f"""
-        <h2 style="color:#1A1A1A;">✅ Order Confirmed!</h2>
-        <p style="color:#555;">Hi {first_name}, your payment was successful and your order has been confirmed.</p>
-        <div style="background:#f5f5f5;padding:20px;border-radius:8px;margin:20px 0;">
-            <p style="color:#555;margin:0 0 8px;">Order Number: <strong>{order_number}</strong></p>
-            <p style="color:#2E7D32;font-size:20px;font-weight:bold;margin:0;">
-                {currency} {amount:,.2f}
-            </p>
-        </div>
-        <p style="color:#555;">Your seller has been notified and will process your order shortly.</p>
-        <div style="text-align:center;margin-top:20px;">
-            <a href="https://www.afritidegroup.com/dashboard/buyer/orders"
-               style="background:#2E7D32;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">
-               Track My Order
-            </a>
-        </div>
-    """
-    _send_email(to_email, f"Order Confirmed — {order_number}", _email_wrapper(content))
