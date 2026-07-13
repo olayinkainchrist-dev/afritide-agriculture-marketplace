@@ -25,17 +25,16 @@ def generate_order_number():
 
 @router.post("", summary="Place a new order")
 async def create_order(
-    payload: OrderCreateSchema,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    payload:      OrderCreateSchema,
+    current_user= Depends(get_current_user),
+    db:           Session = Depends(get_db),
 ):
     if not payload.items:
         raise HTTPException(status_code=400, detail="Order must have at least one item")
 
-    # Validate all products and group by seller
-    seller_id = None
+    seller_id   = None
     order_items = []
-    subtotal = 0.0
+    subtotal    = 0.0
 
     for item in payload.items:
         product = db.query(Product).filter(
@@ -52,55 +51,55 @@ async def create_order(
         seller_id = product.seller_id
 
         total_price = product.price * item.quantity
-        subtotal += total_price
+        subtotal   += total_price
         order_items.append((product, item.quantity, product.price, total_price))
 
     order = Order(
-        order_number=generate_order_number(),
-        buyer_id=current_user.id,
-        seller_id=seller_id,
-        status=OrderStatus.PENDING,
-        subtotal=subtotal,
-        total_amount=subtotal,
-        currency=payload.currency,
-        shipping_address=payload.shipping_address,
-        shipping_method=payload.shipping_method,
-        buyer_notes=payload.buyer_notes,
+        order_number    = generate_order_number(),
+        buyer_id        = current_user.id,
+        seller_id       = seller_id,
+        status          = OrderStatus.PENDING,
+        subtotal        = subtotal,
+        total_amount    = subtotal,
+        currency        = payload.currency,
+        shipping_address= payload.shipping_address,
+        shipping_method = payload.shipping_method,
+        buyer_notes     = payload.buyer_notes,
     )
     db.add(order)
     db.flush()
 
     for product, quantity, unit_price, total_price in order_items:
         order_item = OrderItem(
-            order_id=order.id,
-            product_id=product.id,
-            quantity=quantity,
-            unit=product.unit.value,
-            unit_price=unit_price,
-            total_price=total_price,
-            product_snapshot={"title": product.title, "image": product.main_image},
+            order_id         = order.id,
+            product_id       = product.id,
+            quantity         = quantity,
+            unit             = product.unit.value,
+            unit_price       = unit_price,
+            total_price      = total_price,
+            product_snapshot = {"title": product.title, "image": product.main_image},
         )
         db.add(order_item)
         product.quantity_available -= quantity
-        product.order_count += 1
+        product.order_count        += 1
 
     db.commit()
     db.refresh(order)
 
     return success_response(
-        data=OrderResponseSchema.from_orm(order).dict(),
-        message="Order placed successfully",
-        status_code=201,
+        data       = OrderResponseSchema.from_orm(order).dict(),
+        message    = "Order placed successfully",
+        status_code= 201,
     )
 
 
 @router.get("", summary="Get my orders")
 async def get_my_orders(
-    role: str = "buyer",
-    status: Optional[OrderStatus] = None,
-    pagination: PaginationParams = Depends(get_pagination),
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    role:         str = "buyer",
+    status:       Optional[OrderStatus] = None,
+    pagination:   PaginationParams = Depends(get_pagination),
+    current_user= Depends(get_current_user),
+    db:           Session = Depends(get_db),
 ):
     if role == "seller":
         query = db.query(Order).filter(Order.seller_id == current_user.id)
@@ -110,21 +109,38 @@ async def get_my_orders(
     if status:
         query = query.filter(Order.status == status)
 
-    query = query.order_by(desc(Order.created_at))
-    total = query.count()
+    query  = query.order_by(desc(Order.created_at))
+    total  = query.count()
     orders = query.offset(pagination.offset).limit(pagination.page_size).all()
 
+    def order_with_items(o: Order):
+        data = OrderResponseSchema.from_orm(o).dict()
+        data["items"] = [
+            {
+                "product_id":       str(i.product_id),
+                "quantity":         i.quantity,
+                "unit":             i.unit,
+                "unit_price":       i.unit_price,
+                "total_price":      i.total_price,
+                "product_snapshot": i.product_snapshot,
+            }
+            for i in o.items
+        ]
+        return data
+
     return paginated_response(
-        data=[OrderResponseSchema.from_orm(o).dict() for o in orders],
-        total=total, page=pagination.page, page_size=pagination.page_size,
+        data      = [order_with_items(o) for o in orders],
+        total     = total,
+        page      = pagination.page,
+        page_size = pagination.page_size,
     )
 
 
 @router.get("/{order_id}", summary="Get order details")
 async def get_order(
-    order_id: uuid.UUID,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    order_id:     uuid.UUID,
+    current_user= Depends(get_current_user),
+    db:           Session = Depends(get_db),
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -135,11 +151,11 @@ async def get_order(
     data = OrderResponseSchema.from_orm(order).dict()
     data["items"] = [
         {
-            "product_id": str(i.product_id),
-            "quantity": i.quantity,
-            "unit": i.unit,
-            "unit_price": i.unit_price,
-            "total_price": i.total_price,
+            "product_id":       str(i.product_id),
+            "quantity":         i.quantity,
+            "unit":             i.unit,
+            "unit_price":       i.unit_price,
+            "total_price":      i.total_price,
             "product_snapshot": i.product_snapshot,
         }
         for i in order.items
@@ -149,10 +165,10 @@ async def get_order(
 
 @router.put("/{order_id}/status", summary="Update order status (seller)")
 async def update_order_status(
-    order_id: uuid.UUID,
-    payload: OrderUpdateSchema,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    order_id:     uuid.UUID,
+    payload:      OrderUpdateSchema,
+    current_user= Depends(get_current_user),
+    db:           Session = Depends(get_db),
 ):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -184,6 +200,6 @@ async def update_order_status(
     db.refresh(order)
 
     return success_response(
-        data=OrderResponseSchema.from_orm(order).dict(),
-        message="Order updated successfully",
+        data   = OrderResponseSchema.from_orm(order).dict(),
+        message= "Order updated successfully",
     )
