@@ -38,6 +38,7 @@ export default function FarmerDashboard({ user }: Props) {
       const res = await apiClient.get("/orders?role=seller&page_size=5");
       return res.data;
     },
+    refetchInterval: 30_000, // Auto-refresh every 30 seconds
   });
 
   const products        = productsData?.data || [];
