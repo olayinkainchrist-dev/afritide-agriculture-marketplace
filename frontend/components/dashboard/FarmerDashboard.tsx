@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "@/lib/api/products.api";
 import DashboardLayout from "./DashboardLayout";
 import apiClient from "@/lib/api/client";
+import { useAuthStore } from "@/lib/store/auth.store";
 import {
   LayoutDashboard, Package, ShoppingCart,
   MessageSquare, FileText, TrendingUp,
@@ -26,10 +27,12 @@ const NAV_ITEMS = [
 interface Props { user: User; }
 
 export default function FarmerDashboard({ user }: Props) {
+  const { isAuthenticated } = useAuthStore();
 
   const { data: productsData, isLoading: productsLoading } = useQuery({
     queryKey: ["my-products"],
     queryFn:  () => productsApi.getMyProducts({ page_size: 50 }),
+    enabled:  isAuthenticated,
   });
 
   const { data: ordersData } = useQuery({
@@ -39,6 +42,7 @@ export default function FarmerDashboard({ user }: Props) {
       return res.data;
     },
     refetchInterval: 30_000, // Auto-refresh every 30 seconds
+    enabled:         isAuthenticated,
   });
 
   const products        = productsData?.data || [];
