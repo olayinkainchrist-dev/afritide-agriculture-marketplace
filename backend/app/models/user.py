@@ -16,33 +16,33 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
-    BUYER              = "buyer"
-    FARMER             = "farmer"
-    COOPERATIVE        = "cooperative"
-    EXPORTER           = "exporter"
-    PROCESSING_COMPANY = "processing_company"
-    LOGISTICS_PROVIDER = "logistics_provider"
-    WAREHOUSE_OPERATOR = "warehouse_operator"
-    GOVERNMENT_AGENCY  = "government_agency"
-    ADMIN              = "admin"
+    BUYER              = "BUYER"
+    FARMER             = "FARMER"
+    COOPERATIVE        = "COOPERATIVE"
+    EXPORTER           = "EXPORTER"
+    PROCESSING_COMPANY = "PROCESSING_COMPANY"
+    LOGISTICS_PROVIDER = "LOGISTIC_PROVIDER"
+    WAREHOUSE_OPERATOR = "WAREHOUSE_OPERATOR"
+    GOVERNMENT_AGENCY  = "GOVERNMENT_AGENCY"
+    ADMIN              = "ADMIN"
 
 
 class UserStatus(str, enum.Enum):
-    PENDING      = "pending"
-    ACTIVE       = "active"
-    UNDER_REVIEW = "under_review"
-    VERIFIED     = "verified"
-    SUSPENDED    = "suspended"
-    BANNED       = "banned"
+    PENDING      = "PENDING"
+    ACTIVE       = "ACTIVE"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    VERIFIED     = "VERIFIED"
+    SUSPENDED    = "SUSPENDED"
+    BANNED       = "BANNED"
 
 
 class VerificationBadge(str, enum.Enum):
-    NONE                 = "none"
-    VERIFIED_FARMER      = "verified_farmer"
-    VERIFIED_EXPORTER    = "verified_exporter"
-    GOLD_SUPPLIER        = "gold_supplier"
-    PREMIUM_SELLER       = "premium_seller"
-    GOVERNMENT_CERTIFIED = "government_certified"
+    NONE                 = "NONE"
+    VERIFIED_FARMER      = "VERIFIED_FARMER"
+    VERIFIED_EXPORTER    = "VERIFIED_EXPORTER"
+    GOLD_SUPPLIER        = "GOLD_SUPPLIER"
+    PREMIUM_SELLER       = "PREMIUM_SELLER"
+    GOVERNMENT_CERTIFIED = "GOVERNMENT_CERTIFIED"
 
 
 class User(Base):

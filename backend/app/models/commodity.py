@@ -14,9 +14,9 @@ from app.core.database import Base
 
 
 class PriceTrend(str, enum.Enum):
-    UP     = "up"
-    DOWN   = "down"
-    STABLE = "stable"
+    UP     = "UP"
+    DOWN   = "DOWN"
+    STABLE = "STABLE"
 
 
 class PriceType(str, enum.Enum):
