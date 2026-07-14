@@ -85,9 +85,9 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
   );
 
   const displayName = farmer.business_name || `${farmer.first_name} ${farmer.last_name}`;
-  const roleLabel = farmer.role === "cooperative" ? "Cooperative"
-    : farmer.role === "exporter" ? "Exporter & Supplier"
-    : "Farmer";
+  const roleLabel = farmer.role === "COOPERATIVE" ? "COOPERATIVE"
+    : farmer.role === "EXPORTER" ? "Exporter & Supplier"
+    : "FARMER";
 
   return (
     <main className="min-h-screen bg-[#060f08]">
@@ -260,7 +260,7 @@ function ContactSellerButton({ sellerId, sellerName }: { sellerId: string; selle
 
   const getDashboardMessages = () => {
     if (!user) return "/login";
-    if (user.role === "buyer") return "/dashboard/buyer/messages";
+    if (user.role === "BUYER") return "/dashboard/buyer/messages";
     return "/dashboard/farmer/messages";
   };
 

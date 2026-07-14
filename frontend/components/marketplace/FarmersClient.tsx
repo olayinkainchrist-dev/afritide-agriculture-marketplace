@@ -18,9 +18,9 @@ const COUNTRIES = [
 
 const ROLES = [
   { value: "all",         label: "All Sellers" },
-  { value: "farmer",      label: "Farmers" },
-  { value: "cooperative", label: "Cooperatives" },
-  { value: "exporter",    label: "Exporters" },
+  { value: "FARMER",      label: "Farmers" },
+  { value: "COOPERATIVE", label: "Cooperatives" },
+  { value: "EXPORTER",    label: "Exporters" },
 ];
 
 export default function FarmersClient() {
@@ -168,12 +168,12 @@ export default function FarmersClient() {
 
 function FarmerCard({ farmer }: { farmer: any }) {
   const displayName = farmer.business_name || `${farmer.first_name} ${farmer.last_name}`;
-  const roleLabel = farmer.role === "cooperative" ? "Cooperative"
-    : farmer.role === "exporter" ? "Exporter"
-    : "Farmer";
+  const roleLabel = farmer.role === "COOPERATIVE" ? "COOPERATIVE"
+    : farmer.role === "EXPORTER" ? "EXPORTER"
+    : "FARMER";
 
-  const roleColor = farmer.role === "exporter" ? "text-blue-400 bg-blue-950/40 border-blue-800/40"
-    : farmer.role === "cooperative" ? "text-amber-400 bg-amber-950/40 border-amber-800/40"
+  const roleColor = farmer.role === "EXPORTER" ? "text-blue-400 bg-blue-950/40 border-blue-800/40"
+    : farmer.role === "COOPERATIVE" ? "text-amber-400 bg-amber-950/40 border-amber-800/40"
     : "text-green-400 bg-green-950/40 border-green-800/40";
 
   return (

@@ -14,3 +14,4 @@ export default function FarmerDashboardPage() {
   if (!isAuthenticated || !user) return null;
   return <FarmerDashboard user={user} />;
 }
+

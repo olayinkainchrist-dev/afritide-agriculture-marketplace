@@ -10,9 +10,9 @@ import toast from "react-hot-toast";
 
 const ROLE_TARGETS = [
   { value: "",          label: "All Users",        desc: "Send to everyone on the platform" },
-  { value: "buyer",     label: "Buyers Only",       desc: "Send to all registered buyers" },
-  { value: "farmer",    label: "Farmers Only",      desc: "Send to all registered farmers" },
-  { value: "exporter",  label: "Exporters Only",    desc: "Send to all exporters" },
+  { value: "BUYER",     label: "Buyers Only",       desc: "Send to all registered buyers" },
+  { value: "FARMER",    label: "Farmers Only",      desc: "Send to all registered farmers" },
+  { value: "EXPORTER",  label: "Exporters Only",    desc: "Send to all exporters" },
 ];
 
 export default function AdminAnnouncePage() {
@@ -145,3 +145,4 @@ export default function AdminAnnouncePage() {
     </DashboardLayout>
   );
 }
+

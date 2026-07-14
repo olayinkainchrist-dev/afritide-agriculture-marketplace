@@ -19,3 +19,4 @@ export default function AdminDashboardPage() {
 
   return <AdminDashboard user={user} />;
 }
+

@@ -29,7 +29,7 @@ export default function ContactSellerButton({
 
   const getDashboardMessages = () => {
     if (!user) return "/login";
-    if (user.role === "buyer") return "/dashboard/buyer/messages";
+    if (user.role === "BUYER") return "/dashboard/buyer/messages";
     return "/dashboard/farmer/messages";
   };
 

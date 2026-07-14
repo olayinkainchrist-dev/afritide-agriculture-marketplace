@@ -63,9 +63,9 @@ export default function FeaturedFarmers() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {farmers.map((farmer: any) => {
             const displayName = farmer.business_name || `${farmer.first_name} ${farmer.last_name}`;
-            const roleColor = farmer.role === "exporter"
+            const roleColor = farmer.role === "EXPORTER"
               ? "text-blue-400 bg-blue-950/40 border-blue-800/40"
-              : farmer.role === "cooperative"
+              : farmer.role === "COOPERATIVE"
               ? "text-amber-400 bg-amber-950/40 border-amber-800/40"
               : "text-green-400 bg-green-950/40 border-green-800/40";
 

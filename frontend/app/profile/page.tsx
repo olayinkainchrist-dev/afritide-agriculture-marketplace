@@ -106,7 +106,7 @@ export default function ProfilePage() {
 
   if (!isAuthenticated || !user) return null;
 
-  const isFarmer = ["farmer", "cooperative", "exporter"].includes(user.role);
+  const isFarmer = ["FARMER", "COOPERATIVE", "EXPORTER"].includes(user.role);
 
   return (
     <main className="min-h-screen bg-[#060f08]">
@@ -419,9 +419,9 @@ export default function ProfilePage() {
                       { label: "My Products",     href: "/dashboard/farmer/products", show: isFarmer },
                       { label: "My Orders",       href: isFarmer ? "/dashboard/farmer/orders" : "/dashboard/buyer/orders" },
                       { label: "Settings",        href: "/settings" },
-                      { label: "Commodities",     href: "/dashboard/admin/commodities", show: user.role === "admin" },
-                      { label: "Support Tickets", href: "/dashboard/admin/support",     show: user.role === "admin" },
-                      { label: "View Reports",    href: "/dashboard/admin/reports",     show: user.role === "admin" },
+                      { label: "Commodities",     href: "/dashboard/admin/commodities", show: user.role === "ADMIN" },
+                      { label: "Support Tickets", href: "/dashboard/admin/support",     show: user.role === "ADMIN" },
+                      { label: "View Reports",    href: "/dashboard/admin/reports",     show: user.role === "ADMIN" },
                     ].filter(l => l.show !== false).map(({ label, href }) => (
                       <Link key={href} href={href}
                         className="bg-white/[0.03] border border-white/[0.06] hover:border-green-800/50 rounded-xl px-4 py-3 text-gray-400 hover:text-white text-sm font-medium transition-all text-center">

@@ -13,7 +13,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-const ROLE_FILTERS = ["all", "buyer", "farmer", "exporter", "cooperative", "ADMIN"];
+const ROLE_FILTERS = ["all", "BUYER", "FARMER", "EXPORTER", "COOPERATIVE", "ADMIN"];
 const STATUS_FILTERS = ["all", "pending", "active", "verified", "suspended"];
 
 export default function AdminUsersPage() {
@@ -211,3 +211,4 @@ export default function AdminUsersPage() {
     </DashboardLayout>
   );
 }
+

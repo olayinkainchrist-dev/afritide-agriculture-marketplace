@@ -646,7 +646,7 @@ export default function ProductDetailClient({ id }: Props) {
                 </div>
 
                 {/* Review form — only for authenticated buyers */}
-                {isAuthenticated && user?.role === "buyer" && (
+                {isAuthenticated && user?.role === "BUYER" && (
                   <ReviewForm productId={product.id} onSubmitted={() => {
                     queryClient.invalidateQueries({ queryKey: ["product", id] });
                   }} />
@@ -974,3 +974,4 @@ function RFQModal({ product, onClose }: { product: any; onClose: () => void }) {
     </div>
   );
 }
+

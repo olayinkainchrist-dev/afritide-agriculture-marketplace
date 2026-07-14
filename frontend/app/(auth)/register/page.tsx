@@ -14,7 +14,7 @@ const schema = z.object({
   email:         z.string().email("Enter a valid email"),
   phone:         z.string().optional(),
   password:      z.string().min(8, "Password must be at least 8 characters"),
-  role:          z.enum(["buyer", "farmer", "cooperative", "exporter", "processing_company", "logistics_provider", "warehouse_operator"]),
+  role:          z.enum(["BUYER", "FARMER", "COOPERATIVE", "EXPORTER", "PROCESSING_COMPANY", "LOGISTICS_PROVIDER", "WAREHOUSE_OPERATOR"]),
   business_name: z.string().optional(),
   country:       z.string().optional(),
 });
@@ -22,13 +22,13 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const roles = [
-  { value: "buyer",               label: "Buyer",               desc: "Source agricultural products",       icon: "🛒" },
-  { value: "farmer",              label: "Farmer",              desc: "List and sell your produce",         icon: "🌾" },
-  { value: "exporter",            label: "Exporter",            desc: "Export African commodities",         icon: "🚢" },
-  { value: "cooperative",         label: "Cooperative",         desc: "Group of farmers trading together",  icon: "🤝" },
-  { value: "processing_company",  label: "Processing Company",  desc: "Mill, process or package produce",   icon: "🏭" },
-  { value: "logistics_provider",  label: "Logistics Provider",  desc: "Freight, shipping and delivery",     icon: "🚛" },
-  { value: "warehouse_operator",  label: "Warehouse Operator",  desc: "Storage and warehousing services",   icon: "🏪" },
+  { value: "BUYER",               label: "BUYER",               desc: "Source agricultural products",       icon: "🛒" },
+  { value: "FARMER",              label: "FARMER",              desc: "List and sell your produce",         icon: "🌾" },
+  { value: "EXPORTER",            label: "EXPORTER",            desc: "Export African commodities",         icon: "🚢" },
+  { value: "COOPERATIVE",         label: "COOPERATIVE",         desc: "Group of farmers trading together",  icon: "🤝" },
+  { value: "PROCESSING_COMPANY",  label: "Processing Company",  desc: "Mill, process or package produce",   icon: "🏭" },
+  { value: "LOGISTICS_PROVIDER",  label: "Logistics Provider",  desc: "Freight, shipping and delivery",     icon: "🚛" },
+  { value: "WAREHOUSE_OPERATOR",  label: "Warehouse Operator",  desc: "Storage and warehousing services",   icon: "🏪" },
 ];
 
 export default function RegisterPage() {
@@ -44,7 +44,7 @@ function RegisterForm() {
   const [loading,      setLoading]      = useState(false);
   const { register: registerUser } = useAuth();
   const searchParams = useSearchParams();
-  const defaultRole = (searchParams.get("role") as any) || "buyer";
+  const defaultRole = (searchParams.get("role") as any) || "BUYER";
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -64,20 +64,20 @@ function RegisterForm() {
 
   const getBusinessLabel = () => {
     switch (selectedRole) {
-      case "farmer":             return "Farm name";
-      case "processing_company": return "Company name";
-      case "logistics_provider": return "Company name";
-      case "warehouse_operator": return "Warehouse name";
+      case "FARMER":             return "Farm name";
+      case "PROCESSING_COMPANY": return "Company name";
+      case "LOGISTICS_PROVIDER": return "Company name";
+      case "WAREHOUSE_OPERATOR": return "Warehouse name";
       default:                   return "Business name";
     }
   };
 
   const getBusinessPlaceholder = () => {
     switch (selectedRole) {
-      case "farmer":             return "e.g. Israel Farms";
-      case "processing_company": return "e.g. AgroMill Nigeria Ltd";
-      case "logistics_provider": return "e.g. Swift Cargo Services";
-      case "warehouse_operator": return "e.g. SafeStore Warehousing";
+      case "FARMER":             return "e.g. Israel Farms";
+      case "PROCESSING_COMPANY": return "e.g. AgroMill Nigeria Ltd";
+      case "LOGISTICS_PROVIDER": return "e.g. Swift Cargo Services";
+      case "WAREHOUSE_OPERATOR": return "e.g. SafeStore Warehousing";
       default:                   return "e.g. Global Agro Exports Ltd";
     }
   };
@@ -218,7 +218,7 @@ function RegisterForm() {
             </div>
 
             {/* Business name — hide for buyers */}
-            {selectedRole !== "buyer" && (
+            {selectedRole !== "BUYER" && (
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
                   {getBusinessLabel()} <span className="text-gray-600">(optional)</span>

@@ -12,12 +12,12 @@ import Link from "next/link";
 
 const ROLES = [
   { value: "all",                label: "All Suppliers" },
-  { value: "farmer",             label: "Farmers" },
-  { value: "exporter",           label: "Exporters" },
-  { value: "cooperative",        label: "Cooperatives" },
-  { value: "processing_company", label: "Processing Companies" },
-  { value: "logistics_provider", label: "Logistics Providers" },
-  { value: "warehouse_operator", label: "Warehouse Operators" },
+  { value: "FARMER",             label: "Farmers" },
+  { value: "EXPORTER",           label: "Exporters" },
+  { value: "COOPERATIVE",        label: "Cooperatives" },
+  { value: "PROCESSING_COMPANY", label: "Processing Companies" },
+  { value: "LOGISTICS_PROVIDER", label: "Logistics Providers" },
+  { value: "WAREHOUSE_OPERATOR", label: "Warehouse Operators" },
 ];
 
 export default function FarmersPage() {
