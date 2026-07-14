@@ -15,7 +15,7 @@ export default function AdminAnalyticsPage() {
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
-    else if (user?.role !== "admin") router.push("/dashboard/farmer");
+    else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
   }, [isAuthenticated, user, router]);
 
   const { data, isLoading } = useQuery({
@@ -24,7 +24,7 @@ export default function AdminAnalyticsPage() {
       const res = await apiClient.get("/analytics/admin/dashboard");
       return res.data.data;
     },
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && user?.role === "ADMIN",
   });
 
   if (!isAuthenticated || !user) return null;

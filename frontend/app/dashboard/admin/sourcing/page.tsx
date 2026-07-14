@@ -37,7 +37,7 @@ export default function AdminSourcingPage() {
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
-    else if (user?.role !== "admin") router.push("/dashboard/farmer");
+    else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
   }, [isAuthenticated, user, router]);
 
   const { data, isLoading, refetch } = useQuery({
@@ -48,7 +48,7 @@ export default function AdminSourcingPage() {
       const res = await apiClient.get(`/rfqs?${params}`);
       return res.data;
     },
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && user?.role === "ADMIN",
     refetchInterval: 30_000,
   });
 

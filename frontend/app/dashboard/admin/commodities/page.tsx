@@ -48,7 +48,7 @@ export default function AdminCommoditiesPage() {
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
-    else if (user?.role !== "admin") router.push("/dashboard/farmer");
+    else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
   }, [isAuthenticated, user, router]);
 
   const { data, isLoading, refetch } = useQuery({
@@ -57,7 +57,7 @@ export default function AdminCommoditiesPage() {
       const res = await apiClient.get("/commodities?page_size=100");
       return res.data;
     },
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && user?.role === "ADMIN",
   });
 
   const commodities = data?.data || [];

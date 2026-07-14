@@ -13,7 +13,7 @@ import {
 import { formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-const ROLE_FILTERS = ["all", "buyer", "farmer", "exporter", "cooperative", "admin"];
+const ROLE_FILTERS = ["all", "buyer", "farmer", "exporter", "cooperative", "ADMIN"];
 const STATUS_FILTERS = ["all", "pending", "active", "verified", "suspended"];
 
 export default function AdminUsersPage() {
@@ -25,7 +25,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
-    else if (user?.role !== "admin") router.push("/dashboard/farmer");
+    else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
   }, [isAuthenticated, user, router]);
 
   const { data, isLoading, refetch } = useQuery({
@@ -35,7 +35,7 @@ export default function AdminUsersPage() {
       const res = await apiClient.get(`/admin/users${params}`);
       return res.data;
     },
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && user?.role === "ADMIN",
   });
 
   const users = (data?.data || []).filter((u: any) => {

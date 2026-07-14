@@ -55,7 +55,7 @@ export default function AdminProductsPage() {
   useEffect(() => {
     if (!hasHydrated) return;
     if (!isAuthenticated) router.push("/login");
-    else if (user?.role !== "admin") router.push("/dashboard/farmer");
+    else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
   }, [hasHydrated, isAuthenticated, user, router]);
 
   const { data, isLoading } = useQuery({

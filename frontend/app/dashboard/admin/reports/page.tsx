@@ -63,7 +63,7 @@ export default function AdminReportsPage() {
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
-    else if (user?.role !== "admin") router.push("/dashboard/farmer");
+    else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
   }, [isAuthenticated, user, router]);
 
   const handleDownload = async (report: typeof REPORTS[0]) => {

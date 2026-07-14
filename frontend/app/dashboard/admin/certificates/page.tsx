@@ -16,7 +16,7 @@ export default function AdminCertificatesPage() {
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
-    else if (user?.role !== "admin") router.push("/dashboard/farmer");
+    else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
   }, [isAuthenticated, user, router]);
 
   const { data, isLoading, refetch } = useQuery({
@@ -25,7 +25,7 @@ export default function AdminCertificatesPage() {
       const res = await apiClient.get("/certificates/pending");
       return res.data;
     },
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && user?.role === "ADMIN",
   });
 
   const certs = data?.data || [];

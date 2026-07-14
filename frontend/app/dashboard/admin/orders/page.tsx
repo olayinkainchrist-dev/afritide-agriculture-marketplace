@@ -23,7 +23,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
-    else if (user?.role !== "admin") router.push("/dashboard/farmer");
+    else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
   }, [isAuthenticated, user, router]);
 
   const { data, isLoading } = useQuery({
@@ -32,7 +32,7 @@ export default function AdminOrdersPage() {
       const res = await apiClient.get("/orders?page_size=100");
       return res.data;
     },
-    enabled: isAuthenticated && user?.role === "admin",
+    enabled: isAuthenticated && user?.role === "ADMIN",
   });
 
   const orders = data?.data || [];
