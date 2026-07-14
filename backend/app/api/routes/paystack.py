@@ -123,20 +123,20 @@ async def verify_paystack_payment(
                 product.quantity_available = max(0, product.quantity_available - item.quantity)
                 product.order_count        = (product.order_count or 0) + 1
 
-        # Notify seller via in-app notification
+        # Notify seller — do NOT rollback on failure
         try:
             db.add(Notification(
                 user_id= uuid.UUID(seller_id),
-                type=    NotificationType.NEW_ORDER if hasattr(NotificationType, 'NEW_ORDER') else NotificationType.ANNOUNCEMENT,
+                type=    NotificationType.NEW_ORDER,
                 title=   "New Order Received 🛒",
                 message= f"You have a new order {order_number} for {seller_items[0].currency} {subtotal:,.0f}. Please confirm it.",
             ))
-            db.flush()
         except Exception:
-            db.rollback()
+            pass
 
         created_orders.append((order, seller_id, seller_items, subtotal))
 
+    # Commit all orders and notifications together
     db.commit()
 
     # Step 3 — Clear cart

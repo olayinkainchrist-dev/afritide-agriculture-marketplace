@@ -19,7 +19,7 @@ export default function Footer() {
             </p>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-green-500" /><span>afritidegroup@gmail.com</span></div>
-              <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-green-500" /><span>+44 7488 342400, +2348023148419</span></div>
+              <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-green-500" /><span>+44 7488 342400 +2348023148419</span></div>
               <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" /><span>Princess House, The Square, 3rd Floor, Suite 308, Shrewsbury, SY1 1JZ, UK</span></div>
             </div>
           </div>
