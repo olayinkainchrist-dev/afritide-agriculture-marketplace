@@ -27,29 +27,29 @@ const NAV_ITEMS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending:    "bg-amber-500/20 text-amber-400 border-amber-700/40",
-  confirmed:  "bg-blue-500/20 text-blue-400 border-blue-700/40",
-  processing: "bg-violet-500/20 text-violet-400 border-violet-700/40",
-  shipped:    "bg-sky-500/20 text-sky-400 border-sky-700/40",
-  delivered:  "bg-green-500/20 text-green-400 border-green-700/40",
-  completed:  "bg-green-500/20 text-green-400 border-green-700/40",
-  cancelled:  "bg-red-500/20 text-red-400 border-red-700/40",
-  disputed:   "bg-orange-500/20 text-orange-400 border-orange-700/40",
+  PENDING:    "bg-amber-500/20 text-amber-400 border-amber-700/40",
+  CONFIRMED:  "bg-blue-500/20 text-blue-400 border-blue-700/40",
+  PROCESSING: "bg-violet-500/20 text-violet-400 border-violet-700/40",
+  SHIPPED:    "bg-sky-500/20 text-sky-400 border-sky-700/40",
+  DELIVERED:  "bg-green-500/20 text-green-400 border-green-700/40",
+  COMPLETED:  "bg-green-500/20 text-green-400 border-green-700/40",
+  CANCELLED:  "bg-red-500/20 text-red-400 border-red-700/40",
+  DISPUTED:   "bg-orange-500/20 text-orange-400 border-orange-700/40",
 };
 
 const TIMELINE_STEPS = [
-  { status: "pending",   label: "Order Placed", icon: Clock },
-  { status: "confirmed", label: "Confirmed",    icon: CheckCircle2 },
-  { status: "shipped",   label: "Shipped",      icon: Truck },
-  { status: "delivered", label: "Delivered",    icon: MapPin },
-  { status: "completed", label: "Completed",    icon: Package },
+  { status: "PENDING",   label: "Order Placed", icon: Clock },
+  { status: "CONFIRMED", label: "Confirmed",    icon: CheckCircle2 },
+  { status: "SHIPPED",   label: "Shipped",      icon: Truck },
+  { status: "DELIVERED", label: "Delivered",    icon: MapPin },
+  { status: "COMPLETED", label: "Completed",    icon: Package },
 ];
 
-const STATUS_ORDER = ["pending", "confirmed", "shipped", "delivered", "completed"];
+const STATUS_ORDER = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "COMPLETED"];
 
 function OrderTimeline({ order }: { order: any }) {
   const currentIdx  = STATUS_ORDER.indexOf(order.status);
-  const isCancelled = order.status === "cancelled";
+  const isCancelled = order.status === "CANCELLED";
 
   if (isCancelled) {
     return (
@@ -170,9 +170,9 @@ export default function BuyerOrdersPage() {
 
   const counts = {
     all:       allOrders.length,
-    pending:   allOrders.filter((o: any) => o.status === "pending").length,
-    shipped:   allOrders.filter((o: any) => o.status === "shipped").length,
-    completed: allOrders.filter((o: any) => ["completed", "delivered"].includes(o.status)).length,
+    PENDING:   allOrders.filter((o: any) => o.status === "PENDING").length,
+    SHIPPED:   allOrders.filter((o: any) => o.status === "SHIPPED").length,
+    completed: allOrders.filter((o: any) => ["COMPLETED", "DELIVERED"].includes(o.status)).length,
   };
 
   return (
@@ -183,12 +183,11 @@ export default function BuyerOrdersPage() {
           <p className="text-gray-500 text-sm mt-1">{allOrders.length} orders placed</p>
         </div>
 
-        {/* Filter tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
             { key: "all",       label: "All",        count: counts.all },
-            { key: "pending",   label: "Pending",    count: counts.pending },
-            { key: "shipped",   label: "In Transit", count: counts.shipped },
+            { key: "PENDING",   label: "Pending",    count: counts.PENDING },
+            { key: "SHIPPED",   label: "In Transit", count: counts.SHIPPED },
             { key: "completed", label: "Completed",  count: counts.completed },
           ].map(({ key, label, count }) => (
             <button key={key} onClick={() => setFilterStatus(key)}
@@ -243,7 +242,7 @@ export default function BuyerOrdersPage() {
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
                             STATUS_COLORS[order.status] ?? "bg-gray-500/20 text-gray-400 border-gray-700/40"
                           }`}>
-                            {order.status}
+                            {order.status?.toLowerCase()}
                           </span>
                         </div>
                         <p className="text-gray-600 text-xs">

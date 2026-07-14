@@ -24,16 +24,16 @@ const NAV_ITEMS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending:    "bg-amber-500/20 text-amber-400 border-amber-700/40",
-  confirmed:  "bg-blue-500/20 text-blue-400 border-blue-700/40",
-  processing: "bg-violet-500/20 text-violet-400 border-violet-700/40",
-  shipped:    "bg-sky-500/20 text-sky-400 border-sky-700/40",
-  delivered:  "bg-green-500/20 text-green-400 border-green-700/40",
-  completed:  "bg-green-500/20 text-green-400 border-green-700/40",
-  cancelled:  "bg-red-500/20 text-red-400 border-red-700/40",
+  PENDING:    "bg-amber-500/20 text-amber-400 border-amber-700/40",
+  CONFIRMED:  "bg-blue-500/20 text-blue-400 border-blue-700/40",
+  PROCESSING: "bg-violet-500/20 text-violet-400 border-violet-700/40",
+  SHIPPED:    "bg-sky-500/20 text-sky-400 border-sky-700/40",
+  DELIVERED:  "bg-green-500/20 text-green-400 border-green-700/40",
+  COMPLETED:  "bg-green-500/20 text-green-400 border-green-700/40",
+  CANCELLED:  "bg-red-500/20 text-red-400 border-red-700/40",
 };
 
-const STATUS_FLOW = ["pending", "confirmed", "shipped", "delivered", "completed"];
+const STATUS_FLOW = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "COMPLETED"];
 
 export default function FarmerOrdersPage() {
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
@@ -68,11 +68,11 @@ export default function FarmerOrdersPage() {
     setUpdating(order.id);
     try {
       const payload: any = { status: newStatus };
-      if (newStatus === "shipped" && tracking[order.id]) {
+      if (newStatus === "SHIPPED" && tracking[order.id]) {
         payload.tracking_number = tracking[order.id];
       }
       await apiClient.put(`/orders/${order.id}/status`, payload);
-      toast.success(`Order ${newStatus}`);
+      toast.success(`Order marked as ${newStatus.toLowerCase()}`);
       queryClient.invalidateQueries({ queryKey: ["farmer-orders"] });
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to update order");
@@ -91,10 +91,10 @@ export default function FarmerOrdersPage() {
 
   const counts = {
     all:       allOrders.length,
-    pending:   allOrders.filter((o: any) => o.status === "pending").length,
-    confirmed: allOrders.filter((o: any) => o.status === "confirmed").length,
-    shipped:   allOrders.filter((o: any) => o.status === "shipped").length,
-    completed: allOrders.filter((o: any) => o.status === "completed").length,
+    PENDING:   allOrders.filter((o: any) => o.status === "PENDING").length,
+    CONFIRMED: allOrders.filter((o: any) => o.status === "CONFIRMED").length,
+    SHIPPED:   allOrders.filter((o: any) => o.status === "SHIPPED").length,
+    COMPLETED: allOrders.filter((o: any) => o.status === "COMPLETED").length,
   };
 
   return (
@@ -108,10 +108,10 @@ export default function FarmerOrdersPage() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
             { key: "all",       label: "All",       count: counts.all },
-            { key: "pending",   label: "Pending",   count: counts.pending },
-            { key: "confirmed", label: "Confirmed", count: counts.confirmed },
-            { key: "shipped",   label: "Shipped",   count: counts.shipped },
-            { key: "completed", label: "Completed", count: counts.completed },
+            { key: "PENDING",   label: "Pending",   count: counts.PENDING },
+            { key: "CONFIRMED", label: "Confirmed", count: counts.CONFIRMED },
+            { key: "SHIPPED",   label: "Shipped",   count: counts.SHIPPED },
+            { key: "COMPLETED", label: "Completed", count: counts.COMPLETED },
           ].map(({ key, label, count }) => (
             <button key={key} onClick={() => setFilterStatus(key)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
@@ -193,14 +193,14 @@ export default function FarmerOrdersPage() {
                         <span className={`text-[10px] font-bold px-2 py-1 rounded-full border capitalize ${
                           STATUS_COLORS[order.status] ?? "bg-gray-500/20 text-gray-400 border-gray-700/40"
                         }`}>
-                          {order.status}
+                          {order.status?.toLowerCase()}
                         </span>
                       </div>
 
                       <div className="col-span-3 flex items-center gap-2">
-                        {nextStatus && order.status !== "cancelled" && (
+                        {nextStatus && order.status !== "CANCELLED" && (
                           <>
-                            {nextStatus === "shipped" && (
+                            {nextStatus === "SHIPPED" && (
                               <input
                                 value={tracking[order.id] || ""}
                                 onChange={e => setTracking(prev => ({ ...prev, [order.id]: e.target.value }))}
@@ -212,30 +212,30 @@ export default function FarmerOrdersPage() {
                               onClick={() => handleUpdateStatus(order, nextStatus)}
                               disabled={isUpdating}
                               className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl transition-all disabled:opacity-50 ${
-                                nextStatus === "confirmed" ? "bg-blue-950/40 hover:bg-blue-900/50 text-blue-400 border border-blue-800/40" :
-                                nextStatus === "shipped"   ? "bg-sky-950/40 hover:bg-sky-900/50 text-sky-400 border border-sky-800/40" :
-                                nextStatus === "delivered" ? "bg-violet-950/40 hover:bg-violet-900/50 text-violet-400 border border-violet-800/40" :
+                                nextStatus === "CONFIRMED" ? "bg-blue-950/40 hover:bg-blue-900/50 text-blue-400 border border-blue-800/40" :
+                                nextStatus === "SHIPPED"   ? "bg-sky-950/40 hover:bg-sky-900/50 text-sky-400 border border-sky-800/40" :
+                                nextStatus === "DELIVERED" ? "bg-violet-950/40 hover:bg-violet-900/50 text-violet-400 border border-violet-800/40" :
                                 "bg-green-950/40 hover:bg-green-900/50 text-green-400 border border-green-800/40"
                               }`}>
                               {isUpdating
                                 ? <Loader2 className="w-3 h-3 animate-spin" />
-                                : nextStatus === "confirmed" ? <CheckCircle2 className="w-3 h-3" />
-                                : nextStatus === "shipped"   ? <Truck className="w-3 h-3" />
+                                : nextStatus === "CONFIRMED" ? <CheckCircle2 className="w-3 h-3" />
+                                : nextStatus === "SHIPPED"   ? <Truck className="w-3 h-3" />
                                 : <Clock className="w-3 h-3" />
                               }
-                              {isUpdating ? "Updating..." : `Mark ${nextStatus}`}
+                              {isUpdating ? "Updating..." : `Mark ${nextStatus.toLowerCase()}`}
                             </button>
                           </>
                         )}
-                        {order.status === "pending" && (
+                        {order.status === "PENDING" && (
                           <button
-                            onClick={() => handleUpdateStatus(order, "cancelled")}
+                            onClick={() => handleUpdateStatus(order, "CANCELLED")}
                             disabled={isUpdating}
                             className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-red-950/40 hover:bg-red-900/50 text-red-400 border border-red-800/40 transition-all disabled:opacity-50">
                             <XCircle className="w-3 h-3" /> Cancel
                           </button>
                         )}
-                        {order.status === "completed" && (
+                        {order.status === "COMPLETED" && (
                           <span className="text-green-400 text-xs font-bold flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> Fulfilled
                           </span>

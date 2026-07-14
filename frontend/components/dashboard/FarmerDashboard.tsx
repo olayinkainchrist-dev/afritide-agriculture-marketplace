@@ -41,7 +41,7 @@ export default function FarmerDashboard({ user }: Props) {
       const res = await apiClient.get("/orders?role=seller&page_size=5");
       return res.data;
     },
-    refetchInterval: 30_000, // Auto-refresh every 30 seconds
+    refetchInterval: 30_000,
     enabled:         isAuthenticated,
   });
 
@@ -51,7 +51,9 @@ export default function FarmerDashboard({ user }: Props) {
   const pendingProducts = products.filter(p => p.status === "pending_review").length;
   const totalViews      = products.reduce((sum, p) => sum + p.view_count, 0);
   const totalOrders     = products.reduce((sum, p) => sum + p.order_count, 0);
-  const pendingOrders   = recentOrders.filter((o: any) => o.status === "pending" || o.status === "confirmed").length;
+  const pendingOrders   = recentOrders.filter((o: any) =>
+    o.status === "PENDING" || o.status === "CONFIRMED"
+  ).length;
 
   const stats = [
     { label: "Active Listings", value: activeProducts,           icon: Package,     color: "text-green-400", bg: "bg-green-950/50 border-green-900/50",  trend: `${pendingProducts} pending` },
@@ -61,12 +63,13 @@ export default function FarmerDashboard({ user }: Props) {
   ];
 
   const ORDER_STATUS_COLORS: Record<string, string> = {
-    pending:   "bg-amber-500/20 text-amber-400 border-amber-700/40",
-    confirmed: "bg-blue-500/20 text-blue-400 border-blue-700/40",
-    shipped:   "bg-sky-500/20 text-sky-400 border-sky-700/40",
-    delivered: "bg-green-500/20 text-green-400 border-green-700/40",
-    completed: "bg-green-500/20 text-green-400 border-green-700/40",
-    cancelled: "bg-red-500/20 text-red-400 border-red-700/40",
+    PENDING:    "bg-amber-500/20 text-amber-400 border-amber-700/40",
+    CONFIRMED:  "bg-blue-500/20 text-blue-400 border-blue-700/40",
+    PROCESSING: "bg-violet-500/20 text-violet-400 border-violet-700/40",
+    SHIPPED:    "bg-sky-500/20 text-sky-400 border-sky-700/40",
+    DELIVERED:  "bg-green-500/20 text-green-400 border-green-700/40",
+    COMPLETED:  "bg-green-500/20 text-green-400 border-green-700/40",
+    CANCELLED:  "bg-red-500/20 text-red-400 border-red-700/40",
   };
 
   return (
@@ -209,7 +212,6 @@ export default function FarmerDashboard({ user }: Props) {
             </div>
           </div>
 
-          {/* Pending review alert */}
           {pendingProducts > 0 && (
             <div className="bg-amber-950/40 border border-amber-800/40 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-1">
@@ -253,7 +255,7 @@ export default function FarmerDashboard({ user }: Props) {
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
                     ORDER_STATUS_COLORS[order.status] ?? "bg-gray-500/20 text-gray-400 border-gray-700/40"
                   }`}>
-                    {order.status}
+                    {order.status?.toLowerCase()}
                   </span>
                 </div>
               </div>
