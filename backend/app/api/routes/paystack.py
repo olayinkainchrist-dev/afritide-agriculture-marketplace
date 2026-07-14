@@ -126,7 +126,7 @@ async def verify_paystack_payment(
         # Notify seller via in-app notification
         db.add(Notification(
             user_id= uuid.UUID(seller_id),
-            type=    NotificationType.NEW_ORDER,
+            type=    NotificationType.NEW_ORDER if hasattr(NotificationType, 'NEW_ORDER') else NotificationType.ANNOUNCEMENT,
             title=   "New Order Received 🛒",
             message= f"You have a new order {order_number} for {seller_items[0].currency} {subtotal:,.0f}. Please confirm it.",
         ))
