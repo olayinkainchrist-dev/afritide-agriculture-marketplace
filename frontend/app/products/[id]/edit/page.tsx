@@ -11,7 +11,7 @@ import Footer from "@/components/layout/Footer";
 import { productsApi } from "@/lib/api/products.api";
 import {
   ArrowLeft, Loader2, Save, Package,
-  Leaf, Globe, ImagePlus, X, CheckCircle2,
+  Leaf, Globe, ImagePlus, X,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -21,10 +21,10 @@ const schema = z.object({
   description:            z.string().optional(),
   short_description:      z.string().optional(),
   price:                  z.number().positive("Enter a valid price"),
-  currency:               z.string().default("USD"),
+  currency:               z.string().default("NGN"),
   is_negotiable:          z.boolean().default(false),
   minimum_order_quantity: z.number().positive().default(1),
-  unit:                   z.enum(["kg","tonne","gram","litre","piece","bag","crate","dozen","bunch","head","unit"]),
+  unit:                   z.enum(["KG","TONNE","GRAM","LITRE","PIECE","BAG","CRATE","DOZEN","BUNCH","HEAD","UNIT"]),
   quantity_available:     z.number().positive("Enter available quantity"),
   is_organic:             z.boolean().default(false),
   is_export_ready:        z.boolean().default(false),
@@ -39,26 +39,25 @@ const schema = z.object({
 
 type FormData = z.input<typeof schema>;
 
-const UNITS = ["kg","tonne","gram","litre","piece","bag","crate","dozen","bunch","head","unit"];
+const UNITS      = ["KG","TONNE","GRAM","LITRE","PIECE","BAG","CRATE","DOZEN","BUNCH","HEAD","UNIT"];
 const CURRENCIES = ["USD","NGN","GBP","EUR","GHS","CFA"];
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
-  const [saving, setSaving] = useState(false);
+  const [saving,          setSaving]          = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
-  const [productImages, setProductImages] = useState<string[]>([]);
+  const [productImages,   setProductImages]   = useState<string[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated, router]);
 
-  // Fetch existing product
   const { data, isLoading } = useQuery({
     queryKey: ["product-edit", id],
-    queryFn: () => productsApi.getById(id),
-    enabled: isAuthenticated,
+    queryFn:  () => productsApi.getById(id),
+    enabled:  isAuthenticated,
   });
 
   const product = data?.data;
@@ -67,7 +66,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     resolver: zodResolver(schema),
   });
 
-  // Populate form when product loads
   useEffect(() => {
     if (product) {
       reset({
@@ -93,7 +91,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     }
   }, [product, reset]);
 
-  // Populate images when product loads
   useEffect(() => {
     if (product) {
       setProductImages(product.images || (product.main_image ? [product.main_image] : []));
@@ -105,8 +102,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     try {
       const payload = {
         ...data,
-        tags: data.tags ? data.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
-        images: productImages,
+        tags:       data.tags ? data.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
+        images:     productImages,
         main_image: productImages[0] || undefined,
       };
       const res = await productsApi.update(id, payload);
@@ -129,9 +126,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       const res = await productsApi.uploadImages(id, files);
       if (res.success) {
         const updated = await productsApi.getById(id);
-        if (updated.data?.images) {
-          setProductImages(updated.data.images);
-        }
+        if (updated.data?.images) setProductImages(updated.data.images);
         toast.success(`${files.length} image(s) uploaded`);
       }
     } catch {
@@ -146,17 +141,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setProductImages(newImages);
     try {
       await productsApi.update(id, {
-        images: newImages,
+        images:     newImages,
         main_image: newImages[0] || undefined,
       });
       toast.success("Image removed");
     } catch {
       toast.error("Failed to remove image");
-      // Revert on failure
       setProductImages(productImages);
     }
   };
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated) return null;
 
   if (isLoading) return (
@@ -186,7 +181,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     </main>
   );
 
-  // Check ownership — only after product has loaded
   if (!isLoading && product && product?.seller_id !== user?.id) {
     router.push("/dashboard/farmer/products");
     return null;
@@ -197,7 +191,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        {/* Header */}
         <div className="mb-8">
           <Link href="/dashboard/farmer/products"
             className="flex items-center gap-2 text-gray-500 hover:text-white text-sm mb-4 transition-colors">
@@ -217,12 +210,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
-          {/* ── Basic Info ──────────────────────────────────────── */}
+          {/* Basic Info */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 space-y-5">
             <h2 className="text-white font-bold flex items-center gap-2">
               <Package className="w-4 h-4 text-green-500" /> Basic Information
             </h2>
-
             <div>
               <label className="text-xs text-gray-500 mb-1.5 block">
                 Product Title <span className="text-red-400">*</span>
@@ -231,21 +223,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
               {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title.message}</p>}
             </div>
-
             <div>
               <label className="text-xs text-gray-500 mb-1.5 block">Short Description</label>
               <input {...register("short_description")}
                 placeholder="Brief summary shown in listing cards"
                 className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
             </div>
-
             <div>
               <label className="text-xs text-gray-500 mb-1.5 block">Full Description</label>
-              <textarea {...register("description")}
-                rows={4}
+              <textarea {...register("description")} rows={4}
                 className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors resize-none" />
             </div>
-
             <div>
               <label className="text-xs text-gray-500 mb-1.5 block">
                 Tags <span className="text-gray-600">(comma-separated)</span>
@@ -256,12 +244,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          {/* ── Pricing & Stock ──────────────────────────────────── */}
+          {/* Pricing & Stock */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 space-y-5">
             <h2 className="text-white font-bold flex items-center gap-2">
               <Globe className="w-4 h-4 text-green-500" /> Pricing & Stock
             </h2>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">
@@ -283,7 +270,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <label className="text-xs text-gray-500 mb-1.5 block">Unit</label>
                 <select {...register("unit")}
                   className="w-full bg-white/[0.05] border border-white/[0.08] text-white text-sm rounded-xl px-4 py-3.5 focus:outline-none appearance-none">
-                  {UNITS.map(u => <option key={u} value={u} className="bg-[#0a1a0f]">{u}</option>)}
+                  {UNITS.map(u => <option key={u} value={u} className="bg-[#0a1a0f]">{u.toLowerCase()}</option>)}
                 </select>
               </div>
               <div>
@@ -309,7 +296,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               </div>
             </div>
 
-            {/* Toggles */}
             <div className="space-y-3 pt-2">
               {[
                 { key: "is_negotiable",   label: "Price is negotiable",   desc: "Buyers can submit offers" },
@@ -322,8 +308,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     onClick={() => setValue(key as any, !watch(key as any), { shouldDirty: true })}
                     className={`w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all ${
                       watch(key as any) ? "bg-green-500 border-green-500" : "border-white/[0.15]"
-                    }`}
-                  >
+                    }`}>
                     {watch(key as any) && (
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -339,12 +324,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          {/* ── Location & Details ───────────────────────────────── */}
+          {/* Location & Details */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 space-y-4">
             <h2 className="text-white font-bold flex items-center gap-2">
               <Leaf className="w-4 h-4 text-green-500" /> Location & Details
             </h2>
-
             <div className="grid grid-cols-2 gap-4">
               {[
                 { key: "country",           label: "Country",           placeholder: "e.g. Nigeria" },
@@ -363,13 +347,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
 
-          {/* ── Images ───────────────────────────────────────────── */}
+          {/* Images */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
             <h2 className="text-white font-bold mb-4 flex items-center gap-2">
               <ImagePlus className="w-4 h-4 text-green-500" /> Product Images
             </h2>
-
-            {/* Existing images */}
             {productImages.length > 0 && (
               <div className="grid grid-cols-4 gap-3 mb-4">
                 {productImages.map((img, i) => (
@@ -378,20 +360,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     {i === 0 && (
                       <span className="absolute bottom-1 left-1 text-[9px] bg-green-600 text-white px-1.5 py-0.5 rounded font-bold">Main</span>
                     )}
-                    {/* Delete button */}
-                    <button
-                      type="button"
-                      onClick={() => removeImage(i)}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500/90 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg"
-                    >
+                    <button type="button" onClick={() => removeImage(i)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500/90 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg">
                       <X className="w-3 h-3 text-white" />
                     </button>
                   </div>
                 ))}
               </div>
             )}
-
-            {/* Upload new */}
             <label className={`flex items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-6 cursor-pointer transition-all ${
               uploadingImages
                 ? "border-green-600/60 bg-green-950/20"
@@ -406,22 +382,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </label>
           </div>
 
-          {/* ── Save button ─────────────────────────────────────── */}
+          {/* Save */}
           <div className="flex items-center gap-4">
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
-            >
+            <button type="submit" disabled={saving}
+              className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30">
               {saving
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
                 : <><Save className="w-4 h-4" /> Save Changes</>
               }
             </button>
-            <Link
-              href="/dashboard/farmer/products"
-              className="px-6 py-4 text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] rounded-2xl text-sm font-medium transition-all"
-            >
+            <Link href="/dashboard/farmer/products"
+              className="px-6 py-4 text-gray-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] rounded-2xl text-sm font-medium transition-all">
               Cancel
             </Link>
           </div>
