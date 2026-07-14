@@ -36,17 +36,18 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_FLOW = ["pending", "confirmed", "shipped", "delivered", "completed"];
 
 export default function FarmerOrdersPage() {
-  const { user, isAuthenticated } = useAuthStore();
-  const router       = useRouter();
-  const queryClient  = useQueryClient();
-  const [expandedId, setExpandedId]   = useState<string | null>(null);
-  const [updating,   setUpdating]     = useState<string | null>(null);
-  const [tracking,   setTracking]     = useState<Record<string, string>>({});
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
+  const router      = useRouter();
+  const queryClient = useQueryClient();
+
+  const [expandedId,   setExpandedId]   = useState<string | null>(null);
+  const [updating,     setUpdating]     = useState<string | null>(null);
+  const [tracking,     setTracking]     = useState<Record<string, string>>({});
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["farmer-orders"],
@@ -54,7 +55,8 @@ export default function FarmerOrdersPage() {
       const res = await apiClient.get("/orders?role=seller&page_size=100");
       return res.data;
     },
-    enabled: isAuthenticated,
+    enabled:         isAuthenticated,
+    refetchInterval: 30_000,
   });
 
   const allOrders = data?.data || [];
@@ -84,6 +86,7 @@ export default function FarmerOrdersPage() {
     return idx >= 0 && idx < STATUS_FLOW.length - 1 ? STATUS_FLOW[idx + 1] : null;
   };
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   const counts = {
@@ -102,7 +105,6 @@ export default function FarmerOrdersPage() {
           <p className="text-gray-500 text-sm mt-1">{allOrders.length} orders received</p>
         </div>
 
-        {/* Filter tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
             { key: "all",       label: "All",       count: counts.all },
@@ -241,7 +243,6 @@ export default function FarmerOrdersPage() {
                       </div>
                     </div>
 
-                    {/* Expanded order items */}
                     {isExpanded && (
                       <div className="px-5 pb-5 bg-white/[0.01] border-t border-white/[0.04]">
                         <div className="pt-4 space-y-3">
@@ -266,7 +267,6 @@ export default function FarmerOrdersPage() {
                             </div>
                           ))}
 
-                          {/* Tracking info */}
                           {order.tracking_number && (
                             <div className="bg-sky-950/20 border border-sky-800/30 rounded-xl p-3 mt-2">
                               <p className="text-sky-400 text-xs font-bold">
@@ -275,7 +275,6 @@ export default function FarmerOrdersPage() {
                             </div>
                           )}
 
-                          {/* Order notes */}
                           {order.buyer_notes && (
                             <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3">
                               <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-1">Buyer Notes</p>

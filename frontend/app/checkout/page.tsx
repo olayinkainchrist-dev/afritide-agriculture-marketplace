@@ -16,9 +16,9 @@ import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function CheckoutPage() {
-  const { user, isAuthenticated } = useAuthStore();
-  const { items, setItems, clearCart } = useCartStore();
-  const router = useRouter();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
+  const { items, setItems, clearCart }          = useCartStore();
+  const router                                  = useRouter();
   const [loading,    setLoading]    = useState(true);
   const [processing, setProcessing] = useState(false);
   const [orderDone,  setOrderDone]  = useState(false);
@@ -32,22 +32,20 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
     loadCart();
-  }, [isAuthenticated]);
+  }, [hasHydrated, isAuthenticated]);
 
-  // Load Paystack inline script
   useEffect(() => {
     const script = document.createElement("script");
-    script.src = "https://js.paystack.co/v1/inline.js";
+    script.src   = "https://js.paystack.co/v1/inline.js";
     script.async = true;
     document.body.appendChild(script);
-    return () => {
-      document.body.removeChild(script);
-    };
+    return () => { document.body.removeChild(script); };
   }, []);
 
   const loadCart = async () => {
@@ -62,8 +60,7 @@ export default function CheckoutPage() {
   };
 
   const subtotal    = items.reduce((sum, item) => sum + item.item_total, 0);
-  const total       = subtotal; // Buyer pays subtotal only
-  const platformFee = subtotal * 0.05; // Deducted from seller — not added to buyer
+  const total       = subtotal;
   const currency    = items[0]?.currency || "NGN";
 
   const handlePaystackSuccess = async (response: any) => {
@@ -127,7 +124,8 @@ export default function CheckoutPage() {
     handler.openIframe();
   };
 
-  // Order success screen
+  if (!hasHydrated) return null;
+
   if (orderDone) {
     return (
       <main className="min-h-screen bg-[#060f08]">
@@ -170,7 +168,6 @@ export default function CheckoutPage() {
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
-        {/* Header */}
         <div className="mb-8 flex items-center gap-4">
           <Link href="/cart" className="text-gray-500 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -195,10 +192,8 @@ export default function CheckoutPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            {/* Left — Shipping form */}
             <div className="lg:col-span-2 space-y-6">
 
-              {/* Shipping address */}
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
                 <h2 className="text-white font-bold text-lg mb-5 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-green-500" /> Shipping Address
@@ -236,16 +231,15 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Shipping method */}
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
                 <h2 className="text-white font-bold text-lg mb-5 flex items-center gap-2">
                   <Package className="w-5 h-5 text-green-500" /> Shipping Method
                 </h2>
                 <div className="space-y-3">
                   {[
-                    { value: "standard", label: "Standard Delivery", desc: "7-14 business days",          price: "Free" },
-                    { value: "express",  label: "Express Delivery",  desc: "3-5 business days",           price: "Negotiated with seller" },
-                    { value: "pickup",   label: "Farm Pickup",       desc: "Pick up directly from farm",  price: "Free" },
+                    { value: "standard", label: "Standard Delivery", desc: "7-14 business days",         price: "Free" },
+                    { value: "express",  label: "Express Delivery",  desc: "3-5 business days",          price: "Negotiated with seller" },
+                    { value: "pickup",   label: "Farm Pickup",       desc: "Pick up directly from farm", price: "Free" },
                   ].map(method => (
                     <label key={method.value}
                       className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
@@ -267,7 +261,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Notes */}
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
                 <h2 className="text-white font-bold text-lg mb-4">Order Notes (optional)</h2>
                 <textarea
@@ -280,12 +273,10 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Right — Order summary */}
             <div className="lg:col-span-1">
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 sticky top-24 space-y-5">
                 <h2 className="text-white font-bold text-lg">Order Summary</h2>
 
-                {/* Items */}
                 <div className="space-y-3 max-h-48 overflow-y-auto">
                   {items.map(item => (
                     <div key={item.id} className="flex items-center gap-3">

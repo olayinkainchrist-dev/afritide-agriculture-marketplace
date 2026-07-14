@@ -24,12 +24,12 @@ const NAV_ITEMS = [
 ];
 
 export default function BuyerDashboardPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated, router]);
 
   const { data: ordersData } = useQuery({
     queryKey: ["buyer-recent-orders"],
@@ -63,6 +63,7 @@ export default function BuyerDashboardPage() {
   const cartItems    = cartData?.data?.items || [];
   const cartSubtotal = cartData?.data?.subtotal || 0;
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   return (

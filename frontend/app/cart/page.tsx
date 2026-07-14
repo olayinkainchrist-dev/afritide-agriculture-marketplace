@@ -15,19 +15,20 @@ import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 export default function CartPage() {
-  const { isAuthenticated } = useAuthStore();
-  const { items, setItems } = useCartStore();
-  const router = useRouter();
+  const { isAuthenticated, hasHydrated } = useAuthStore();
+  const { items, setItems }              = useCartStore();
+  const router                           = useRouter();
   const [loading,  setLoading]  = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
     loadCart();
-  }, [isAuthenticated]);
+  }, [hasHydrated, isAuthenticated]);
 
   const loadCart = async () => {
     try {
@@ -76,6 +77,8 @@ export default function CartPage() {
     }
   };
 
+  if (!hasHydrated) return null;
+
   const subtotal = items.reduce((sum, item) => sum + item.item_total, 0);
   const currency = items[0]?.currency || "NGN";
 
@@ -108,7 +111,6 @@ export default function CartPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            {/* Cart items */}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
                 <div key={item.id} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 flex gap-4">
@@ -171,7 +173,6 @@ export default function CartPage() {
               </button>
             </div>
 
-            {/* Order summary */}
             <div className="lg:col-span-1">
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 sticky top-24">
                 <h2 className="text-white font-bold text-lg mb-5">Order Summary</h2>

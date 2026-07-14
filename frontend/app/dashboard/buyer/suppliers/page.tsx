@@ -13,22 +13,22 @@ import {
 import Link from "next/link";
 
 const NAV_ITEMS = [
-  { label: "Overview",         href: "/dashboard/buyer",              icon: LayoutDashboard },
-  { label: "My Orders",        href: "/dashboard/buyer/orders",       icon: ShoppingCart },
-  { label: "Wishlist",         href: "/dashboard/buyer/wishlist",     icon: Heart },
-  { label: "My Suppliers",     href: "/dashboard/buyer/suppliers",    icon: Users },
-  { label: "Messages",         href: "/dashboard/buyer/messages",     icon: MessageSquare },
-  { label: "Sourcing Requests",href: "/dashboard/buyer/rfqs",         icon: FileText },
-  { label: "Alerts",           href: "/dashboard/buyer/alerts",       icon: Bell },
+  { label: "Overview",          href: "/dashboard/buyer",           icon: LayoutDashboard },
+  { label: "My Orders",         href: "/dashboard/buyer/orders",    icon: ShoppingCart },
+  { label: "Wishlist",          href: "/dashboard/buyer/wishlist",  icon: Heart },
+  { label: "My Suppliers",      href: "/dashboard/buyer/suppliers", icon: Users },
+  { label: "Messages",          href: "/dashboard/buyer/messages",  icon: MessageSquare },
+  { label: "Sourcing Requests", href: "/dashboard/buyer/rfqs",      icon: FileText },
+  { label: "Alerts",            href: "/dashboard/buyer/alerts",    icon: Bell },
 ];
 
 export default function FavouriteSuppliersPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated]);
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-following"],
@@ -41,6 +41,7 @@ export default function FavouriteSuppliersPage() {
 
   const suppliers = data?.data || [];
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   return (

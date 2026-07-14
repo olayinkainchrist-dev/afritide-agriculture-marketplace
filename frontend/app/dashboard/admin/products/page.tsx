@@ -41,7 +41,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminProductsPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router      = useRouter();
   const queryClient = useQueryClient();
 
@@ -53,9 +53,10 @@ export default function AdminProductsPage() {
   const [rejectReason, setRejectReason] = useState("");
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) router.push("/login");
     else if (user?.role !== "admin") router.push("/dashboard/farmer");
-  }, [isAuthenticated, user, router]);
+  }, [hasHydrated, isAuthenticated, user, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-products", activeTab],
@@ -101,6 +102,7 @@ export default function AdminProductsPage() {
     }
   };
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   return (
@@ -111,7 +113,6 @@ export default function AdminProductsPage() {
           <p className="text-gray-500 text-sm mt-1">Review and approve seller product listings</p>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {STATUS_TABS.map(tab => (
             <button key={tab.key} onClick={() => { setActiveTab(tab.key); setExpandedId(null); }}

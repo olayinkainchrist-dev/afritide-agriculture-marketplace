@@ -62,7 +62,7 @@ const DELIVERY_OPTIONS = [
 ];
 
 export default function NewProductPage() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, hasHydrated } = useAuthStore();
   const router  = useRouter();
   const [loading,         setLoading]         = useState(false);
   const [step,            setStep]            = useState(1);
@@ -72,8 +72,8 @@ export default function NewProductPage() {
   const [priceTiers,      setPriceTiers]      = useState<{min_qty: number, max_qty: number | null, price: number}[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated]);
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated, router]);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -103,10 +103,10 @@ export default function NewProductPage() {
       const url = res.data?.data?.url;
       if (url) {
         setImages(prev => [...prev, url]);
+        toast.success("Image uploaded");
       } else {
         toast.error("Upload succeeded but no URL returned");
       }
-      toast.success("Image uploaded");
     } catch {
       toast.error("Failed to upload image");
     } finally {
@@ -120,17 +120,10 @@ export default function NewProductPage() {
     );
   };
 
-  const addTier = () => {
-    setPriceTiers(prev => [...prev, { min_qty: 1, max_qty: null, price: 0 }]);
-  };
-
-  const removeTier = (i: number) => {
-    setPriceTiers(prev => prev.filter((_, idx) => idx !== i));
-  };
-
-  const updateTier = (i: number, field: string, value: any) => {
+  const addTier    = () => setPriceTiers(prev => [...prev, { min_qty: 1, max_qty: null, price: 0 }]);
+  const removeTier = (i: number) => setPriceTiers(prev => prev.filter((_, idx) => idx !== i));
+  const updateTier = (i: number, field: string, value: any) =>
     setPriceTiers(prev => prev.map((t, idx) => idx === i ? { ...t, [field]: value } : t));
-  };
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -155,6 +148,7 @@ export default function NewProductPage() {
     }
   };
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated) return null;
 
   const STEPS = [
@@ -326,7 +320,6 @@ export default function NewProductPage() {
                       + Add Tier
                     </button>
                   </div>
-
                   {priceTiers.length === 0 ? (
                     <div className="border border-dashed border-white/[0.08] rounded-xl p-4 text-center">
                       <p className="text-gray-600 text-xs">No bulk tiers set — single price applies to all quantities</p>
@@ -450,7 +443,6 @@ export default function NewProductPage() {
             {/* Step 4 — Images & Delivery */}
             {step === 4 && (
               <>
-                {/* Image upload */}
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-3">
                     Product Images <span className="text-gray-600">(up to 5)</span>
@@ -492,7 +484,6 @@ export default function NewProductPage() {
                   <p className="text-gray-600 text-xs">First image will be the main product photo. Max 5MB each.</p>
                 </div>
 
-                {/* Delivery options */}
                 <div>
                   <p className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
                     <Truck className="w-4 h-4 text-green-500" />
@@ -528,7 +519,6 @@ export default function NewProductPage() {
             )}
           </div>
 
-          {/* Navigation buttons */}
           <div className="flex items-center justify-between mt-6">
             <button type="button"
               onClick={() => step > 1 ? setStep(step - 1) : router.push("/dashboard/farmer/products")}
@@ -543,7 +533,7 @@ export default function NewProductPage() {
                 Next <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
-              <button type="button" 
+              <button type="button"
                 disabled={loading}
                 onClick={() => handleSubmit(onSubmit)()}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold px-8 py-3 rounded-xl transition-all text-sm shadow-xl shadow-green-900/30">

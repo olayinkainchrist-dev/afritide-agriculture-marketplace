@@ -3,22 +3,25 @@ import { persist } from "zustand/middleware";
 import { User } from "@/types";
 
 interface AuthState {
-  user: User | null;
-  access_token: string | null;
-  refresh_token: string | null;
+  user:            User | null;
+  access_token:    string | null;
+  refresh_token:   string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, access_token: string, refresh_token: string) => void;
-  updateUser: (user: User) => void;
-  logout: () => void;
+  hasHydrated:     boolean;
+  setAuth:         (user: User, access_token: string, refresh_token: string) => void;
+  updateUser:      (user: User) => void;
+  logout:          () => void;
+  setHasHydrated:  (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null,
-      access_token: null,
-      refresh_token: null,
+      user:            null,
+      access_token:    null,
+      refresh_token:   null,
       isAuthenticated: false,
+      hasHydrated:     false,
 
       setAuth: (user, access_token, refresh_token) => {
         localStorage.setItem("access_token", access_token);
@@ -34,15 +37,20 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, access_token: null, refresh_token: null, isAuthenticated: false });
         window.location.href = "/login";
       },
+
+      setHasHydrated: (state) => set({ hasHydrated: state }),
     }),
     {
       name: "afritide-auth",
       partialize: (state) => ({
-        user: state.user,
-        access_token: state.access_token,
-        refresh_token: state.refresh_token,
+        user:            state.user,
+        access_token:    state.access_token,
+        refresh_token:   state.refresh_token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

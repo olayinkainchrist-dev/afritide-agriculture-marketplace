@@ -38,17 +38,17 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const TIMELINE_STEPS = [
-  { status: "pending",   label: "Order Placed",   icon: Clock },
-  { status: "confirmed", label: "Confirmed",       icon: CheckCircle2 },
-  { status: "shipped",   label: "Shipped",         icon: Truck },
-  { status: "delivered", label: "Delivered",       icon: MapPin },
-  { status: "completed", label: "Completed",       icon: Package },
+  { status: "pending",   label: "Order Placed", icon: Clock },
+  { status: "confirmed", label: "Confirmed",    icon: CheckCircle2 },
+  { status: "shipped",   label: "Shipped",      icon: Truck },
+  { status: "delivered", label: "Delivered",    icon: MapPin },
+  { status: "completed", label: "Completed",    icon: Package },
 ];
 
 const STATUS_ORDER = ["pending", "confirmed", "shipped", "delivered", "completed"];
 
 function OrderTimeline({ order }: { order: any }) {
-  const currentIdx = STATUS_ORDER.indexOf(order.status);
+  const currentIdx  = STATUS_ORDER.indexOf(order.status);
   const isCancelled = order.status === "cancelled";
 
   if (isCancelled) {
@@ -66,7 +66,6 @@ function OrderTimeline({ order }: { order: any }) {
         const isDone    = currentIdx >= idx;
         const isCurrent = currentIdx === idx;
         const Icon      = step.icon;
-
         return (
           <div key={step.status} className="flex items-center gap-1 flex-shrink-0">
             <div className="flex flex-col items-center gap-1">
@@ -98,16 +97,16 @@ function OrderTimeline({ order }: { order: any }) {
 }
 
 export default function BuyerOrdersPage() {
-  const { user, isAuthenticated } = useAuthStore();
-  const { setItems }              = useCartStore();
-  const router                    = useRouter();
-  const [reordering,  setReordering]  = useState<string | null>(null);
-  const [expandedId,  setExpandedId]  = useState<string | null>(null);
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
+  const { setItems }                           = useCartStore();
+  const router                                 = useRouter();
+  const [reordering,   setReordering]   = useState<string | null>(null);
+  const [expandedId,   setExpandedId]   = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState("all");
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated, router]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["buyer-orders"],
@@ -115,7 +114,7 @@ export default function BuyerOrdersPage() {
       const res = await apiClient.get("/orders?role=buyer&page_size=50");
       return res.data;
     },
-    enabled: isAuthenticated,
+    enabled:         isAuthenticated,
     refetchInterval: 30_000,
   });
 
@@ -166,6 +165,7 @@ export default function BuyerOrdersPage() {
     }
   };
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   const counts = {
@@ -186,10 +186,10 @@ export default function BuyerOrdersPage() {
         {/* Filter tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
-            { key: "all",       label: "All",       count: counts.all },
-            { key: "pending",   label: "Pending",   count: counts.pending },
+            { key: "all",       label: "All",        count: counts.all },
+            { key: "pending",   label: "Pending",    count: counts.pending },
             { key: "shipped",   label: "In Transit", count: counts.shipped },
-            { key: "completed", label: "Completed", count: counts.completed },
+            { key: "completed", label: "Completed",  count: counts.completed },
           ].map(({ key, label, count }) => (
             <button key={key} onClick={() => setFilterStatus(key)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
@@ -235,7 +235,6 @@ export default function BuyerOrdersPage() {
                 <div key={order.id}
                   className="bg-white/[0.03] border border-white/[0.07] hover:border-white/[0.12] rounded-2xl overflow-hidden transition-all">
 
-                  {/* Order header */}
                   <div className="px-5 py-4 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                       <div className="flex-1 min-w-0">
@@ -256,7 +255,6 @@ export default function BuyerOrdersPage() {
                         {formatPrice(order.total_amount, order.currency)}
                       </p>
                     </div>
-
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : order.id)}
                       className="text-gray-600 hover:text-white transition-colors flex-shrink-0 p-1">
@@ -264,12 +262,10 @@ export default function BuyerOrdersPage() {
                     </button>
                   </div>
 
-                  {/* Timeline — always visible */}
                   <div className="px-5 border-t border-white/[0.04]">
                     <OrderTimeline order={order} />
                   </div>
 
-                  {/* Tracking number if shipped */}
                   {order.tracking_number && (
                     <div className="px-5 pb-3">
                       <div className="bg-sky-950/20 border border-sky-800/30 rounded-xl px-3 py-2 flex items-center gap-2">
@@ -281,7 +277,6 @@ export default function BuyerOrdersPage() {
                     </div>
                   )}
 
-                  {/* Expanded — items + actions */}
                   {isExpanded && (
                     <div className="px-5 pb-5 border-t border-white/[0.04] pt-4 space-y-3">
                       <p className="text-gray-600 text-[10px] uppercase tracking-widest font-bold">Order Items</p>
