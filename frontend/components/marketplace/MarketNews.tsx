@@ -100,7 +100,7 @@ export default function MarketNews() {
                     src={articles[0].urlToImage}
                     alt={articles[0].title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "NONE"; }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -151,7 +151,7 @@ export default function MarketNews() {
                     src={article.urlToImage}
                     alt={article.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "NONE"; }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">

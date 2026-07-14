@@ -108,7 +108,7 @@ export default function FarmerOrdersPage() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
             { key: "all",       label: "All",       count: counts.all },
-            { key: "PENDING",   label: "Pending",   count: counts.PENDING },
+            { key: "PENDING",   label: "PENDING",   count: counts.PENDING },
             { key: "CONFIRMED", label: "Confirmed", count: counts.CONFIRMED },
             { key: "SHIPPED",   label: "Shipped",   count: counts.SHIPPED },
             { key: "COMPLETED", label: "Completed", count: counts.COMPLETED },

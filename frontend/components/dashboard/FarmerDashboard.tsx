@@ -47,7 +47,7 @@ export default function FarmerDashboard({ user }: Props) {
 
   const products        = productsData?.data || [];
   const recentOrders    = ordersData?.data   || [];
-  const activeProducts  = products.filter(p => p.status === "active").length;
+  const activeProducts  = products.filter(p => p.status === "ACTIVE").length;
   const pendingProducts = products.filter(p => p.status === "pending_review").length;
   const totalViews      = products.reduce((sum, p) => sum + p.view_count, 0);
   const totalOrders     = products.reduce((sum, p) => sum + p.order_count, 0);
@@ -289,11 +289,11 @@ export default function FarmerDashboard({ user }: Props) {
 
 function StatusBadge({ status }: { status: string }) {
   const config = {
-    active:         { label: "Active",    class: "bg-green-500/20 text-green-400 border-green-700/40" },
-    pending_review: { label: "Pending",   class: "bg-amber-500/20 text-amber-400 border-amber-700/40" },
+    active:         { label: "ACTIVE",    class: "bg-green-500/20 text-green-400 border-green-700/40" },
+    pending_review: { label: "PENDING",   class: "bg-amber-500/20 text-amber-400 border-amber-700/40" },
     draft:          { label: "Draft",     class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
     out_of_stock:   { label: "No Stock",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
-    suspended:      { label: "Suspended", class: "bg-red-500/20 text-red-400 border-red-700/40" },
+    suspended:      { label: "SUSPENDED", class: "bg-red-500/20 text-red-400 border-red-700/40" },
     rejected:       { label: "Rejected",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
     archived:       { label: "Archived",  class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
   } as Record<string, { label: string; class: string }>;

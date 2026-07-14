@@ -74,7 +74,7 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
                   <p className="text-white font-bold text-sm truncate">
                     {user?.business_name || `${user?.first_name} ${user?.last_name}`}
                   </p>
-                  {user?.badge !== "none" && <BadgeCheck className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
+                  {user?.badge !== "NONE" && <BadgeCheck className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
                 </div>
                 <p className="text-gray-600 text-xs capitalize truncate">{user?.role?.replace("_", " ")}</p>
               </div>

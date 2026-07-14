@@ -144,7 +144,7 @@ export default function BuyerDashboardPage() {
                       <p className="text-green-400 font-bold text-sm">{formatPrice(order.total_amount, order.currency)}</p>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
                         order.status === "confirmed"  ? "bg-green-500/20 text-green-400" :
-                        order.status === "pending"    ? "bg-amber-500/20 text-amber-400" :
+                        order.status === "PENDING"    ? "bg-amber-500/20 text-amber-400" :
                         order.status === "delivered"  ? "bg-blue-500/20 text-blue-400"   :
                         "bg-gray-500/20 text-gray-400"
                       }`}>

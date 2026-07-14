@@ -88,7 +88,7 @@ export default function FavouriteSuppliersPage() {
                     <p className="text-white font-bold text-sm group-hover:text-green-400 transition-colors truncate">
                       {s.display_name}
                     </p>
-                    {s.badge !== "none" && <BadgeCheck className="w-4 h-4 text-green-400 flex-shrink-0" />}
+                    {s.badge !== "NONE" && <BadgeCheck className="w-4 h-4 text-green-400 flex-shrink-0" />}
                   </div>
                   <p className="text-gray-500 text-xs capitalize mb-1">{s.role?.replace("_", " ")}</p>
                   <div className="flex items-center gap-3 text-xs text-gray-600">

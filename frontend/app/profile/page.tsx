@@ -150,7 +150,7 @@ export default function ProfilePage() {
                 <h1 className="text-2xl font-black text-white">
                   {user.business_name || `${user.first_name} ${user.last_name}`}
                 </h1>
-                {user.badge !== "none" && (
+                {user.badge !== "NONE" && (
                   <BadgeCheck className="w-6 h-6 text-green-400" />
                 )}
               </div>

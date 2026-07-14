@@ -14,7 +14,7 @@ import { formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 const ROLE_FILTERS = ["all", "BUYER", "FARMER", "EXPORTER", "COOPERATIVE", "ADMIN"];
-const STATUS_FILTERS = ["all", "pending", "active", "verified", "suspended"];
+const STATUS_FILTERS = ["all", "PENDING", "ACTIVE", "VERIFIED", "SUSPENDED"];
 
 export default function AdminUsersPage() {
   const { user, isAuthenticated } = useAuthStore();
@@ -163,8 +163,8 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="col-span-1">
                       <span className={`text-[10px] font-bold px-2 py-1 rounded-full border capitalize ${
-                        u.status === "active" || u.status === "verified" ? "bg-green-500/20 text-green-400 border-green-700/40"
-                        : u.status === "pending" ? "bg-amber-500/20 text-amber-400 border-amber-700/40"
+                        u.status === "ACTIVE" || u.status === "VERIFIED" ? "bg-green-500/20 text-green-400 border-green-700/40"
+                        : u.status === "PENDING" ? "bg-amber-500/20 text-amber-400 border-amber-700/40"
                         : "bg-red-500/20 text-red-400 border-red-700/40"
                       }`}>{u.status}</span>
                     </div>
@@ -189,12 +189,12 @@ export default function AdminUsersPage() {
                           </button>
                         </>
                       )}
-                      {u.status === "active" || u.status === "verified" ? (
+                      {u.status === "ACTIVE" || u.status === "VERIFIED" ? (
                         <button onClick={() => suspendUser(u.id)}
                           className="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-600/10 text-red-400 border border-red-700/30 hover:bg-red-600/20 transition-colors flex items-center gap-1">
                           <UserX className="w-3 h-3" /> Suspend
                         </button>
-                      ) : u.status === "suspended" ? (
+                      ) : u.status === "SUSPENDED" ? (
                         <button onClick={() => reactivateUser(u.id)}
                           className="text-[10px] font-bold px-2 py-1 rounded-lg bg-green-600/20 text-green-400 border border-green-700/40 hover:bg-green-600/30 transition-colors flex items-center gap-1">
                           <UserCheck className="w-3 h-3" /> Reactivate

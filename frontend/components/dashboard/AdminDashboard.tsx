@@ -270,9 +270,9 @@ export default function AdminDashboard({ user }: Props) {
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className={`text-[10px] font-bold px-2 py-1 rounded-full border capitalize ${
-                          u.status === "active" || u.status === "verified"
+                          u.status === "ACTIVE" || u.status === "VERIFIED"
                             ? "bg-green-500/20 text-green-400 border-green-700/40"
-                            : u.status === "pending"
+                            : u.status === "PENDING"
                             ? "bg-amber-500/20 text-amber-400 border-amber-700/40"
                             : "bg-red-500/20 text-red-400 border-red-700/40"
                         }`}>
@@ -286,7 +286,7 @@ export default function AdminDashboard({ user }: Props) {
                             Verify KYC
                           </button>
                         )}
-                        {u.status === "active" && (
+                        {u.status === "ACTIVE" && (
                           <button
                             onClick={() => suspendUser(u.id)}
                             className="text-[10px] font-bold px-2 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-700/30 hover:bg-red-500/20 transition-colors"

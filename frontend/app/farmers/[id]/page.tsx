@@ -131,7 +131,7 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
 
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-xl font-black text-white">{displayName}</h1>
-                  {farmer.badge !== "none" && <BadgeCheck className="w-5 h-5 text-green-400" />}
+                  {farmer.badge !== "NONE" && <BadgeCheck className="w-5 h-5 text-green-400" />}
                 </div>
                 <p className="text-gray-500 text-sm capitalize mb-4">{roleLabel}</p>
 

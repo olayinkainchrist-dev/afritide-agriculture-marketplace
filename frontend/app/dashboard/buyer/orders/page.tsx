@@ -186,7 +186,7 @@ export default function BuyerOrdersPage() {
         <div className="flex gap-2 overflow-x-auto pb-1">
           {[
             { key: "all",       label: "All",        count: counts.all },
-            { key: "PENDING",   label: "Pending",    count: counts.PENDING },
+            { key: "PENDING",   label: "PENDING",    count: counts.PENDING },
             { key: "SHIPPED",   label: "In Transit", count: counts.SHIPPED },
             { key: "completed", label: "Completed",  count: counts.completed },
           ].map(({ key, label, count }) => (

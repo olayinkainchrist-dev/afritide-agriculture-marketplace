@@ -101,7 +101,7 @@ export default function FeaturedFarmers() {
                     <h3 className="font-bold text-white text-sm truncate group-hover:text-green-400 transition-colors">
                       {displayName}
                     </h3>
-                    {farmer.badge !== "none" && (
+                    {farmer.badge !== "NONE" && (
                       <BadgeCheck className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
                     )}
                   </div>

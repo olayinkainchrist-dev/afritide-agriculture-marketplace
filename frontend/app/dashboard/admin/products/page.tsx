@@ -27,7 +27,7 @@ const NAV_ITEMS = [
 
 const STATUS_TABS = [
   { key: "pending_review", label: "Pending Review" },
-  { key: "active",         label: "Approved" },
+  { key: "ACTIVE",         label: "Approved" },
   { key: "rejected",       label: "Rejected" },
   { key: "all",            label: "All" },
 ];

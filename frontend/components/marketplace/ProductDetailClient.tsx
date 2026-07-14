@@ -566,7 +566,7 @@ export default function ProductDetailClient({ id }: Props) {
                       <h3 className="text-white font-bold text-xl">
                         {seller.business_name || `${seller.first_name} ${seller.last_name}`}
                       </h3>
-                      {seller.badge !== "none" && (
+                      {seller.badge !== "NONE" && (
                         <BadgeCheck className="w-5 h-5 text-green-400" />
                       )}
                     </div>

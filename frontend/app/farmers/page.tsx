@@ -125,7 +125,7 @@ export default function FarmersPage() {
                           <h3 className="text-white font-bold text-sm truncate group-hover:text-green-400 transition-colors">
                             {displayName}
                           </h3>
-                          {farmer.badge !== "none" && (
+                          {farmer.badge !== "NONE" && (
                             <BadgeCheck className="w-4 h-4 text-green-400 flex-shrink-0" />
                           )}
                         </div>

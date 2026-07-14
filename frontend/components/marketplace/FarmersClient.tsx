@@ -212,7 +212,7 @@ function FarmerCard({ farmer }: { farmer: any }) {
           <h3 className="font-bold text-white text-sm truncate group-hover:text-green-400 transition-colors">
             {displayName}
           </h3>
-          {farmer.badge !== "none" && (
+          {farmer.badge !== "NONE" && (
             <BadgeCheck className="w-4 h-4 text-green-400 flex-shrink-0" />
           )}
         </div>

@@ -449,7 +449,7 @@ export default function FullCommodityBoard() {
                           compareIds.includes(c.id) ? "bg-violet-500 border-violet-500" : "border-white/[0.2]"
                         }`}>
                           {compareIds.includes(c.id) && (
-                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <svg className="w-3 h-3 text-white" fill="NONE" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           )}
