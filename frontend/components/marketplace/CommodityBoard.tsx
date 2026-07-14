@@ -17,8 +17,8 @@ export default function CommodityBoard() {
   const updatedTime = dataUpdatedAt ? new Date(dataUpdatedAt).toLocaleTimeString() : null;
 
   const TrendIcon = ({ trend }: { trend: string }) => {
-    if (trend === "up") return <ArrowUpRight className="w-4 h-4 text-green-400" />;
-    if (trend === "down") return <ArrowDownRight className="w-4 h-4 text-red-400" />;
+    if (trend === "UP") return <ArrowUpRight className="w-4 h-4 text-green-400" />;
+    if (trend === "DOWN") return <ArrowDownRight className="w-4 h-4 text-red-400" />;
     return <Minus className="w-4 h-4 text-gray-500" />;
   };
 
@@ -87,8 +87,8 @@ export default function CommodityBoard() {
                   <span className="text-xs text-gray-600">per {c.unit}</span>
                   {c.change_percentage !== undefined && (
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                      c.trend === "up" ? "bg-green-950/60 text-green-400" :
-                      c.trend === "down" ? "bg-red-950/60 text-red-400" :
+                      c.trend === "UP" ? "bg-green-950/60 text-green-400" :
+                      c.trend === "DOWN" ? "bg-red-950/60 text-red-400" :
                       "bg-gray-900 text-gray-500"
                     }`}>
                       {c.change_percentage > 0 ? "+" : ""}{c.change_percentage?.toFixed(1)}%

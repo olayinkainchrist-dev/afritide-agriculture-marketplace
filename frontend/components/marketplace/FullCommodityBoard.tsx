@@ -293,9 +293,9 @@ export default function FullCommodityBoard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Total",   value: allCommodities.length, color: "text-white" },
-          { label: "Rising",  value: allCommodities.filter((c: any) => c.trend === "UP"     || c.trend === "up").length,     color: "text-green-400" },
-          { label: "Falling", value: allCommodities.filter((c: any) => c.trend === "DOWN"   || c.trend === "down").length,   color: "text-red-400" },
-          { label: "Stable",  value: allCommodities.filter((c: any) => c.trend === "STABLE" || c.trend === "stable").length, color: "text-gray-400" },
+          { label: "Rising",  value: allCommodities.filter((c: any) => c.trend === "UP"     || c.trend === "UP").length,     color: "text-green-400" },
+          { label: "Falling", value: allCommodities.filter((c: any) => c.trend === "DOWN"   || c.trend === "DOWN").length,   color: "text-red-400" },
+          { label: "STABLE",  value: allCommodities.filter((c: any) => c.trend === "STABLE" || c.trend === "STABLE").length, color: "text-gray-400" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 text-center">
             <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -489,11 +489,11 @@ export default function FullCommodityBoard() {
 
                     <div className="col-span-2">
                       <div className={`flex items-center gap-1 text-sm font-bold ${
-                        (c.trend === "UP"   || c.trend === "up")   ? "text-green-400" :
-                        (c.trend === "DOWN" || c.trend === "down") ? "text-red-400"   : "text-gray-500"
+                        (c.trend === "UP"   || c.trend === "UP")   ? "text-green-400" :
+                        (c.trend === "DOWN" || c.trend === "DOWN") ? "text-red-400"   : "text-gray-500"
                       }`}>
-                        {(c.trend === "UP"   || c.trend === "up")   ? <ArrowUpRight className="w-4 h-4" />   :
-                         (c.trend === "DOWN" || c.trend === "down") ? <ArrowDownRight className="w-4 h-4" /> :
+                        {(c.trend === "UP"   || c.trend === "UP")   ? <ArrowUpRight className="w-4 h-4" />   :
+                         (c.trend === "DOWN" || c.trend === "DOWN") ? <ArrowDownRight className="w-4 h-4" /> :
                          <Minus className="w-4 h-4" />}
                         {c.change_percentage
                           ? `${c.change_percentage > 0 ? "+" : ""}${c.change_percentage.toFixed(1)}%`

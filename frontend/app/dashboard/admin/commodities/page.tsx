@@ -337,10 +337,10 @@ export default function AdminCommoditiesPage() {
                     </div>
                     <div className="col-span-1">
                       <span className={`text-sm font-black ${
-                        c.trend === "up"   ? "text-green-400" :
-                        c.trend === "down" ? "text-red-400"   : "text-gray-500"
+                        c.trend === "UP"   ? "text-green-400" :
+                        c.trend === "DOWN" ? "text-red-400"   : "text-gray-500"
                       }`}>
-                        {c.trend === "up" ? "▲" : c.trend === "down" ? "▼" : "—"}
+                        {c.trend === "UP" ? "▲" : c.trend === "DOWN" ? "▼" : "—"}
                         {c.change_percentage ? ` ${Math.abs(c.change_percentage).toFixed(1)}%` : ""}
                       </span>
                     </div>

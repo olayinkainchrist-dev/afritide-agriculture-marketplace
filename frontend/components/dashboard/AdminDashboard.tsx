@@ -335,11 +335,11 @@ export default function AdminDashboard({ user }: Props) {
                       <div className="text-right">
                         <p className="text-green-400 font-black">{formatPrice(c.price, c.currency)}</p>
                         <p className={`text-xs font-medium ${
-                          c.trend === "up" ? "text-green-400"
-                          : c.trend === "down" ? "text-red-400"
+                          c.trend === "UP" ? "text-green-400"
+                          : c.trend === "DOWN" ? "text-red-400"
                           : "text-gray-500"
                         }`}>
-                          {c.trend === "up" ? "▲" : c.trend === "down" ? "▼" : "—"}
+                          {c.trend === "UP" ? "▲" : c.trend === "DOWN" ? "▼" : "—"}
                           {c.change_percentage ? ` ${Math.abs(c.change_percentage).toFixed(1)}%` : ""}
                         </p>
                       </div>

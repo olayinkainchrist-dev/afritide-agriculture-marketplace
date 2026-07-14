@@ -49,14 +49,14 @@ export function getCategoryLabel(category: string): string {
 }
 
 export function getTrendColor(trend: string): string {
-  if (trend === "up") return "text-green-600";
-  if (trend === "down") return "text-red-600";
+  if (trend === "UP") return "text-green-600";
+  if (trend === "DOWN") return "text-red-600";
   return "text-gray-500";
 }
 
 export function getTrendIcon(trend: string): string {
-  if (trend === "up") return "▲";
-  if (trend === "down") return "▼";
+  if (trend === "UP") return "▲";
+  if (trend === "DOWN") return "▼";
   return "—";
 }
 
