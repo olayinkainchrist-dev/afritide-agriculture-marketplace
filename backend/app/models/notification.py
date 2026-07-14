@@ -32,7 +32,7 @@ class NotificationType(str, enum.Enum):
     PRICE_ALERT = "price_alert"
     SYSTEM = "system"
     ANNOUNCEMENT = "announcement"
-
+    NEW_ORDER = "new_order"
 
 class Notification(Base):
     __tablename__ = "notifications"

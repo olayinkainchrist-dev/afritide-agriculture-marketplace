@@ -288,3 +288,82 @@ def send_support_reply(to_email: str, name: str, topic: str, reply: str):
         </div>
     """
     _send_email(to_email, f"Re: {topic} — Afritide Support", _email_wrapper(content))
+
+def send_new_order_email(
+    to_email:     str,
+    first_name:   str,
+    order_number: str,
+    amount:       float,
+    currency:     str,
+    item_count:   int,
+    buyer_name:   str,
+):
+    content = f"""
+        <h2 style="color: #1A1A1A;">🛒 New Order Received!</h2>
+        <p style="color: #555; font-size: 15px;">
+            Hi {first_name}, you have received a new order from <strong>{buyer_name}</strong>.
+        </p>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #555; margin: 0 0 8px;"><strong>Order Number:</strong> {order_number}</p>
+            <p style="color: #555; margin: 0 0 8px;"><strong>Items:</strong> {item_count} item(s)</p>
+            <p style="color: #2E7D32; font-size: 22px; font-weight: bold; margin: 0;">
+                {currency} {amount:,.2f}
+            </p>
+        </div>
+        <p style="color: #555; font-size: 15px;">
+            Please log in to your dashboard to confirm this order and begin fulfillment.
+        </p>
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="https://www.afritidegroup.com/dashboard/farmer/orders"
+               style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+               View Order
+            </a>
+        </div>
+    """
+    _send_email(to_email, f"New Order Received — {order_number}", _email_wrapper(content))
+
+
+def send_order_status_email(
+    to_email:        str,
+    first_name:      str,
+    order_number:    str,
+    new_status:      str,
+    tracking_number: str = None,
+):
+    status_messages = {
+        "confirmed":  ("✅ Order Confirmed",   "Your order has been confirmed by the seller and is being prepared."),
+        "shipped":    ("🚚 Order Shipped",      "Your order is on its way!"),
+        "delivered":  ("📦 Order Delivered",   "Your order has been delivered. We hope you love it!"),
+        "completed":  ("🎉 Order Completed",   "Your order is complete. Thank you for shopping on Afritide!"),
+        "cancelled":  ("❌ Order Cancelled",   "Unfortunately your order has been cancelled."),
+    }
+
+    title, message = status_messages.get(new_status, ("Order Update", f"Your order status has changed to {new_status}."))
+    color = "#c62828" if new_status == "cancelled" else "#2E7D32"
+
+    tracking_html = ""
+    if tracking_number and new_status == "shipped":
+        tracking_html = f"""
+        <div style="background: #E3F2FD; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #1565C0;">
+            <p style="color: #1565C0; font-size: 14px; margin: 0; font-weight: bold;">
+                🔍 Tracking Number: {tracking_number}
+            </p>
+        </div>
+        """
+
+    content = f"""
+        <h2 style="color: #1A1A1A;">{title}</h2>
+        <p style="color: #555; font-size: 15px;">Hi {first_name}, {message}</p>
+        <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #555; margin: 0 0 4px; font-size: 14px;"><strong>Order:</strong> {order_number}</p>
+            <p style="color: {color}; font-size: 18px; font-weight: bold; margin: 0; text-transform: capitalize;">{new_status}</p>
+        </div>
+        {tracking_html}
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="https://www.afritidegroup.com/dashboard/buyer/orders"
+               style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+               Track My Order
+            </a>
+        </div>
+    """
+    _send_email(to_email, f"{title} — {order_number}", _email_wrapper(content))

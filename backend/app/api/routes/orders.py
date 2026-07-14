@@ -199,6 +199,22 @@ async def update_order_status(
     db.commit()
     db.refresh(order)
 
+    # Email buyer on status change
+    try:
+        from app.services.email import send_order_status_email
+        from app.models.user import User
+        buyer = db.query(User).filter(User.id == order.buyer_id).first()
+        if buyer:
+            send_order_status_email(
+                to_email=        buyer.email,
+                first_name=      buyer.first_name,
+                order_number=    order.order_number,
+                new_status=      order.status.value,
+                tracking_number= order.tracking_number,
+            )
+    except Exception:
+        pass
+
     return success_response(
         data   = OrderResponseSchema.from_orm(order).dict(),
         message= "Order updated successfully",

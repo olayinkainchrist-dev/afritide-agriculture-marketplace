@@ -14,7 +14,9 @@ from app.core.responses import success_response
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.product import Product
 from app.models.cart import Cart, CartItem
-from app.services.email import send_order_confirmation_email
+from app.models.user import User
+from app.models.notification import Notification, NotificationType
+from app.services.email import send_order_confirmation_email, send_new_order_email
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 
@@ -65,9 +67,9 @@ async def verify_paystack_payment(
     if data.get("data", {}).get("status") != "success":
         raise HTTPException(status_code=400, detail="Payment not successful")
 
-    amount_paid = data["data"]["amount"] / 100  # Convert from kobo
+    amount_paid = data["data"]["amount"] / 100
 
-    # Step 2 — Create order per seller (group items by seller)
+    # Step 2 — Create order per seller
     seller_groups: Dict[str, list] = {}
     for item in payload.cart_items:
         if item.seller_id not in seller_groups:
@@ -79,10 +81,9 @@ async def verify_paystack_payment(
     for seller_id, seller_items in seller_groups.items():
         subtotal      = sum(i.item_total for i in seller_items)
         platform_fee  = subtotal * PLATFORM_FEE
-        total         = subtotal  # Buyer paid subtotal only
-        seller_payout = subtotal - platform_fee  # Seller gets 95%
+        total         = subtotal
+        seller_payout = subtotal - platform_fee
 
-        # Generate order number
         order_number = f"AFR-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
 
         order = Order(
@@ -94,7 +95,7 @@ async def verify_paystack_payment(
             shipping_cost=    0.0,
             tax_amount=       0.0,
             platform_fee=     platform_fee,
-            total_amount=     total,  # What buyer paid
+            total_amount=     total,
             currency=         seller_items[0].currency,
             shipping_address= payload.shipping_address,
             shipping_method=  payload.shipping_method,
@@ -106,7 +107,6 @@ async def verify_paystack_payment(
         db.add(order)
         db.flush()
 
-        # Create order items
         for item in seller_items:
             order_item = OrderItem(
                 order_id=   order.id,
@@ -118,13 +118,20 @@ async def verify_paystack_payment(
             )
             db.add(order_item)
 
-            # Reduce product stock
             product = db.query(Product).filter(Product.id == uuid.UUID(item.product_id)).first()
             if product:
                 product.quantity_available = max(0, product.quantity_available - item.quantity)
                 product.order_count        = (product.order_count or 0) + 1
 
-        created_orders.append(order)
+        # Notify seller via in-app notification
+        db.add(Notification(
+            user_id= uuid.UUID(seller_id),
+            type=    NotificationType.NEW_ORDER,
+            title=   "New Order Received 🛒",
+            message= f"You have a new order {order_number} for {seller_items[0].currency} {subtotal:,.0f}. Please confirm it.",
+        ))
+
+        created_orders.append((order, seller_id, seller_items, subtotal))
 
     db.commit()
 
@@ -134,24 +141,42 @@ async def verify_paystack_payment(
         db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
         db.commit()
 
-    # Step 4 — Send confirmation email
+    # Step 4 — Email buyer confirmation
     try:
         send_order_confirmation_email(
-            current_user.email,
-            current_user.first_name,
-            created_orders[0].order_number,
-            amount_paid,
-            payload.cart_items[0].currency,
+            to_email=     current_user.email,
+            first_name=   current_user.first_name,
+            order_number= created_orders[0][0].order_number,
+            amount=       amount_paid,
+            currency=     payload.cart_items[0].currency,
         )
     except Exception:
-        pass  # Don't fail if email fails
+        pass
 
+    # Step 5 — Email each seller
+    for order, seller_id, seller_items, subtotal in created_orders:
+        try:
+            seller = db.query(User).filter(User.id == uuid.UUID(seller_id)).first()
+            if seller:
+                send_new_order_email(
+                    to_email=     seller.email,
+                    first_name=   seller.first_name,
+                    order_number= order.order_number,
+                    amount=       subtotal,
+                    currency=     seller_items[0].currency,
+                    item_count=   len(seller_items),
+                    buyer_name=   f"{current_user.first_name} {current_user.last_name}",
+                )
+        except Exception:
+            pass
+
+    first_order = created_orders[0][0]
     return success_response(
         data={
-            "order_id":    str(created_orders[0].id),
-            "order_number":created_orders[0].order_number,
-            "amount_paid": amount_paid,
-            "orders_count":len(created_orders),
+            "order_id":     str(first_order.id),
+            "order_number": first_order.order_number,
+            "amount_paid":  amount_paid,
+            "orders_count": len(created_orders),
         },
         message="Payment verified and order created successfully",
     )
