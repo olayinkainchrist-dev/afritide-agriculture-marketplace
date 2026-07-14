@@ -73,7 +73,7 @@ export default function FarmerOrdersPage() {
       }
       await apiClient.put(`/orders/${order.id}/status`, payload);
       toast.success(`Order marked as ${newStatus.toLowerCase()}`);
-      queryClient.invalidateQueries({ queryKey: ["farmer-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["farmer-orders-full"] });
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to update order");
     } finally {
