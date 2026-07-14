@@ -103,7 +103,7 @@ export default function AdminSourcingPage() {
 
         {/* Status filters */}
         <div className="flex gap-2 overflow-x-auto">
-          {["all", "open", "quoted", "accepted", "rejected"].map(s => (
+          {["all", "open", "quoted", "accepted", "REJECTED"].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all capitalize ${
                 statusFilter === s

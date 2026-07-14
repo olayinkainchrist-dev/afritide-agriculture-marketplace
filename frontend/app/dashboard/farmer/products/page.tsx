@@ -29,10 +29,10 @@ const NAV_ITEMS = [
 const STATUS_FILTERS = [
   { value: "all",            label: "All" },
   { value: "ACTIVE",         label: "ACTIVE" },
-  { value: "pending_review", label: "PENDING" },
-  { value: "draft",          label: "Draft" },
-  { value: "out_of_stock",   label: "Out of Stock" },
-  { value: "archived",       label: "Archived" },
+  { value: "PENDING_REVIEW", label: "PENDING" },
+  { value: "DRAFT",          label: "DRAFT" },
+  { value: "OUT_OF_STOCK",   label: "Out of Stock" },
+  { value: "ARCHIVED",       label: "ARCHIVED" },
 ];
 
 export default function FarmerProductsPage() {
@@ -224,11 +224,11 @@ function StatusBadge({ status }: { status: string }) {
   const config: Record<string, { label: string; class: string }> = {
     active:         { label: "ACTIVE",    class: "bg-green-500/20 text-green-400 border-green-700/40" },
     pending_review: { label: "PENDING",   class: "bg-amber-500/20 text-amber-400 border-amber-700/40" },
-    draft:          { label: "Draft",     class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
+    draft:          { label: "DRAFT",     class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
     out_of_stock:   { label: "No Stock",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
     suspended:      { label: "SUSPENDED", class: "bg-red-500/20 text-red-400 border-red-700/40" },
-    rejected:       { label: "Rejected",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
-    archived:       { label: "Archived",  class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
+    rejected:       { label: "REJECTED",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
+    archived:       { label: "ARCHIVED",  class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
   };
   const c = config[status] ?? { label: status, class: "bg-gray-500/20 text-gray-400 border-gray-700/40" };
   return (

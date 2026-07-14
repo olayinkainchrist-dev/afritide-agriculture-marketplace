@@ -445,7 +445,7 @@ export default function BuyerSourcingPage() {
               </div>
             )}
 
-            {selectedRFQ.status === "rejected" && (
+            {selectedRFQ.status === "REJECTED" && (
               <div className="bg-red-950/20 border border-red-800/20 rounded-2xl p-5 text-center">
                 <XCircle className="w-10 h-10 text-red-400 mx-auto mb-2" />
                 <p className="text-red-400 font-bold">Quotation Rejected</p>

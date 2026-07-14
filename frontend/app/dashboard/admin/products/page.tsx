@@ -26,9 +26,9 @@ const NAV_ITEMS = [
 ];
 
 const STATUS_TABS = [
-  { key: "pending_review", label: "Pending Review" },
+  { key: "PENDING_REVIEW", label: "Pending Review" },
   { key: "ACTIVE",         label: "Approved" },
-  { key: "rejected",       label: "Rejected" },
+  { key: "REJECTED",       label: "REJECTED" },
   { key: "all",            label: "All" },
 ];
 
@@ -45,7 +45,7 @@ export default function AdminProductsPage() {
   const router      = useRouter();
   const queryClient = useQueryClient();
 
-  const [activeTab,    setActiveTab]    = useState("pending_review");
+  const [activeTab,    setActiveTab]    = useState("PENDING_REVIEW");
   const [expandedId,   setExpandedId]   = useState<string | null>(null);
   const [approving,    setApproving]    = useState<string | null>(null);
   const [rejecting,    setRejecting]    = useState<string | null>(null);
@@ -122,7 +122,7 @@ export default function AdminProductsPage() {
                   : "bg-white/[0.04] text-gray-400 hover:text-white border border-white/[0.06]"
               }`}>
               {tab.label}
-              {tab.key === "pending_review" && products.length > 0 && activeTab === "pending_review" && (
+              {tab.key === "PENDING_REVIEW" && products.length > 0 && activeTab === "PENDING_REVIEW" && (
                 <span className="ml-2 bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
                   {products.length}
                 </span>
@@ -142,10 +142,10 @@ export default function AdminProductsPage() {
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <CheckCircle2 className="w-12 h-12 text-green-700 mb-3" />
               <h3 className="text-white font-bold mb-1">
-                {activeTab === "pending_review" ? "All caught up!" : "No products found"}
+                {activeTab === "PENDING_REVIEW" ? "All caught up!" : "No products found"}
               </h3>
               <p className="text-gray-600 text-sm">
-                {activeTab === "pending_review" ? "No products pending review" : "No products in this category"}
+                {activeTab === "PENDING_REVIEW" ? "No products pending review" : "No products in this category"}
               </p>
             </div>
           ) : (
@@ -204,7 +204,7 @@ export default function AdminProductsPage() {
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
 
-                        {product.status === "pending_review" && (
+                        {product.status === "PENDING_REVIEW" && (
                           <>
                             <button onClick={() => handleApprove(product.id)}
                               disabled={approving === product.id}
@@ -274,7 +274,7 @@ export default function AdminProductsPage() {
                               </div>
                             )}
 
-                            {product.status === "pending_review" && (
+                            {product.status === "PENDING_REVIEW" && (
                               <div className="flex gap-2 pt-2">
                                 <button onClick={() => handleApprove(product.id)}
                                   disabled={approving === product.id}
