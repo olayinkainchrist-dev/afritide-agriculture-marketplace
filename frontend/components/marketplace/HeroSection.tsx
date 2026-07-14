@@ -29,10 +29,17 @@ export default function HeroSection() {
     else router.push("/marketplace");
   };
 
+  const role = user?.role?.toUpperCase();
+
+  const getDashboardHref = () => {
+    if (role === "ADMIN") return "/dashboard/admin";
+    if (role === "BUYER") return "/dashboard/buyer";
+    return "/dashboard/farmer";
+  };
+
   return (
     <section className="relative min-h-[94vh] flex flex-col justify-center overflow-hidden bg-[#060f08]">
 
-      {/* Background layers */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_-5%,_#14532d55_0%,_transparent_72%)]" />
         <div className="absolute inset-0 opacity-[0.055]"
@@ -49,7 +56,6 @@ export default function HeroSection() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-28">
         <div className="max-w-4xl mx-auto text-center">
 
-          {/* Live badge */}
           <div className="inline-flex items-center gap-3 bg-green-950/70 border border-green-800/50 rounded-full px-5 py-2 mb-10 backdrop-blur-sm">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -60,7 +66,6 @@ export default function HeroSection() {
             </span>
           </div>
 
-          {/* Headline */}
           <h1 className="text-[clamp(2.6rem,7.5vw,5.2rem)] font-black leading-[1.02] tracking-tight text-white mb-3">
             Where African Farms
           </h1>
@@ -70,7 +75,6 @@ export default function HeroSection() {
             </span>
           </h1>
 
-          {/* Sub-headline */}
           <p className="text-gray-400 text-[1.15rem] md:text-xl max-w-2xl mx-auto mb-3 leading-relaxed">
             The most trusted B2B agricultural marketplace in Africa.
           </p>
@@ -78,7 +82,6 @@ export default function HeroSection() {
             Source verified commodities — from cocoa to cattle — directly from 10,000+ KYC-verified farmers and exporters. No middlemen. No uncertainty.
           </p>
 
-          {/* Search */}
           <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-7">
             <div className="relative flex items-center bg-white/[0.055] border border-white/[0.09] rounded-2xl p-1.5 backdrop-blur-md focus-within:border-green-600/50 focus-within:bg-white/[0.07] transition-all shadow-2xl shadow-black/60">
               <Search className="ml-3 w-5 h-5 text-gray-600 flex-shrink-0" />
@@ -90,17 +93,13 @@ export default function HeroSection() {
                 placeholder="Search cocoa, palm oil, cattle, sesame..."
                 className="flex-1 bg-transparent text-white placeholder-gray-600 px-4 py-3 text-[0.95rem] focus:outline-none"
               />
-              <button
-                type="submit"
-                onClick={() => handleSearch()}
-                className="bg-green-500 hover:bg-green-400 active:bg-green-600 text-white font-bold px-7 py-3 rounded-xl transition-all flex items-center gap-2 text-sm shadow-lg shadow-green-900/40 whitespace-nowrap"
-              >
+              <button type="submit" onClick={() => handleSearch()}
+                className="bg-green-500 hover:bg-green-400 active:bg-green-600 text-white font-bold px-7 py-3 rounded-xl transition-all flex items-center gap-2 text-sm shadow-lg shadow-green-900/40 whitespace-nowrap">
                 Search <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </form>
 
-          {/* Tags */}
           <div className="flex flex-wrap justify-center gap-2 mb-12">
             <span className="text-xs text-gray-700 py-1.5 self-center">Trending:</span>
             {tags.map((tag) => (
@@ -111,22 +110,16 @@ export default function HeroSection() {
             ))}
           </div>
 
-          {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-20">
             {isAuthenticated && user ? (
               <>
                 <Link
-                  href={user.role === "buyer" ? "/marketplace" : "/dashboard/farmer/products"}
+                  href={role === "BUYER" ? "/marketplace" : "/dashboard/farmer/products"}
                   className="group bg-green-500 hover:bg-green-400 active:bg-green-600 text-white font-bold px-9 py-4 rounded-2xl transition-all shadow-xl shadow-green-900/40 flex items-center justify-center gap-2 text-[0.95rem]">
-                  {user.role === "buyer" ? "Browse Marketplace" : "My Products"}
+                  {role === "BUYER" ? "Browse Marketplace" : "My Products"}
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <Link
-                  href={
-                    user.role === "admin"  ? "/dashboard/admin" :
-                    user.role === "buyer"  ? "/dashboard/buyer" :
-                    "/dashboard/farmer"
-                  }
+                <Link href={getDashboardHref()}
                   className="bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.1] hover:border-green-700/50 text-white font-bold px-9 py-4 rounded-2xl transition-all backdrop-blur-sm flex items-center justify-center text-[0.95rem]">
                   My Dashboard
                 </Link>
@@ -150,7 +143,6 @@ export default function HeroSection() {
             </Link>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {stats.map((s) => (
               <div key={s.label}
@@ -165,7 +157,6 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Bottom trust bar */}
       <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.05] bg-white/[0.02] backdrop-blur-sm py-3">
         <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-8 text-xs text-gray-600 font-medium tracking-wide">
           {[

@@ -20,12 +20,12 @@ const schema = z.object({
   title:                  z.string().min(3, "Title must be at least 3 characters"),
   description:            z.string().optional(),
   short_description:      z.string().optional(),
-  category:               z.enum(["livestock","dairy","cash_crops","fruits","vegetables","fishery","poultry","machinery","seeds","fertilizers"]),
+  category:               z.enum(["LIVESTOCK","DAIRY","CASH_CROPS","FRUITS","VEGETABLES","FISHERY","POULTRY","MACHINERY","SEEDS","FERTILIZERS"]),
   price:                  z.number().positive("Price must be greater than 0"),
   currency:               z.string().min(1).default("USD"),
   is_negotiable:          z.boolean().default(false),
   minimum_order_quantity: z.number().positive().default(1),
-  unit:                   z.enum(["kg","tonne","gram","litre","piece","bag","crate","dozen","bunch","head","unit"]),
+  unit:                   z.enum(["KG","TONNE","GRAM","LITRE","PIECE","BAG","CRATE","DOZEN","BUNCH","HEAD","UNIT"]),
   quantity_available:     z.number().positive("Enter available quantity"),
   is_organic:             z.boolean().default(false),
   is_export_ready:        z.boolean().default(false),
@@ -39,19 +39,19 @@ const schema = z.object({
 type FormData = z.input<typeof schema>;
 
 const CATEGORIES = [
-  { value: "livestock",   label: "Livestock",   emoji: "🐄" },
-  { value: "cash_crops",  label: "Cash Crops",  emoji: "🌿" },
-  { value: "dairy",       label: "Dairy",       emoji: "🥛" },
-  { value: "fruits",      label: "Fruits",      emoji: "🥭" },
-  { value: "vegetables",  label: "Vegetables",  emoji: "🥬" },
-  { value: "fishery",     label: "Fishery",     emoji: "🐟" },
-  { value: "poultry",     label: "Poultry",     emoji: "🐔" },
-  { value: "machinery",   label: "Machinery",   emoji: "🚜" },
-  { value: "seeds",       label: "Seeds",       emoji: "🌱" },
-  { value: "fertilizers", label: "Fertilizers", emoji: "🧪" },
+  { value: "LIVESTOCK",   label: "Livestock",   emoji: "🐄" },
+  { value: "CASH_CROPS",  label: "Cash Crops",  emoji: "🌿" },
+  { value: "DAIRY",       label: "Dairy",       emoji: "🥛" },
+  { value: "FRUITS",      label: "Fruits",      emoji: "🥭" },
+  { value: "VEGETABLES",  label: "Vegetables",  emoji: "🥬" },
+  { value: "FISHERY",     label: "Fishery",     emoji: "🐟" },
+  { value: "POULTRY",     label: "Poultry",     emoji: "🐔" },
+  { value: "MACHINERY",   label: "Machinery",   emoji: "🚜" },
+  { value: "SEEDS",       label: "Seeds",       emoji: "🌱" },
+  { value: "FERTILIZERS", label: "Fertilizers", emoji: "🧪" },
 ];
 
-const UNITS      = ["kg","tonne","gram","litre","piece","bag","crate","dozen","bunch","head","unit"];
+const UNITS      = ["KG","TONNE","GRAM","LITRE","PIECE","BAG","CRATE","DOZEN","BUNCH","HEAD","UNIT"];
 const CURRENCIES = ["USD","NGN","GBP","EUR","GHS","CFA"];
 
 const DELIVERY_OPTIONS = [
@@ -79,7 +79,7 @@ export default function NewProductPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       currency:               "NGN",
-      unit:                   "kg",
+      unit:                   "KG",
       minimum_order_quantity: 1,
       is_organic:             false,
       is_export_ready:        false,

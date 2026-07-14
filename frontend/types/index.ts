@@ -1,12 +1,12 @@
 // ── USER TYPES ────────────────────────────────────────────────────────────────
 
 export type UserRole =
-  | "buyer" | "farmer" | "cooperative" | "exporter"
-  | "processing_company" | "logistics_provider"
-  | "warehouse_operator" | "government_agency" | "admin";
+  | "BUYER" | "FARMER" | "COOPERATIVE" | "EXPORTER"
+  | "PROCESSING_COMPANY" | "LOGISTICS_PROVIDER"
+  | "WAREHOUSE_OPERATOR" | "GOVERNMENT_AGENCY" | "ADMIN";
 
-export type UserStatus = "pending" | "active" | "under_review" | "verified" | "suspended" | "banned";
-export type VerificationBadge = "none" | "verified_farmer" | "verified_exporter" | "gold_supplier" | "premium_seller";
+export type UserStatus = "PENDING" | "ACTIVE" | "UNDER_REVIEW" | "VERIFIED" | "SUSPENDED" | "BANNED";
+export type VerificationBadge = "NONE" | "VERIFIED_FARMER" | "VERIFIED_EXPORTER" | "GOLD_SUPPLIER" | "PREMIUM_SELLER";
 
 export interface User {
   id:                   string;
@@ -56,13 +56,13 @@ export interface AuthResponse {
 // ── PRODUCT TYPES ─────────────────────────────────────────────────────────────
 
 export type ProductCategory =
-  | "livestock" | "dairy" | "cash_crops" | "fruits"
-  | "vegetables" | "fishery" | "poultry" | "machinery"
-  | "seeds" | "fertilizers";
+  | "LIVESTOCK" | "DAIRY" | "CASH_CROPS" | "FRUITS"
+  | "VEGETABLES" | "FISHERY" | "POULTRY" | "MACHINERY"
+  | "SEEDS" | "FERTILIZERS";
 
-export type ProductStatus = "draft" | "pending_review" | "active" | "out_of_stock" | "suspended" | "archived";
-export type UnitOfMeasure = "kg" | "tonne" | "gram" | "litre" | "piece" | "bag" | "crate" | "dozen" | "bunch" | "head" | "unit";
-export type ProductGrade  = "grade_a" | "grade_b" | "grade_c" | "premium" | "standard" | "organic" | "export_quality";
+export type ProductStatus = "DRAFT" | "PENDING_REVIEW" | "ACTIVE" | "OUT_OF_STOCK" | "SUSPENDED" | "ARCHIVED";
+export type UnitOfMeasure = "KG" | "TONNE" | "GRAM" | "LITRE" | "PIECE" | "BAG" | "CRATE" | "DOZEN" | "BUNCH" | "HEAD" | "UNIT";
+export type ProductGrade  = "GRADE_A" | "GRADE_B" | "GRADE_C" | "PREMIUM" | "STANDARD" | "ORGANIC" | "EXPORT_QUALITY";
 
 export interface PriceTier {
   min_qty: number;
@@ -132,8 +132,8 @@ export interface Product {
 // ── ORDER TYPES ───────────────────────────────────────────────────────────────
 
 export type OrderStatus =
-  | "pending" | "confirmed" | "processing" | "shipped"
-  | "delivered" | "completed" | "cancelled" | "disputed" | "refunded";
+  | "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED"
+  | "DELIVERED" | "COMPLETED" | "CANCELLED" | "DISPUTED" | "REFUNDED";
 
 export interface OrderItem {
   product_id:        string;
@@ -166,29 +166,29 @@ export interface Order {
 
 // ── RFQ TYPES ─────────────────────────────────────────────────────────────────
 
-export type RFQStatus = "open" | "quoted" | "accepted" | "rejected" | "converted" | "expired" | "cancelled";
+export type RFQStatus = "OPEN" | "QUOTED" | "ACCEPTED" | "REJECTED" | "CONVERTED" | "EXPIRED" | "CANCELLED";
 
 export interface RFQ {
-  id:               string;
-  rfq_number:       string;
-  buyer_id:         string;
-  seller_id?:       string;
-  product_name:     string;
-  quantity:         number;
-  unit:             string;
-  target_price?:    number;
-  currency:         string;
-  status:           RFQStatus;
-  quoted_price?:    number;
+  id:                string;
+  rfq_number:        string;
+  buyer_id:          string;
+  seller_id?:        string;
+  product_name:      string;
+  quantity:          number;
+  unit:              string;
+  target_price?:     number;
+  currency:          string;
+  status:            RFQStatus;
+  quoted_price?:     number;
   quote_valid_until?:string;
   delivery_country?: string;
-  delivery_date?:   string;
-  created_at:       string;
+  delivery_date?:    string;
+  created_at:        string;
 }
 
 // ── COMMODITY TYPES ───────────────────────────────────────────────────────────
 
-export type PriceTrend = "up" | "down" | "stable";
+export type PriceTrend = "UP" | "DOWN" | "STABLE";
 
 export interface CommodityPrice {
   id:                string;

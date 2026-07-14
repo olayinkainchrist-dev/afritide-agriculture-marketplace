@@ -13,10 +13,14 @@ export const useAuth = () => {
       if (res.success && res.data) {
         setAuth(res.data.user, res.data.access_token, res.data.refresh_token);
         toast.success("Welcome back!");
-        const role = res.data.user.role;
-        if (role === "admin") router.push("/dashboard/admin");
-        else if (["farmer", "cooperative", "exporter", "processing_company", "logistics_provider", "warehouse_operator"].includes(role)) router.push("/dashboard/farmer");
-        else router.push("/dashboard/buyer");
+        const role = res.data.user.role?.toUpperCase();
+        if (role === "ADMIN") {
+          router.push("/dashboard/admin");
+        } else if (["FARMER", "COOPERATIVE", "EXPORTER", "PROCESSING_COMPANY", "LOGISTICS_PROVIDER", "WAREHOUSE_OPERATOR"].includes(role)) {
+          router.push("/dashboard/farmer");
+        } else {
+          router.push("/dashboard/buyer");
+        }
       }
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Login failed");

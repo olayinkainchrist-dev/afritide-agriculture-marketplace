@@ -10,22 +10,22 @@ import apiClient from "@/lib/api/client";
 import { useCartStore } from "@/lib/store/cart.store";
 
 const categories = [
-  { label: "🐄 Livestock",   href: "/marketplace?category=livestock" },
-  { label: "🌿 Cash Crops",  href: "/marketplace?category=cash_crops" },
-  { label: "🥛 Dairy",       href: "/marketplace?category=dairy" },
-  { label: "🥭 Fruits",      href: "/marketplace?category=fruits" },
-  { label: "🥬 Vegetables",  href: "/marketplace?category=vegetables" },
-  { label: "🐟 Fishery",     href: "/marketplace?category=fishery" },
-  { label: "🚜 Machinery",   href: "/marketplace?category=machinery" },
+  { label: "🐄 Livestock",   href: "/marketplace?category=LIVESTOCK" },
+  { label: "🌿 Cash Crops",  href: "/marketplace?category=CASH_CROPS" },
+  { label: "🥛 Dairy",       href: "/marketplace?category=DAIRY" },
+  { label: "🥭 Fruits",      href: "/marketplace?category=FRUITS" },
+  { label: "🥬 Vegetables",  href: "/marketplace?category=VEGETABLES" },
+  { label: "🐟 Fishery",     href: "/marketplace?category=FISHERY" },
+  { label: "🚜 Machinery",   href: "/marketplace?category=MACHINERY" },
 ];
 
 export default function Navbar() {
-  const [mobileOpen, setMobileOpen]   = useState(false);
-  const [catOpen,    setCatOpen]      = useState(false);
-  const [query,      setQuery]        = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showDrop,   setShowDrop]     = useState(false);
-  const [loading,    setLoading]      = useState(false);
+  const [mobileOpen,   setMobileOpen]   = useState(false);
+  const [catOpen,      setCatOpen]      = useState(false);
+  const [query,        setQuery]        = useState("");
+  const [suggestions,  setSuggestions]  = useState<string[]>([]);
+  const [showDrop,     setShowDrop]     = useState(false);
+  const [loading,      setLoading]      = useState(false);
   const searchRef   = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const router = useRouter();
@@ -77,9 +77,15 @@ export default function Navbar() {
     if (e.key === "Escape") setShowDrop(false);
   };
 
+  const getDashboardHref = () => {
+    const role = user?.role?.toUpperCase();
+    if (role === "ADMIN") return "/dashboard/admin";
+    if (role === "BUYER") return "/dashboard/buyer";
+    return "/dashboard/farmer";
+  };
+
   return (
     <nav className="bg-[#060f08]/95 backdrop-blur-xl border-b border-white/[0.06] sticky top-0 z-50">
-      {/* Top announcement bar */}
       <div className="bg-green-500/10 border-b border-green-900/40 text-center py-2 px-4">
         <p className="text-green-400 text-xs font-medium">
           🌍 Africa&apos;s #1 Agricultural Marketplace —{" "}
@@ -90,7 +96,6 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 h-16">
 
-          {/* Logo */}
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
               <Leaf className="w-4 h-4 text-white" />
@@ -98,7 +103,6 @@ export default function Navbar() {
             <span className="text-lg font-black text-white">Afritide Group</span>
           </Link>
 
-          {/* Search with autocomplete */}
           <div className="hidden md:flex flex-1 max-w-lg mx-4" ref={searchRef}>
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
@@ -117,8 +121,6 @@ export default function Navbar() {
                   <X className="w-3.5 h-3.5 text-gray-600 hover:text-white transition-colors" />
                 </button>
               )}
-
-              {/* Autocomplete dropdown */}
               {showDrop && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-[#0a1a0f] border border-white/[0.08] rounded-xl shadow-2xl py-2 z-50 max-h-64 overflow-y-auto">
                   {loading ? (
@@ -150,7 +152,6 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Nav links */}
           <div className="hidden lg:flex items-center gap-1">
             <div className="relative" onMouseEnter={() => setCatOpen(true)} onMouseLeave={() => setCatOpen(false)}>
               <button className="flex items-center gap-1 text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
@@ -175,11 +176,9 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Right */}
           <div className="flex items-center gap-2 ml-auto">
             {isAuthenticated && user ? (
               <>
-                {/* Cart icon */}
                 <Link href="/cart" className="relative p-2 text-gray-500 hover:text-white transition-colors">
                   <ShoppingCart className="w-5 h-5" />
                   {itemCount() > 0 && (
@@ -205,23 +204,23 @@ export default function Navbar() {
                   <div className="absolute right-0 top-full mt-1 w-48 bg-[#0a1a0f] border border-white/[0.08] rounded-xl shadow-2xl py-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                     <div className="px-4 py-2 border-b border-white/[0.06] mb-1">
                       <p className="text-white text-sm font-medium">{user.first_name} {user.last_name}</p>
-                      <p className="text-gray-600 text-xs capitalize">{user.role}</p>
+                      <p className="text-gray-600 text-xs capitalize">{user.role?.toLowerCase()}</p>
                     </div>
-                    <Link href={
-                      user.role === "admin" ? "/dashboard/admin" :
-                      user.role === "buyer" ? "/dashboard/buyer" :
-                      "/dashboard/farmer"
-                    } className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
+                    <Link href={getDashboardHref()}
+                      className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
                       Dashboard
                     </Link>
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
+                    <Link href="/profile"
+                      className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
                       Profile
                     </Link>
-                    <Link href="/cart" className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
+                    <Link href="/cart"
+                      className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
                       🛒 Cart {itemCount() > 0 && `(${itemCount()})`}
                     </Link>
                     <hr className="my-1 border-white/[0.06]" />
-                    <button onClick={logout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-950/30 transition-colors">
+                    <button onClick={logout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-950/30 transition-colors">
                       Logout
                     </button>
                   </div>
@@ -229,10 +228,12 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link href="/login" className="text-sm font-medium text-gray-400 hover:text-white px-4 py-2 rounded-xl hover:bg-white/[0.05] transition-all">
+                <Link href="/login"
+                  className="text-sm font-medium text-gray-400 hover:text-white px-4 py-2 rounded-xl hover:bg-white/[0.05] transition-all">
                   Login
                 </Link>
-                <Link href="/register" className="text-sm font-bold bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl transition-colors shadow-lg shadow-green-900/30">
+                <Link href="/register"
+                  className="text-sm font-bold bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl transition-colors shadow-lg shadow-green-900/30">
                   Get Started
                 </Link>
               </>
@@ -244,7 +245,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile */}
       {mobileOpen && (
         <div className="lg:hidden border-t border-white/[0.06] bg-[#080f09] px-4 py-4 space-y-1">
           <div className="relative mb-4">
