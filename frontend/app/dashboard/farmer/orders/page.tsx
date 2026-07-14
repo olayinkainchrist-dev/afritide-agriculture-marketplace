@@ -50,7 +50,7 @@ export default function FarmerOrdersPage() {
   }, [hasHydrated, isAuthenticated, router]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["farmer-orders"],
+    queryKey: ["farmer-orders-full"],
     queryFn: async () => {
       const res = await apiClient.get("/orders?role=seller&page_size=100");
       return res.data;
