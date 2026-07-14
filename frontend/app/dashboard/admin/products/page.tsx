@@ -42,8 +42,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AdminProductsPage() {
   const { user, isAuthenticated } = useAuthStore();
-  const router       = useRouter();
-  const queryClient  = useQueryClient();
+  const router      = useRouter();
+  const queryClient = useQueryClient();
 
   const [activeTab,    setActiveTab]    = useState("pending_review");
   const [expandedId,   setExpandedId]   = useState<string | null>(null);
@@ -60,13 +60,8 @@ export default function AdminProductsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-products", activeTab],
     queryFn: async () => {
-      if (activeTab === "pending_review") {
-        const res = await apiClient.get("/admin/products/pending?page_size=100");
-        return res.data;
-      }
-      const params = new URLSearchParams({ page_size: "100" });
-      if (activeTab !== "all") params.append("status", activeTab);
-      const res = await apiClient.get(`/products?${params}`);
+      const params = new URLSearchParams({ page_size: "100", status: activeTab });
+      const res = await apiClient.get(`/admin/products?${params}`);
       return res.data;
     },
     enabled: isAuthenticated,
@@ -168,7 +163,6 @@ export default function AdminProductsPage() {
                   <div key={product.id}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors items-center">
 
-                      {/* Product info */}
                       <div className="col-span-5 flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/[0.04] border border-white/[0.08] flex-shrink-0">
                           {product.main_image
@@ -184,7 +178,6 @@ export default function AdminProductsPage() {
                         </div>
                       </div>
 
-                      {/* Price */}
                       <div className="col-span-2">
                         <p className="text-green-400 font-black text-sm">
                           {formatPrice(product.price, product.currency)}
@@ -192,12 +185,10 @@ export default function AdminProductsPage() {
                         <p className="text-gray-700 text-[10px]">per {product.unit}</p>
                       </div>
 
-                      {/* Date */}
                       <div className="col-span-2">
                         <p className="text-gray-500 text-xs">{formatDate(product.created_at)}</p>
                       </div>
 
-                      {/* Status */}
                       <div className="col-span-1">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize ${
                           STATUS_COLORS[product.status] ?? "bg-gray-500/20 text-gray-400 border-gray-700/40"
@@ -206,7 +197,6 @@ export default function AdminProductsPage() {
                         </span>
                       </div>
 
-                      {/* Actions */}
                       <div className="col-span-2 flex items-center gap-2">
                         <button onClick={() => setExpandedId(isExpanded ? null : product.id)}
                           className="p-1.5 text-gray-600 hover:text-white hover:bg-white/[0.05] rounded-lg transition-all">
@@ -234,12 +224,9 @@ export default function AdminProductsPage() {
                       </div>
                     </div>
 
-                    {/* Expanded product detail */}
                     {isExpanded && (
                       <div className="px-5 pb-5 bg-white/[0.01] border-t border-white/[0.04]">
                         <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                          {/* Images */}
                           {product.images?.length > 0 && (
                             <div>
                               <p className="text-gray-600 text-[10px] uppercase tracking-widest font-bold mb-2">Images</p>
@@ -252,19 +239,18 @@ export default function AdminProductsPage() {
                             </div>
                           )}
 
-                          {/* Details */}
                           <div className="space-y-3">
                             <p className="text-gray-600 text-[10px] uppercase tracking-widest font-bold">Details</p>
                             <div className="grid grid-cols-2 gap-2">
                               {[
-                                { label: "Category",    value: getCategoryLabel(product.category) },
-                                { label: "Price",       value: formatPrice(product.price, product.currency) },
-                                { label: "Stock",       value: `${product.quantity_available} ${product.unit}` },
-                                { label: "Min Order",   value: `${product.minimum_order_quantity} ${product.unit}` },
-                                { label: "Location",    value: [product.city, product.state, product.country].filter(Boolean).join(", ") || "—" },
-                                { label: "Organic",     value: product.is_organic ? "Yes" : "No" },
-                                { label: "Export Ready",value: product.is_export_ready ? "Yes" : "No" },
-                                { label: "Negotiable",  value: product.is_negotiable ? "Yes" : "No" },
+                                { label: "Category",     value: getCategoryLabel(product.category) },
+                                { label: "Price",        value: formatPrice(product.price, product.currency) },
+                                { label: "Stock",        value: `${product.quantity_available} ${product.unit}` },
+                                { label: "Min Order",    value: `${product.minimum_order_quantity} ${product.unit}` },
+                                { label: "Location",     value: [product.city, product.state, product.country].filter(Boolean).join(", ") || "—" },
+                                { label: "Organic",      value: product.is_organic ? "Yes" : "No" },
+                                { label: "Export Ready", value: product.is_export_ready ? "Yes" : "No" },
+                                { label: "Negotiable",   value: product.is_negotiable ? "Yes" : "No" },
                               ].map(({ label, value }) => (
                                 <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
                                   <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-0.5">{label}</p>
@@ -277,6 +263,13 @@ export default function AdminProductsPage() {
                               <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3">
                                 <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-1">Description</p>
                                 <p className="text-gray-400 text-xs leading-relaxed line-clamp-4">{product.description}</p>
+                              </div>
+                            )}
+
+                            {product.rejection_reason && (
+                              <div className="bg-red-950/20 border border-red-800/30 rounded-xl p-3">
+                                <p className="text-red-400 text-[10px] uppercase tracking-wide mb-1">Rejection Reason</p>
+                                <p className="text-red-300 text-xs">{product.rejection_reason}</p>
                               </div>
                             )}
 
@@ -310,7 +303,6 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
-      {/* Reject Modal */}
       {rejectModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a1a0f] border border-white/[0.08] rounded-2xl p-6 w-full max-w-md">
