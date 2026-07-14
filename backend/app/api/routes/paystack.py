@@ -82,7 +82,6 @@ async def verify_paystack_payment(
         subtotal      = sum(i.item_total for i in seller_items)
         platform_fee  = subtotal * PLATFORM_FEE
         total         = subtotal
-        seller_payout = subtotal - platform_fee
 
         order_number = f"AFR-{datetime.utcnow().strftime('%Y%m%d')}-{str(uuid.uuid4())[:6].upper()}"
 
@@ -123,20 +122,9 @@ async def verify_paystack_payment(
                 product.quantity_available = max(0, product.quantity_available - item.quantity)
                 product.order_count        = (product.order_count or 0) + 1
 
-        # Notify seller — do NOT rollback on failure
-        try:
-            db.add(Notification(
-                user_id= uuid.UUID(seller_id),
-                type=    NotificationType.NEW_ORDER,
-                title=   "New Order Received 🛒",
-                message= f"You have a new order {order_number} for {seller_items[0].currency} {subtotal:,.0f}. Please confirm it.",
-            ))
-        except Exception:
-            pass
-
         created_orders.append((order, seller_id, seller_items, subtotal))
 
-    # Commit all orders and notifications together
+    # Commit orders first — isolated from notifications
     db.commit()
 
     # Step 3 — Clear cart
@@ -145,7 +133,20 @@ async def verify_paystack_payment(
         db.query(CartItem).filter(CartItem.cart_id == cart.id).delete()
         db.commit()
 
-    # Step 4 — Email buyer confirmation
+    # Step 4 — Notify sellers — separate transaction, never blocks order
+    for order, seller_id, seller_items, subtotal in created_orders:
+        try:
+            db.add(Notification(
+                user_id= uuid.UUID(seller_id),
+                type=    NotificationType.NEW_ORDER,
+                title=   "New Order Received 🛒",
+                message= f"You have a new order {order.order_number} for {seller_items[0].currency} {subtotal:,.0f}. Please confirm it.",
+            ))
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    # Step 5 — Email buyer confirmation
     try:
         send_order_confirmation_email(
             to_email=     current_user.email,
@@ -157,7 +158,7 @@ async def verify_paystack_payment(
     except Exception:
         pass
 
-    # Step 5 — Email each seller
+    # Step 6 — Email each seller
     for order, seller_id, seller_items, subtotal in created_orders:
         try:
             seller = db.query(User).filter(User.id == uuid.UUID(seller_id)).first()
