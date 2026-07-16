@@ -4,25 +4,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth.store";
 import {
-  Leaf, LayoutDashboard, Package, ShoppingCart,
-  MessageSquare, FileText, TrendingUp,
-  Settings, LogOut, Menu, X, BadgeCheck,
-  Users, BarChart3, Shield,
+  Leaf, Settings, LogOut, Menu, X, BadgeCheck,
 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import NotificationBell from "@/components/shared/NotificationBell";
+import TradingAssistant from "@/components/ai/TradingAssistant";
 
 interface NavItem {
   label: string;
-  href: string;
-  icon: React.ElementType;
+  href:  string;
+  icon:  React.ElementType;
   badge?: number;
 }
 
 interface Props {
-  children: React.ReactNode;
-  navItems: NavItem[];
-  title: string;
+  children:  React.ReactNode;
+  navItems:  NavItem[];
+  title:     string;
 }
 
 export default function DashboardLayout({ children, navItems, title }: Props) {
@@ -33,9 +31,8 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
   return (
     <div className="min-h-screen bg-[#060f08] flex">
 
-      {/* ── Sidebar ───────────────────────────────────────── */}
+      {/* Sidebar */}
       <>
-        {/* Mobile overlay */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
@@ -76,7 +73,9 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
                   </p>
                   {user?.badge !== "NONE" && <BadgeCheck className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />}
                 </div>
-                <p className="text-gray-600 text-xs capitalize truncate">{user?.role?.replace("_", " ")}</p>
+                <p className="text-gray-600 text-xs capitalize truncate">
+                  {user?.role?.replace(/_/g, " ").toLowerCase()}
+                </p>
               </div>
             </div>
           </div>
@@ -112,14 +111,13 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
 
           {/* Bottom actions */}
           <div className="p-3 border-t border-white/[0.06] space-y-1">
-            <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-white/[0.05] transition-all">
+            <Link href="/settings"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-white hover:bg-white/[0.05] transition-all">
               <Settings className="w-4 h-4" />
               <span className="text-sm font-medium">Settings</span>
             </Link>
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:text-red-400 hover:bg-red-950/30 transition-all"
-            >
+            <button onClick={logout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:text-red-400 hover:bg-red-950/30 transition-all">
               <LogOut className="w-4 h-4" />
               <span className="text-sm font-medium">Logout</span>
             </button>
@@ -127,7 +125,7 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
         </aside>
       </>
 
-      {/* ── Main content ─────────────────────────────────── */}
+      {/* Main content */}
       <div className="flex-1 min-w-0 lg:ml-64 flex flex-col min-h-screen">
 
         {/* Top bar */}
@@ -135,8 +133,7 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 text-gray-500 hover:text-white rounded-lg hover:bg-white/[0.05] transition-all"
-            >
+              className="lg:hidden p-2 text-gray-500 hover:text-white rounded-lg hover:bg-white/[0.05] transition-all">
               <Menu className="w-5 h-5" />
             </button>
             <div>
@@ -149,7 +146,8 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
 
           <div className="flex items-center gap-2">
             <NotificationBell />
-            <Link href="/marketplace" className="hidden sm:flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 bg-green-950/40 border border-green-800/40 px-3 py-2 rounded-xl transition-colors font-medium">
+            <Link href="/marketplace"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 bg-green-950/40 border border-green-800/40 px-3 py-2 rounded-xl transition-colors font-medium">
               View Marketplace →
             </Link>
           </div>
@@ -160,6 +158,9 @@ export default function DashboardLayout({ children, navItems, title }: Props) {
           {children}
         </main>
       </div>
+
+      {/* AI Trading Assistant — floating on all dashboard pages */}
+      <TradingAssistant />
     </div>
   );
 }
