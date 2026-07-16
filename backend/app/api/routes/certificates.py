@@ -58,7 +58,7 @@ async def upload_kyc_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    url = await upload_image(file, folder="kyc-documents")
+    url = await upload_document(file, folder="kyc-documents")
     if not url:
         raise HTTPException(status_code=400, detail="Document upload failed")
     return success_response(
