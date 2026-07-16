@@ -67,8 +67,10 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
-        // Refresh user data on every app load
-        state?.refreshUser();
+        // Refresh user data after hydration — slight delay to ensure token is available
+        setTimeout(() => {
+          state?.refreshUser();
+        }, 500);
       },
     }
   )
