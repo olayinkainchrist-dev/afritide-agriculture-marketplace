@@ -111,18 +111,30 @@ class Product(Base):
     is_negotiable          = Column(Boolean, default=False, nullable=False)
     minimum_order_quantity = Column(Float, default=1.0, nullable=False)
     unit                   = Column(Enum(UnitOfMeasure), default=UnitOfMeasure.KG, nullable=False)
-    price_tiers = Column(JSON, nullable=True)  # [{min_qty, max_qty, price}]
-    
+    price_tiers            = Column(JSON, nullable=True)
+
     # Stock
     quantity_available = Column(Float, nullable=False)
     quantity_unit      = Column(String(50), nullable=True)
     restock_date       = Column(DateTime, nullable=True)
 
-    # Quality
+    # Quality — core
     grade           = Column(Enum(ProductGrade), nullable=True)
     is_organic      = Column(Boolean, default=False, nullable=False)
     is_export_ready = Column(Boolean, default=False, nullable=False)
-    certifications  = Column(JSON, nullable=True)
+    certifications  = Column(JSON, nullable=True)  # ["NAFDAC", "USDA Organic", "EU", "SGS", "Halal"]
+
+    # Quality — specifications
+    moisture_percentage      = Column(Float, nullable=True)
+    purity_percentage        = Column(Float, nullable=True)
+    foreign_matter_percentage= Column(Float, nullable=True)
+    protein_percentage       = Column(Float, nullable=True)
+    oil_content_percentage   = Column(Float, nullable=True)
+    broken_grain_percentage  = Column(Float, nullable=True)
+
+    # Quality — documents
+    lab_report_url               = Column(String(500), nullable=True)
+    inspection_certificate_url   = Column(String(500), nullable=True)
 
     # Media
     images            = Column(JSON, nullable=True)
@@ -132,8 +144,8 @@ class Product(Base):
     specification_pdf = Column(String(500), nullable=True)
 
     # Delivery
-    delivery_options  = Column(JSON, nullable=True)
-    delivery_time_days= Column(Integer, nullable=True)
+    delivery_options   = Column(JSON, nullable=True)
+    delivery_time_days = Column(Integer, nullable=True)
 
     # Location
     country       = Column(String(100), nullable=True)
@@ -152,10 +164,9 @@ class Product(Base):
     health_certificate_url = Column(String(500), nullable=True)
 
     # Crop Specific
-    moisture_percentage = Column(Float, nullable=True)
-    harvest_date        = Column(DateTime, nullable=True)
-    packaging           = Column(String(255), nullable=True)
-    warehouse_location  = Column(String(255), nullable=True)
+    harvest_date       = Column(DateTime, nullable=True)
+    packaging          = Column(String(255), nullable=True)
+    warehouse_location = Column(String(255), nullable=True)
 
     # Dairy Specific
     storage_condition   = Column(String(255), nullable=True)
@@ -181,9 +192,9 @@ class Product(Base):
     rating_count   = Column(Integer, default=0, nullable=False)
 
     # Featured
-    is_featured   = Column(Boolean, default=False, nullable=False)
-    featured_until= Column(DateTime, nullable=True)
-    is_sponsored  = Column(Boolean, default=False, nullable=False)
+    is_featured    = Column(Boolean, default=False, nullable=False)
+    featured_until = Column(DateTime, nullable=True)
+    is_sponsored   = Column(Boolean, default=False, nullable=False)
 
     # Admin
     rejection_reason = Column(Text, nullable=True)
@@ -194,7 +205,7 @@ class Product(Base):
     updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     published_at = Column(DateTime, nullable=True)
 
-    # ── Relationships ─────────────────────────────────────────────────
+    # Relationships
     seller       = relationship("User", back_populates="products")
     category_rel = relationship("Category", back_populates="products")
     reviews      = relationship("Review", back_populates="product", lazy="dynamic")
