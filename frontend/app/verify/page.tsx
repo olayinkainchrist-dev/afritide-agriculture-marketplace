@@ -19,6 +19,8 @@ const KYC_STEPS = [
   { n: 3, label: "Review",    desc: "Admin verification" },
 ];
 
+const BUSINESS_REQUIRED_ROLES = ["COOPERATIVE", "EXPORTER", "PROCESSING_COMPANY"];
+
 export default function VerifyPage() {
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
@@ -26,14 +28,19 @@ export default function VerifyPage() {
   const [submitting,      setSubmitting]      = useState(false);
   const [submitted,       setSubmitted]       = useState(false);
   const [docUrl,          setDocUrl]          = useState("");
+  const [bizDocUrl,       setBizDocUrl]       = useState("");
   const [uploading,       setUploading]       = useState(false);
+  const [uploadingBiz,    setUploadingBiz]    = useState(false);
   const [selectedDocType, setSelectedDocType] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef    = useRef<HTMLInputElement>(null);
+  const bizFileRef = useRef<HTMLInputElement>(null);
+
+  const isBusinessRequired = BUSINESS_REQUIRED_ROLES.includes(user?.role?.toUpperCase() || "");
 
   useEffect(() => {
     if (!hasHydrated) return;
     if (!isAuthenticated) router.push("/login");
-    if (user?.kyc_approved)  setSubmitted(true);
+    if (user?.kyc_approved)   setSubmitted(true);
     else if (user?.kyc_submitted) setSubmitted(true);
   }, [hasHydrated, isAuthenticated, user, router]);
 
@@ -52,7 +59,9 @@ export default function VerifyPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await apiClient.post("/certificates/upload-doc", formData);
+      const res = await apiClient.post("/certificates/upload-doc", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       if (res.data.success) {
         setDocUrl(res.data.data.document_url);
         toast.success("Document uploaded successfully");
@@ -64,9 +73,35 @@ export default function VerifyPage() {
     }
   };
 
+  const handleBizDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { toast.error("File must be under 10MB"); return; }
+    setUploadingBiz(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiClient.post("/certificates/upload-doc", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res.data.success) {
+        setBizDocUrl(res.data.data.document_url);
+        toast.success("Business document uploaded successfully");
+      }
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setUploadingBiz(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!selectedDocType) { toast.error("Please select a document type"); return; }
-    if (!docUrl)          { toast.error("Please upload your document first"); return; }
+    if (!docUrl)          { toast.error("Please upload your identity document first"); return; }
+    if (isBusinessRequired && !bizDocUrl) {
+      toast.error("Business registration document is required for your account type");
+      return;
+    }
     setSubmitting(true);
     try {
       await apiClient.put("/users/me", {
@@ -74,8 +109,13 @@ export default function VerifyPage() {
         kyc_document_url: docUrl,
       });
       await apiClient.post(
-        `/certificates/from-url?type=other&document_url=${encodeURIComponent(docUrl)}&notes=${encodeURIComponent(`KYC: ${selectedDocType}`)}`
+        `/certificates/from-url?type=other&document_url=${encodeURIComponent(docUrl)}&notes=${encodeURIComponent(`KYC Identity: ${selectedDocType}`)}`
       );
+      if (bizDocUrl) {
+        await apiClient.post(
+          `/certificates/from-url?type=other&document_url=${encodeURIComponent(bizDocUrl)}&notes=${encodeURIComponent("KYC Business Registration")}`
+        );
+      }
       setSubmitted(true);
       toast.success("KYC submitted! Admin will review within 24-48 hours.");
     } catch {
@@ -232,19 +272,67 @@ export default function VerifyPage() {
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 space-y-5">
                 <div>
                   <h3 className="text-white font-bold mb-1">Step 2: Business Registration</h3>
-                  <p className="text-gray-500 text-sm">Upload your business registration certificate or CAC document (optional for individual farmers)</p>
-                </div>
-
-                <div className="bg-amber-950/30 border border-amber-800/30 rounded-xl p-4 flex gap-3">
-                  <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-amber-300 text-xs leading-relaxed">
-                    Individual farmers can skip this step. Business registration is required for cooperatives and exporters.
+                  <p className="text-gray-500 text-sm">
+                    {isBusinessRequired
+                      ? "Upload your CAC certificate or business registration document"
+                      : "Upload your business registration certificate or CAC document (optional for individual farmers)"
+                    }
                   </p>
                 </div>
 
+                {isBusinessRequired ? (
+                  <div className="bg-red-950/30 border border-red-800/30 rounded-xl p-4 flex gap-3">
+                    <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-red-300 text-xs leading-relaxed">
+                      Business registration document is <strong>required</strong> for your account type ({user.role?.replace(/_/g, " ").toLowerCase()}).
+                      You must upload a valid CAC certificate or business registration document to proceed.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-amber-950/30 border border-amber-800/30 rounded-xl p-4 flex gap-3">
+                    <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-amber-300 text-xs leading-relaxed">
+                      Individual farmers can skip this step. Business registration is required for cooperatives and exporters.
+                    </p>
+                  </div>
+                )}
+
+                {/* Upload area */}
+                <div onClick={() => bizFileRef.current?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                    bizDocUrl ? "border-green-600/60 bg-green-950/20" : "border-white/[0.1] hover:border-green-700/40 hover:bg-white/[0.02]"
+                  }`}>
+                  <input ref={bizFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleBizDocUpload} className="hidden" />
+                  {uploadingBiz ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="w-8 h-8 text-green-400 animate-spin" />
+                      <p className="text-gray-400 text-sm">Uploading...</p>
+                    </div>
+                  ) : bizDocUrl ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <CheckCircle2 className="w-8 h-8 text-green-400" />
+                      <p className="text-green-400 font-medium text-sm">Business document uploaded</p>
+                      <button onClick={(e) => { e.stopPropagation(); setBizDocUrl(""); }}
+                        className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                        <X className="w-3 h-3" /> Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <Upload className="w-8 h-8 text-gray-600" />
+                      <div>
+                        <p className="text-gray-300 font-medium text-sm">Click to upload CAC / Business document</p>
+                        <p className="text-gray-600 text-xs mt-1">PDF, JPG or PNG · Max 10MB</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex flex-col gap-3">
-                  <button onClick={() => setStep(3)}
-                    className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => setStep(3)}
+                    disabled={isBusinessRequired && !bizDocUrl}
+                    className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
                     Continue to Review <ArrowRight className="w-4 h-4" />
                   </button>
                   <button onClick={() => setStep(1)}
@@ -269,14 +357,22 @@ export default function VerifyPage() {
                       <FileText className="w-4 h-4 text-green-500" />
                       <span className="text-gray-300 text-sm">Identity Document</span>
                     </div>
-                    <CheckCircle2 className="w-4 h-4 text-green-400" />
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-xs">{selectedDocType}</span>
+                      <CheckCircle2 className="w-4 h-4 text-green-400" />
+                    </div>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
                     <div className="flex items-center gap-3">
-                      <FileText className="w-4 h-4 text-gray-600" />
-                      <span className="text-gray-500 text-sm">Business Registration</span>
+                      <FileText className={`w-4 h-4 ${bizDocUrl ? "text-green-500" : "text-gray-600"}`} />
+                      <span className={`text-sm ${bizDocUrl ? "text-gray-300" : "text-gray-500"}`}>
+                        Business Registration
+                      </span>
                     </div>
-                    <span className="text-gray-600 text-xs">Skipped</span>
+                    {bizDocUrl
+                      ? <CheckCircle2 className="w-4 h-4 text-green-400" />
+                      : <span className="text-gray-600 text-xs">Skipped</span>
+                    }
                   </div>
                 </div>
 
