@@ -21,6 +21,7 @@ from app.models.product import Product, ProductStatus
 from app.models.order import Order, OrderStatus
 from app.models.notification import Notification, NotificationType
 from app.services.email import send_kyc_status_email
+from app.models.user import VerificationBadge, UserRole
 
 router = APIRouter()
 
@@ -97,6 +98,10 @@ async def approve_kyc(
     user.kyc_approved    = True
     user.status          = UserStatus.VERIFIED
     user.kyc_reviewed_at = datetime.utcnow()
+    if user.role == UserRole.EXPORTER:
+        user.badge = VerificationBadge.VERIFIED_EXPORTER
+    else:
+        user.badge = VerificationBadge.VERIFIED_FARMER
     db.commit()
 
     try:
