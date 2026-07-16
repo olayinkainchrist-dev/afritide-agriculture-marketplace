@@ -1,14 +1,15 @@
 "use client";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "./DashboardLayout";
 import apiClient from "@/lib/api/client";
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
-  TrendingUp, Shield, Bell, Settings,
-  CheckCircle2, XCircle, Clock, Eye,
+  TrendingUp, Shield, Bell,
+  CheckCircle2, XCircle, Eye,
   BarChart3, Megaphone, DollarSign,
   ArrowUpRight, RefreshCw, Plus, Loader2,
+  FileText, HeadphonesIcon,
 } from "lucide-react";
 import { User } from "@/types";
 import { formatPrice, formatNumber, formatDate } from "@/lib/utils";
@@ -16,36 +17,37 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 
 const NAV_ITEMS = [
-  { label: "Overview",        href: "/dashboard/admin",              icon: LayoutDashboard },
-  { label: "Users",           href: "/dashboard/admin/users",        icon: Users },
-  { label: "Products",        href: "/dashboard/admin/products",     icon: Package },
-  { label: "Orders",          href: "/dashboard/admin/orders",       icon: ShoppingCart },
-  { label: "Commodities",     href: "/dashboard/admin/commodities",  icon: TrendingUp },
-  { label: "Certificates",    href: "/dashboard/admin/certificates", icon: Shield },
-  { label: "Announcements",   href: "/dashboard/admin/announce",     icon: Megaphone },
-  { label: "Analytics",       href: "/dashboard/admin/analytics",    icon: BarChart3 },
+  { label: "Overview",      href: "/dashboard/admin",              icon: LayoutDashboard },
+  { label: "Users",         href: "/dashboard/admin/users",        icon: Users },
+  { label: "Products",      href: "/dashboard/admin/products",     icon: Package },
+  { label: "Orders",        href: "/dashboard/admin/orders",       icon: ShoppingCart },
+  { label: "Sourcing",      href: "/dashboard/admin/sourcing",     icon: FileText },
+  { label: "Commodities",   href: "/dashboard/admin/commodities",  icon: TrendingUp },
+  { label: "Certificates",  href: "/dashboard/admin/certificates", icon: Shield },
+  { label: "Announcements", href: "/dashboard/admin/announce",     icon: Megaphone },
+  { label: "Analytics",     href: "/dashboard/admin/analytics",    icon: BarChart3 },
+  { label: "Reports",       href: "/dashboard/admin/reports",      icon: BarChart3 },
+  { label: "Support",       href: "/dashboard/admin/support",      icon: HeadphonesIcon },
 ];
 
 interface Props { user: User; }
 
 export default function AdminDashboard({ user }: Props) {
-  const [activeTab, setActiveTab] = useState<"products" | "users" | "commodities">("products");
-  const [announcementTitle, setAnnouncementTitle] = useState("");
-  const [announcementMessage, setAnnouncementMessage] = useState("");
-  const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
+  const [activeTab,            setActiveTab]            = useState<"products" | "users" | "commodities">("products");
+  const [announcementTitle,    setAnnouncementTitle]    = useState("");
+  const [announcementMessage,  setAnnouncementMessage]  = useState("");
+  const [sendingAnnouncement,  setSendingAnnouncement]  = useState(false);
   const queryClient = useQueryClient();
 
-  // ── Fetch analytics ──────────────────────────────────────────────────
   const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
     queryKey: ["admin-analytics"],
     queryFn: async () => {
-      const res = await apiClient.get("/analytics/admin/dashboard");
+      const res = await apiClient.get("/admin/analytics");
       return res.data.data;
     },
     staleTime: 60_000,
   });
 
-  // ── Fetch pending products ────────────────────────────────────────────
   const { data: pendingProductsData, isLoading: pendingLoading, refetch: refetchPending } = useQuery({
     queryKey: ["pending-products"],
     queryFn: async () => {
@@ -54,7 +56,6 @@ export default function AdminDashboard({ user }: Props) {
     },
   });
 
-  // ── Fetch all users ───────────────────────────────────────────────────
   const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
@@ -63,7 +64,6 @@ export default function AdminDashboard({ user }: Props) {
     },
   });
 
-  // ── Fetch commodities ─────────────────────────────────────────────────
   const { data: commoditiesData, isLoading: commoditiesLoading, refetch: refetchCommodities } = useQuery({
     queryKey: ["admin-commodities"],
     queryFn: async () => {
@@ -72,7 +72,6 @@ export default function AdminDashboard({ user }: Props) {
     },
   });
 
-  // ── Mutations ─────────────────────────────────────────────────────────
   const approveProduct = async (id: string) => {
     try {
       await apiClient.put(`/admin/products/${id}/approve`);
@@ -131,22 +130,22 @@ export default function AdminDashboard({ user }: Props) {
     }
   };
 
-  const analytics = analyticsData;
+  const analytics      = analyticsData;
   const pendingProducts = pendingProductsData?.data || [];
-  const users = usersData?.data || [];
-  const commodities = commoditiesData?.data || [];
+  const users          = usersData?.data            || [];
+  const commodities    = commoditiesData?.data       || [];
 
   const stats = [
-    { label: "Total Users",     value: formatNumber(analytics?.total_users ?? 0),    icon: Users,        color: "text-green-400",  bg: "bg-green-950/50 border-green-900/50",  trend: `+${analytics?.new_users_30d ?? 0} this month` },
-    { label: "Active Products", value: formatNumber(analytics?.active_products ?? 0), icon: Package,      color: "text-sky-400",    bg: "bg-sky-950/50 border-sky-900/50",      trend: `${analytics?.pending_products ?? 0} pending` },
-    { label: "Total Orders",    value: formatNumber(analytics?.total_orders ?? 0),    icon: ShoppingCart, color: "text-amber-400",  bg: "bg-amber-950/50 border-amber-900/50",  trend: "all time" },
-    { label: "Total Revenue", value: formatNumber(analytics?.total_revenue ?? 0), icon: DollarSign, color: "text-rose-400", bg: "bg-rose-950/50 border-rose-900/50", trend: "NGN · completed orders" },
+    { label: "Total Users",     value: formatNumber(analytics?.total_users      ?? 0), icon: Users,        color: "text-green-400", bg: "bg-green-950/50 border-green-900/50",  trend: `+${analytics?.new_users_30d ?? 0} this month` },
+    { label: "Active Products", value: formatNumber(analytics?.active_products  ?? 0), icon: Package,      color: "text-sky-400",   bg: "bg-sky-950/50 border-sky-900/50",      trend: `${analytics?.pending_products ?? 0} pending` },
+    { label: "Total Orders",    value: formatNumber(analytics?.total_orders     ?? 0), icon: ShoppingCart, color: "text-amber-400", bg: "bg-amber-950/50 border-amber-900/50",  trend: "all time" },
+    { label: "Total Revenue",   value: formatNumber(analytics?.total_revenue    ?? 0), icon: DollarSign,   color: "text-rose-400",  bg: "bg-rose-950/50 border-rose-900/50",    trend: "NGN · completed orders" },
   ];
 
   return (
     <DashboardLayout navItems={NAV_ITEMS} title="Admin Dashboard">
 
-      {/* ── Stats ──────────────────────────────────────────────────────── */}
+      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {stats.map((stat) => (
           <div key={stat.label} className={`${stat.bg} border rounded-2xl p-5 transition-all hover:scale-[1.02]`}>
@@ -163,7 +162,7 @@ export default function AdminDashboard({ user }: Props) {
         ))}
       </div>
 
-      {/* ── Top countries ─────────────────────────────────────────────── */}
+      {/* Top countries */}
       {analytics?.top_countries?.length > 0 && (
         <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5 mb-6">
           <h3 className="text-white font-bold mb-4 text-sm">Top Countries</h3>
@@ -180,21 +179,17 @@ export default function AdminDashboard({ user }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-        {/* ── Main panel with tabs ───────────────────────────────────── */}
+        {/* Main panel */}
         <div className="lg:col-span-2 bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
 
-          {/* Tab headers */}
           <div className="flex border-b border-white/[0.06] bg-white/[0.02]">
             {(["products", "users", "commodities"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+              <button key={tab} onClick={() => setActiveTab(tab)}
                 className={`flex-1 px-4 py-3.5 text-sm font-semibold capitalize transition-all border-b-2 ${
                   activeTab === tab
                     ? "border-green-500 text-green-400"
                     : "border-transparent text-gray-500 hover:text-white"
-                }`}
-              >
+                }`}>
                 {tab === "products"
                   ? `Pending Products ${pendingProducts.length > 0 ? `(${pendingProducts.length})` : ""}`
                   : tab === "users" ? "All Users"
@@ -203,7 +198,7 @@ export default function AdminDashboard({ user }: Props) {
             ))}
           </div>
 
-          {/* ── Pending Products tab ─────────────────────────────────── */}
+          {/* Pending Products */}
           {activeTab === "products" && (
             <div>
               {pendingLoading ? (
@@ -223,21 +218,17 @@ export default function AdminDashboard({ user }: Props) {
                       <div className="flex-1 min-w-0">
                         <p className="text-white font-semibold text-sm truncate">{product.title}</p>
                         <p className="text-gray-600 text-xs mt-0.5 capitalize">
-                          {product.category} · Seller: {product.seller_id?.slice(0, 8)}...
+                          {product.category?.toLowerCase()} · Seller: {product.seller_id?.slice(0, 8)}...
                         </p>
                         <p className="text-gray-700 text-xs">{formatDate(product.created_at)}</p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => approveProduct(product.id)}
-                          className="flex items-center gap-1.5 bg-green-600/20 hover:bg-green-600/40 border border-green-700/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors"
-                        >
+                        <button onClick={() => approveProduct(product.id)}
+                          className="flex items-center gap-1.5 bg-green-600/20 hover:bg-green-600/40 border border-green-700/40 text-green-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Approve
                         </button>
-                        <button
-                          onClick={() => rejectProduct(product.id)}
-                          className="flex items-center gap-1.5 bg-red-600/10 hover:bg-red-600/20 border border-red-700/30 text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors"
-                        >
+                        <button onClick={() => rejectProduct(product.id)}
+                          className="flex items-center gap-1.5 bg-red-600/10 hover:bg-red-600/20 border border-red-700/30 text-red-400 text-xs font-bold px-3 py-2 rounded-xl transition-colors">
                           <XCircle className="w-3.5 h-3.5" /> Reject
                         </button>
                       </div>
@@ -248,7 +239,7 @@ export default function AdminDashboard({ user }: Props) {
             </div>
           )}
 
-          {/* ── Users tab ────────────────────────────────────────────── */}
+          {/* Users */}
           {activeTab === "users" && (
             <div>
               {usersLoading ? (
@@ -266,7 +257,9 @@ export default function AdminDashboard({ user }: Props) {
                         <p className="text-white font-semibold text-sm truncate">
                           {u.first_name} {u.last_name}
                         </p>
-                        <p className="text-gray-600 text-xs truncate">{u.email} · <span className="capitalize">{u.role}</span></p>
+                        <p className="text-gray-600 text-xs truncate">
+                          {u.email} · <span className="capitalize">{u.role?.toLowerCase()}</span>
+                        </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className={`text-[10px] font-bold px-2 py-1 rounded-full border capitalize ${
@@ -276,21 +269,17 @@ export default function AdminDashboard({ user }: Props) {
                             ? "bg-amber-500/20 text-amber-400 border-amber-700/40"
                             : "bg-red-500/20 text-red-400 border-red-700/40"
                         }`}>
-                          {u.status}
+                          {u.status?.toLowerCase()}
                         </span>
                         {!u.kyc_approved && u.kyc_submitted && (
-                          <button
-                            onClick={() => approveKYC(u.id)}
-                            className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-700/40 hover:bg-blue-500/30 transition-colors"
-                          >
+                          <button onClick={() => approveKYC(u.id)}
+                            className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-700/40 hover:bg-blue-500/30 transition-colors">
                             Verify KYC
                           </button>
                         )}
                         {u.status === "ACTIVE" && (
-                          <button
-                            onClick={() => suspendUser(u.id)}
-                            className="text-[10px] font-bold px-2 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-700/30 hover:bg-red-500/20 transition-colors"
-                          >
+                          <button onClick={() => suspendUser(u.id)}
+                            className="text-[10px] font-bold px-2 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-700/30 hover:bg-red-500/20 transition-colors">
                             Suspend
                           </button>
                         )}
@@ -302,15 +291,13 @@ export default function AdminDashboard({ user }: Props) {
             </div>
           )}
 
-          {/* ── Commodities tab ───────────────────────────────────────── */}
+          {/* Commodities */}
           {activeTab === "commodities" && (
             <div>
               <div className="flex items-center justify-between p-4 border-b border-white/[0.06]">
                 <p className="text-gray-400 text-sm">{commodities.length} commodities on price board</p>
-                <button
-                  onClick={() => refetchCommodities()}
-                  className="flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 transition-colors"
-                >
+                <button onClick={() => refetchCommodities()}
+                  className="flex items-center gap-1.5 text-xs text-green-400 hover:text-green-300 transition-colors">
                   <RefreshCw className="w-3.5 h-3.5" /> Refresh
                 </button>
               </div>
@@ -330,7 +317,7 @@ export default function AdminDashboard({ user }: Props) {
                     <div key={c.id} className="flex items-center justify-between p-4 hover:bg-white/[0.02] transition-colors">
                       <div>
                         <p className="text-white font-semibold text-sm">{c.commodity_name}</p>
-                        <p className="text-gray-600 text-xs">{c.market || "Global"} · per {c.unit}</p>
+                        <p className="text-gray-600 text-xs">{c.market || "Global"} · per {c.unit?.toLowerCase()}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-green-400 font-black">{formatPrice(c.price, c.currency)}</p>
@@ -351,7 +338,7 @@ export default function AdminDashboard({ user }: Props) {
           )}
         </div>
 
-        {/* ── Right panel ────────────────────────────────────────────── */}
+        {/* Right panel */}
         <div className="space-y-4">
 
           {/* Platform summary */}
@@ -359,10 +346,10 @@ export default function AdminDashboard({ user }: Props) {
             <h3 className="text-white font-bold mb-4 text-sm">Platform Summary</h3>
             <div className="space-y-3">
               {[
-                { label: "Total Farmers",   value: analytics?.total_farmers ?? 0,   color: "text-green-400" },
-                { label: "Total Buyers",    value: analytics?.total_buyers ?? 0,    color: "text-sky-400" },
-                { label: "New Users (30d)", value: analytics?.new_users_30d ?? 0,   color: "text-amber-400" },
-                { label: "Total Products",  value: analytics?.total_products ?? 0,  color: "text-violet-400" },
+                { label: "Total Farmers",   value: analytics?.total_farmers    ?? 0, color: "text-green-400" },
+                { label: "Total Buyers",    value: analytics?.total_buyers     ?? 0, color: "text-sky-400" },
+                { label: "New Users (30d)", value: analytics?.new_users_30d    ?? 0, color: "text-amber-400" },
+                { label: "Total Products",  value: analytics?.total_products   ?? 0, color: "text-violet-400" },
                 { label: "Pending Review",  value: analytics?.pending_products ?? 0, color: "text-rose-400" },
               ].map(({ label, value, color }) => (
                 <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0">
@@ -380,25 +367,17 @@ export default function AdminDashboard({ user }: Props) {
               Send Announcement
             </h3>
             <div className="space-y-3">
-              <input
-                type="text"
-                value={announcementTitle}
+              <input type="text" value={announcementTitle}
                 onChange={(e) => setAnnouncementTitle(e.target.value)}
                 placeholder="Title..."
-                className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-              />
-              <textarea
-                value={announcementMessage}
+                className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+              <textarea value={announcementMessage}
                 onChange={(e) => setAnnouncementMessage(e.target.value)}
                 placeholder="Message to all users..."
                 rows={3}
-                className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors resize-none"
-              />
-              <button
-                onClick={sendAnnouncement}
-                disabled={sendingAnnouncement}
-                className="w-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-700/40 text-amber-400 font-bold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2"
-              >
+                className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-3 py-2.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors resize-none" />
+              <button onClick={sendAnnouncement} disabled={sendingAnnouncement}
+                className="w-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-700/40 text-amber-400 font-bold py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
                 {sendingAnnouncement
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
                   : <><Megaphone className="w-4 h-4" /> Send to All Users</>
@@ -412,10 +391,12 @@ export default function AdminDashboard({ user }: Props) {
             <h3 className="text-white font-bold mb-4 text-sm">Quick Actions</h3>
             <div className="space-y-2">
               {[
-                { label: "Add Commodity Price", href: "/dashboard/admin/commodities", icon: Plus,        color: "text-green-400" },
-                { label: "View All Products",   href: "/marketplace",                 icon: Package,     color: "text-sky-400" },
-                { label: "API Documentation",   href: "https://afritide-agriculture-marketplace.onrender.com/api/docs", icon: Eye, color: "text-violet-400" },
-                { label: "Analytics Report",    href: "/dashboard/admin/analytics",   icon: BarChart3,   color: "text-amber-400" },
+                { label: "Add Commodity Price", href: "/dashboard/admin/commodities",                                              icon: Plus,      color: "text-green-400" },
+                { label: "View All Products",   href: "/marketplace",                                                              icon: Package,   color: "text-sky-400" },
+                { label: "Sourcing Requests",   href: "/dashboard/admin/sourcing",                                                 icon: FileText,  color: "text-violet-400" },
+                { label: "Analytics Report",    href: "/dashboard/admin/analytics",                                                icon: BarChart3, color: "text-amber-400" },
+                { label: "Support Tickets",     href: "/dashboard/admin/support",                                                  icon: HeadphonesIcon, color: "text-rose-400" },
+                { label: "API Documentation",   href: "https://afritide-agriculture-marketplace.onrender.com/api/docs",            icon: Eye,       color: "text-gray-400" },
               ].map(({ label, href, icon: Icon, color }) => (
                 <Link key={href} href={href} target={href.startsWith("http") ? "_blank" : undefined}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.05] transition-all group">
