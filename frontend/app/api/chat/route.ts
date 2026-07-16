@@ -44,7 +44,7 @@ GUIDELINES:
         "anthropic-version":    "2023-06-01",
       },
       body: JSON.stringify({
-        model:      "claude-sonnet-4-6",
+        model:      "claude-sonnet-4-5",
         max_tokens: 1024,
         system:     systemPrompt,
         messages:   messages.map((m: any) => ({
@@ -56,6 +56,7 @@ GUIDELINES:
 
     if (!response.ok) {
       const error = await response.json();
+      console.error("Anthropic error:", JSON.stringify(error));
       return NextResponse.json({ error: error.error?.message || "AI error" }, { status: 500 });
     }
 
