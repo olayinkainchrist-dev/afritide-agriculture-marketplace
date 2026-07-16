@@ -140,7 +140,7 @@ export default function AdminDashboard({ user }: Props) {
     { label: "Total Users",     value: formatNumber(analytics?.total_users ?? 0),    icon: Users,        color: "text-green-400",  bg: "bg-green-950/50 border-green-900/50",  trend: `+${analytics?.new_users_30d ?? 0} this month` },
     { label: "Active Products", value: formatNumber(analytics?.active_products ?? 0), icon: Package,      color: "text-sky-400",    bg: "bg-sky-950/50 border-sky-900/50",      trend: `${analytics?.pending_products ?? 0} pending` },
     { label: "Total Orders",    value: formatNumber(analytics?.total_orders ?? 0),    icon: ShoppingCart, color: "text-amber-400",  bg: "bg-amber-950/50 border-amber-900/50",  trend: "all time" },
-    { label: "Total Revenue",   value: `$${formatNumber(analytics?.total_revenue ?? 0)}`, icon: DollarSign, color: "text-rose-400", bg: "bg-rose-950/50 border-rose-900/50",    trend: "completed orders" },
+    { label: "Total Revenue", value: formatNumber(analytics?.total_revenue ?? 0), icon: DollarSign, color: "text-rose-400", bg: "bg-rose-950/50 border-rose-900/50", trend: "NGN · completed orders" },
   ];
 
   return (

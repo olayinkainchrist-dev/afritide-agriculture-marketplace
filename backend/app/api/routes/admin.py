@@ -7,7 +7,7 @@ Folder: backend/app/api/routes/admin.py
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from datetime import datetime
 import uuid
 import csv
@@ -18,10 +18,39 @@ from app.core.dependencies import get_admin_user, get_pagination, PaginationPara
 from app.core.responses import success_response, paginated_response
 from app.models.user import User, UserStatus
 from app.models.product import Product, ProductStatus
+from app.models.order import Order, OrderStatus
 from app.models.notification import Notification, NotificationType
 from app.services.email import send_kyc_status_email
 
 router = APIRouter()
+
+
+@router.get("/analytics", summary="Get admin analytics")
+async def get_analytics(
+    current_user=Depends(get_admin_user),
+    db:          Session = Depends(get_db),
+):
+    from datetime import timedelta
+    now       = datetime.utcnow()
+    thirty_days_ago = now - timedelta(days=30)
+
+    total_users      = db.query(User).count()
+    new_users_30d    = db.query(User).filter(User.created_at >= thirty_days_ago).count()
+    active_products  = db.query(Product).filter(Product.status == ProductStatus.ACTIVE).count()
+    pending_products = db.query(Product).filter(Product.status == ProductStatus.PENDING_REVIEW).count()
+    total_orders     = db.query(Order).count()
+    total_revenue    = db.query(func.sum(Order.total_amount)).filter(
+        Order.status == OrderStatus.COMPLETED
+    ).scalar() or 0
+
+    return success_response(data={
+        "total_users":      total_users,
+        "new_users_30d":    new_users_30d,
+        "active_products":  active_products,
+        "pending_products": pending_products,
+        "total_orders":     total_orders,
+        "total_revenue":    round(total_revenue, 2),
+    })
 
 
 @router.get("/users", summary="List all users (admin)")
@@ -70,14 +99,21 @@ async def approve_kyc(
     user.kyc_reviewed_at = datetime.utcnow()
     db.commit()
 
-    db.add(Notification(
-        user_id=user.id, type=NotificationType.ACCOUNT_VERIFIED,
-        title="Account Verified",
-        message="Your account has been verified! You now have a verified badge.",
-    ))
-    db.commit()
+    try:
+        db.add(Notification(
+            user_id=user.id, type=NotificationType.ACCOUNT_VERIFIED,
+            title="Account Verified ✅",
+            message="Your account has been verified! You now have a verified badge on Afritide.",
+        ))
+        db.commit()
+    except Exception:
+        db.rollback()
 
-    send_kyc_status_email(user.email, user.first_name, approved=True)
+    try:
+        send_kyc_status_email(user.email, user.first_name, approved=True)
+    except Exception:
+        pass
+
     return success_response(message="User verified successfully")
 
 
@@ -96,7 +132,11 @@ async def reject_kyc(
     user.kyc_reviewed_at = datetime.utcnow()
     db.commit()
 
-    send_kyc_status_email(user.email, user.first_name, approved=False, reason=reason)
+    try:
+        send_kyc_status_email(user.email, user.first_name, approved=False, reason=reason)
+    except Exception:
+        pass
+
     return success_response(message="KYC rejected, user notified")
 
 
@@ -130,7 +170,7 @@ async def reactivate_user(
 
 @router.get("/products", summary="List all products by status (admin)")
 async def list_all_products(
-    status:      str = Query(default="pending_review"),
+    status:      str = Query(default="PENDING_REVIEW"),
     search:      str = Query(default=None),
     pagination:  PaginationParams = Depends(get_pagination),
     current_user=Depends(get_admin_user),
@@ -140,7 +180,7 @@ async def list_all_products(
 
     if status and status != "all":
         try:
-            status_enum = ProductStatus(status)
+            status_enum = ProductStatus(status.upper())
             query = query.filter(Product.status == status_enum)
         except ValueError:
             pass
@@ -148,7 +188,7 @@ async def list_all_products(
     if search:
         query = query.filter(Product.title.ilike(f"%{search}%"))
 
-    query = query.order_by(desc(Product.created_at))
+    query    = query.order_by(desc(Product.created_at))
     total    = query.count()
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
 
@@ -237,12 +277,28 @@ async def approve_product(
     product.published_at = datetime.utcnow()
     db.commit()
 
-    db.add(Notification(
-        user_id=product.seller_id, type=NotificationType.PRODUCT_APPROVED,
-        title="Product Approved",
-        message=f"Your listing '{product.title}' is now live on Afritide.",
-    ))
-    db.commit()
+    try:
+        db.add(Notification(
+            user_id=product.seller_id, type=NotificationType.PRODUCT_APPROVED,
+            title="Product Approved ✅",
+            message=f"Your listing '{product.title}' is now live on Afritide marketplace.",
+        ))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    try:
+        from app.services.email import send_product_status_email
+        seller = db.query(User).filter(User.id == product.seller_id).first()
+        if seller:
+            send_product_status_email(
+                to_email=    seller.email,
+                first_name=  seller.first_name,
+                product_title=product.title,
+                approved=    True,
+            )
+    except Exception:
+        pass
 
     return success_response(message="Product approved and published")
 
@@ -262,12 +318,29 @@ async def reject_product(
     product.rejection_reason = reason
     db.commit()
 
-    db.add(Notification(
-        user_id=product.seller_id, type=NotificationType.PRODUCT_REJECTED,
-        title="Product Listing Rejected",
-        message=f"Your listing '{product.title}' was rejected: {reason}",
-    ))
-    db.commit()
+    try:
+        db.add(Notification(
+            user_id=product.seller_id, type=NotificationType.PRODUCT_REJECTED,
+            title="Product Listing Rejected",
+            message=f"Your listing '{product.title}' was rejected: {reason}",
+        ))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    try:
+        from app.services.email import send_product_status_email
+        seller = db.query(User).filter(User.id == product.seller_id).first()
+        if seller:
+            send_product_status_email(
+                to_email=     seller.email,
+                first_name=   seller.first_name,
+                product_title=product.title,
+                approved=     False,
+                reason=       reason,
+            )
+    except Exception:
+        pass
 
     return success_response(message="Product rejected")
 
@@ -285,14 +358,17 @@ async def send_announcement(
         query = query.filter(User.role == target_role)
     users = query.all()
 
-    db.bulk_save_objects([
-        Notification(
-            user_id=u.id, type=NotificationType.ANNOUNCEMENT,
-            title=title, message=message,
-        )
-        for u in users
-    ])
-    db.commit()
+    try:
+        db.bulk_save_objects([
+            Notification(
+                user_id=u.id, type=NotificationType.ANNOUNCEMENT,
+                title=title, message=message,
+            )
+            for u in users
+        ])
+        db.commit()
+    except Exception:
+        db.rollback()
 
     return success_response(message=f"Announcement sent to {len(users)} users")
 

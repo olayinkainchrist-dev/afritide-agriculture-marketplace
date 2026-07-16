@@ -367,3 +367,51 @@ def send_order_status_email(
         </div>
     """
     _send_email(to_email, f"{title} — {order_number}", _email_wrapper(content))
+
+def send_product_status_email(
+    to_email:      str,
+    first_name:    str,
+    product_title: str,
+    approved:      bool,
+    reason:        str = None,
+):
+    if approved:
+        content = f"""
+            <h2 style="color: #1A1A1A;">✅ Product Approved!</h2>
+            <p style="color: #555; font-size: 15px;">
+                Hi {first_name}, your product listing has been approved and is now live on Afritide.
+            </p>
+            <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #22c55e;">
+                <p style="color: #166534; font-weight: bold; margin: 0;">{product_title}</p>
+            </div>
+            <div style="text-align: center; margin-top: 24px;">
+                <a href="https://www.afritidegroup.com/marketplace"
+                   style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+                   View on Marketplace
+                </a>
+            </div>
+        """
+        subject = f"Product Approved — {product_title}"
+    else:
+        content = f"""
+            <h2 style="color: #1A1A1A;">Product Listing Rejected</h2>
+            <p style="color: #555; font-size: 15px;">
+                Hi {first_name}, unfortunately your product listing was not approved.
+            </p>
+            <div style="background: #fef2f2; padding: 16px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+                <p style="color: #991b1b; font-weight: bold; margin: 0 0 8px;">{product_title}</p>
+                <p style="color: #991b1b; margin: 0; font-size: 14px;"><strong>Reason:</strong> {reason or 'Does not meet listing standards'}</p>
+            </div>
+            <p style="color: #555; font-size: 14px;">
+                Please review the feedback, make the necessary changes, and resubmit your listing.
+            </p>
+            <div style="text-align: center; margin-top: 24px;">
+                <a href="https://www.afritidegroup.com/dashboard/farmer/products"
+                   style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+                   My Products
+                </a>
+            </div>
+        """
+        subject = f"Product Listing Update — {product_title}"
+
+    _send_email(to_email, subject, _email_wrapper(content))
