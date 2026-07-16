@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const { messages, context } = await req.json();
+    console.log("API Key exists:", !!process.env.ANTHROPIC_API_KEY);
+    console.log("API Key prefix:", process.env.ANTHROPIC_API_KEY?.slice(0, 10));
 
     const systemPrompt = `You are Afritide's AI Trading Assistant — an expert in African agricultural markets, commodity trading, export requirements, and supply chain logistics.
 
