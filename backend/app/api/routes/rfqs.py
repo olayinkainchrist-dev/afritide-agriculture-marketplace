@@ -50,6 +50,21 @@ async def create_rfq(
     db.commit()
     db.refresh(rfq)
 
+    try:
+        from app.services.email import send_new_rfq_email
+        send_new_rfq_email(
+            rfq_number=       rfq.rfq_number,
+            product_name=     rfq.product_name,
+            quantity=         rfq.quantity,
+            unit=             rfq.unit,
+            currency=         rfq.currency,
+            target_price=     rfq.target_price,
+            delivery_country= rfq.delivery_country,
+            specifications=   rfq.specifications,
+        )
+    except Exception:
+        pass
+
     return success_response(
         data=RFQResponseSchema.model_validate(rfq).model_dump(mode="json"),
         message="Sourcing request submitted. Our team will find the best suppliers for you.",

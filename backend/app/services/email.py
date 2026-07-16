@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 def _send_email(to_email: str, subject: str, html_body: str) -> bool:
-    """Send email via Resend API."""
     if not settings.RESEND_API_KEY:
         logger.warning(f"[EMAIL SKIPPED - no RESEND_API_KEY] To: {to_email} | Subject: {subject}")
         return False
@@ -29,7 +28,7 @@ def _send_email(to_email: str, subject: str, html_body: str) -> bool:
     try:
         resend.api_key = settings.RESEND_API_KEY
         resend.Emails.send({
-            "from": f"{settings.EMAIL_FROM_NAME} <noreply@afritidegroup.com>",
+            "from":    f"{settings.EMAIL_FROM_NAME} <noreply@afritidegroup.com>",
             "to":      to_email,
             "subject": subject,
             "html":    html_body,
@@ -289,6 +288,7 @@ def send_support_reply(to_email: str, name: str, topic: str, reply: str):
     """
     _send_email(to_email, f"Re: {topic} — Afritide Support", _email_wrapper(content))
 
+
 def send_new_order_email(
     to_email:     str,
     first_name:   str,
@@ -338,11 +338,11 @@ def send_order_status_email(
         "cancelled":  ("❌ Order Cancelled",   "Unfortunately your order has been cancelled."),
     }
 
-    title, message = status_messages.get(new_status, ("Order Update", f"Your order status has changed to {new_status}."))
-    color = "#c62828" if new_status == "cancelled" else "#2E7D32"
+    title, message = status_messages.get(new_status.lower(), ("Order Update", f"Your order status has changed to {new_status}."))
+    color = "#c62828" if new_status.lower() == "cancelled" else "#2E7D32"
 
     tracking_html = ""
-    if tracking_number and new_status == "shipped":
+    if tracking_number and new_status.lower() == "shipped":
         tracking_html = f"""
         <div style="background: #E3F2FD; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #1565C0;">
             <p style="color: #1565C0; font-size: 14px; margin: 0; font-weight: bold;">
@@ -356,7 +356,7 @@ def send_order_status_email(
         <p style="color: #555; font-size: 15px;">Hi {first_name}, {message}</p>
         <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin: 20px 0;">
             <p style="color: #555; margin: 0 0 4px; font-size: 14px;"><strong>Order:</strong> {order_number}</p>
-            <p style="color: {color}; font-size: 18px; font-weight: bold; margin: 0; text-transform: capitalize;">{new_status}</p>
+            <p style="color: {color}; font-size: 18px; font-weight: bold; margin: 0; text-transform: capitalize;">{new_status.lower()}</p>
         </div>
         {tracking_html}
         <div style="text-align: center; margin-top: 24px;">
@@ -367,6 +367,7 @@ def send_order_status_email(
         </div>
     """
     _send_email(to_email, f"{title} — {order_number}", _email_wrapper(content))
+
 
 def send_product_status_email(
     to_email:      str,
@@ -415,3 +416,40 @@ def send_product_status_email(
         subject = f"Product Listing Update — {product_title}"
 
     _send_email(to_email, subject, _email_wrapper(content))
+
+
+def send_new_rfq_email(
+    rfq_number:   str,
+    product_name: str,
+    quantity:     float,
+    unit:         str,
+    currency:     str,
+    target_price: float = None,
+    delivery_country: str = None,
+    specifications:   str = None,
+):
+    content = f"""
+        <h2 style="color: #1A1A1A;">📋 New Sourcing Request</h2>
+        <p style="color: #555; font-size: 15px;">
+            A buyer has submitted a new sourcing request that requires your attention.
+        </p>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #555; margin: 0 0 8px;"><strong>RFQ Number:</strong> {rfq_number}</p>
+            <p style="color: #555; margin: 0 0 8px;"><strong>Product:</strong> {product_name}</p>
+            <p style="color: #555; margin: 0 0 8px;"><strong>Quantity:</strong> {quantity} {unit.lower()}</p>
+            <p style="color: #555; margin: 0 0 8px;"><strong>Target Price:</strong> {f"{currency} {target_price:,.2f}" if target_price else "Open to offers"}</p>
+            <p style="color: #555; margin: 0 0 8px;"><strong>Delivery To:</strong> {delivery_country or "—"}</p>
+            {f'<p style="color: #555; margin: 0;"><strong>Specifications:</strong> {specifications}</p>' if specifications else ""}
+        </div>
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="https://www.afritidegroup.com/dashboard/admin/sourcing"
+               style="background: #2E7D32; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
+               View Sourcing Request
+            </a>
+        </div>
+    """
+    _send_email(
+        "afritidegroup@gmail.com",
+        f"[New RFQ] {product_name} — {rfq_number}",
+        _email_wrapper(content)
+    )
