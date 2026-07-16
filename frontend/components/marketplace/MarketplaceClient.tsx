@@ -13,16 +13,16 @@ import {
 
 const CATEGORIES = [
   { id: "all",          label: "All Products", emoji: "🌍" },
-  { id: "livestock",    label: "Livestock",    emoji: "🐄" },
-  { id: "cash_crops",   label: "Cash Crops",   emoji: "🌿" },
-  { id: "dairy",        label: "Dairy",        emoji: "🥛" },
-  { id: "fruits",       label: "Fruits",       emoji: "🥭" },
-  { id: "vegetables",   label: "Vegetables",   emoji: "🥬" },
-  { id: "fishery",      label: "Fishery",      emoji: "🐟" },
-  { id: "poultry",      label: "Poultry",      emoji: "🐔" },
-  { id: "machinery",    label: "Machinery",    emoji: "🚜" },
-  { id: "seeds",        label: "Seeds",        emoji: "🌱" },
-  { id: "fertilizers",  label: "Fertilizers",  emoji: "🧪" },
+  { id: "LIVESTOCK",    label: "Livestock",    emoji: "🐄" },
+  { id: "CASH_CROPS",   label: "Cash Crops",   emoji: "🌿" },
+  { id: "DAIRY",        label: "Dairy",        emoji: "🥛" },
+  { id: "FRUITS",       label: "Fruits",       emoji: "🥭" },
+  { id: "VEGETABLES",   label: "Vegetables",   emoji: "🥬" },
+  { id: "FISHERY",      label: "Fishery",      emoji: "🐟" },
+  { id: "POULTRY",      label: "Poultry",      emoji: "🐔" },
+  { id: "MACHINERY",    label: "Machinery",    emoji: "🚜" },
+  { id: "SEEDS",        label: "Seeds",        emoji: "🌱" },
+  { id: "FERTILIZERS",  label: "Fertilizers",  emoji: "🧪" },
 ];
 
 const SORT_OPTIONS = [
@@ -66,14 +66,13 @@ export default function MarketplaceClient() {
   const [page,        setPage]        = useState(1);
   const [filters,     setFilters]     = useState<Filters>({
     ...DEFAULT_FILTERS,
-    category: (searchParams.get("category") as ProductCategory) || undefined,
+    category: (searchParams.get("category")?.toUpperCase() as ProductCategory) || undefined,
     country:  searchParams.get("country") || undefined,
   });
 
-  // Sync URL search params when they change
   useEffect(() => {
     const q        = searchParams.get("q") || "";
-    const category = searchParams.get("category") as ProductCategory || undefined;
+    const category = searchParams.get("category")?.toUpperCase() as ProductCategory || undefined;
     const country  = searchParams.get("country") || undefined;
     setSearchQuery(q);
     setFilters(prev => ({ ...prev, category, country }));
@@ -128,7 +127,7 @@ export default function MarketplaceClient() {
   return (
     <div className="min-h-screen bg-[#060f08]">
 
-      {/* ── Page header ──────────────────────────────────── */}
+      {/* Page header */}
       <div className="border-b border-white/[0.06] bg-[#07120a]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -158,21 +157,14 @@ export default function MarketplaceClient() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") setPage(1);
-                }}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+                onKeyDown={(e) => { if (e.key === "Enter") setPage(1); }}
                 placeholder="Search products..."
                 className="w-full pl-10 pr-10 py-3 bg-white/[0.04] border border-white/[0.08] focus:border-green-700/50 rounded-xl text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
               />
               {searchQuery && (
-                <button
-                  onClick={() => { setSearchQuery(""); setPage(1); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                >
+                <button onClick={() => { setSearchQuery(""); setPage(1); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2">
                   <X className="w-4 h-4 text-gray-600 hover:text-white transition-colors" />
                 </button>
               )}
@@ -209,7 +201,7 @@ export default function MarketplaceClient() {
         </div>
       </div>
 
-      {/* ── Body ─────────────────────────────────────────── */}
+      {/* Body */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
 
@@ -243,11 +235,9 @@ export default function MarketplaceClient() {
                 </button>
 
                 {activeFiltersCount > 0 && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
-                  >
-                    <X className="w-3 h-3" /> Clear all
+                  <button onClick={clearFilters}
+                    className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors">
+                    <X className="w-3 h-3" /> Clear all ({activeFiltersCount})
                   </button>
                 )}
               </div>
@@ -256,8 +246,7 @@ export default function MarketplaceClient() {
                 <div className="relative">
                   <select
                     onChange={(e) => handleSortChange(e.target.value)}
-                    className="appearance-none bg-white/[0.04] border border-white/[0.08] text-gray-400 text-sm px-4 py-2.5 pr-8 rounded-xl focus:outline-none focus:border-green-700/50 transition-colors cursor-pointer"
-                  >
+                    className="appearance-none bg-white/[0.04] border border-white/[0.08] text-gray-400 text-sm px-4 py-2.5 pr-8 rounded-xl focus:outline-none focus:border-green-700/50 transition-colors cursor-pointer">
                     {SORT_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value} className="bg-[#0a1a0f]">
                         {o.label}
@@ -269,15 +258,10 @@ export default function MarketplaceClient() {
 
                 <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-1">
                   {(["grid", "list"] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => setViewMode(mode)}
+                    <button key={mode} onClick={() => setViewMode(mode)}
                       className={`p-1.5 rounded-lg transition-colors ${
-                        viewMode === mode
-                          ? "bg-green-600 text-white"
-                          : "text-gray-500 hover:text-white"
-                      }`}
-                    >
+                        viewMode === mode ? "bg-green-600 text-white" : "text-gray-500 hover:text-white"
+                      }`}>
                       {mode === "grid"
                         ? <Grid3X3 className="w-4 h-4" />
                         : <List    className="w-4 h-4" />}
@@ -306,10 +290,8 @@ export default function MarketplaceClient() {
                     : "Try adjusting your filters or search terms."
                   }
                 </p>
-                <button
-                  onClick={clearFilters}
-                  className="bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm"
-                >
+                <button onClick={clearFilters}
+                  className="bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm">
                   Clear all filters
                 </button>
               </div>
@@ -326,21 +308,17 @@ export default function MarketplaceClient() {
                     <button
                       disabled={!pagination.has_prev}
                       onClick={() => setPage(p => p - 1)}
-                      className="px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white disabled:opacity-30 rounded-xl text-sm font-medium transition-all"
-                    >
+                      className="px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white disabled:opacity-30 rounded-xl text-sm font-medium transition-all">
                       ← Previous
                     </button>
                     <div className="flex gap-1.5">
                       {Array.from({ length: Math.min(pagination.total_pages, 7) }, (_, i) => i + 1).map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => setPage(p)}
+                        <button key={p} onClick={() => setPage(p)}
                           className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${
                             p === page
                               ? "bg-green-600 text-white shadow-lg shadow-green-900/30"
                               : "bg-white/[0.04] border border-white/[0.08] text-gray-500 hover:text-white hover:bg-white/[0.07]"
-                          }`}
-                        >
+                          }`}>
                           {p}
                         </button>
                       ))}
@@ -348,8 +326,7 @@ export default function MarketplaceClient() {
                     <button
                       disabled={!pagination.has_next}
                       onClick={() => setPage(p => p + 1)}
-                      className="px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white disabled:opacity-30 rounded-xl text-sm font-medium transition-all"
-                    >
+                      className="px-4 py-2.5 bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white disabled:opacity-30 rounded-xl text-sm font-medium transition-all">
                       Next →
                     </button>
                   </div>
@@ -363,10 +340,7 @@ export default function MarketplaceClient() {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
           <div className="absolute right-0 top-0 bottom-0 w-80 bg-[#0a1a0f] border-l border-white/[0.08] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-white font-bold text-lg">Filters</h2>
