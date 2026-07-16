@@ -7,23 +7,23 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { ADMIN_NAV } from "@/components/dashboard/AdminNav";
 import apiClient from "@/lib/api/client";
 import {
-  Search, X, Loader2, CheckCircle2,
+  X, Loader2, CheckCircle2,
   FileText, Clock, Package,
 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 const STATUS_COLORS: Record<string, string> = {
-  open:      "bg-green-500/20 text-green-400 border-green-700/40",
-  quoted:    "bg-blue-500/20 text-blue-400 border-blue-700/40",
-  accepted:  "bg-emerald-500/20 text-emerald-400 border-emerald-700/40",
-  rejected:  "bg-red-500/20 text-red-400 border-red-700/40",
-  expired:   "bg-gray-500/20 text-gray-400 border-gray-700/40",
-  cancelled: "bg-gray-500/20 text-gray-400 border-gray-700/40",
+  OPEN:      "bg-green-500/20 text-green-400 border-green-700/40",
+  QUOTED:    "bg-blue-500/20 text-blue-400 border-blue-700/40",
+  ACCEPTED:  "bg-emerald-500/20 text-emerald-400 border-emerald-700/40",
+  REJECTED:  "bg-red-500/20 text-red-400 border-red-700/40",
+  EXPIRED:   "bg-gray-500/20 text-gray-400 border-gray-700/40",
+  CANCELLED: "bg-gray-500/20 text-gray-400 border-gray-700/40",
 };
 
 export default function AdminSourcingPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
   const [selectedRFQ,  setSelectedRFQ]  = useState<any>(null);
   const [submitting,   setSubmitting]   = useState(false);
@@ -36,24 +36,25 @@ export default function AdminSourcingPage() {
   });
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) router.push("/login");
     else if (user?.role !== "ADMIN") router.push("/dashboard/farmer");
-  }, [isAuthenticated, user, router]);
+  }, [hasHydrated, isAuthenticated, user, router]);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-sourcing-requests", statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams({ role: "seller", page_size: "100" });
-      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (statusFilter !== "all") params.append("status", statusFilter.toUpperCase());
       const res = await apiClient.get(`/rfqs?${params}`);
       return res.data;
     },
-    enabled: isAuthenticated && user?.role === "ADMIN",
+    enabled:         isAuthenticated && user?.role === "ADMIN",
     refetchInterval: 30_000,
   });
 
-  const rfqs = data?.data || [];
-  const openCount = rfqs.filter((r: any) => r.status === "open").length;
+  const rfqs      = data?.data || [];
+  const openCount = rfqs.filter((r: any) => r.status === "OPEN").length;
 
   const handleSubmitQuote = async () => {
     if (!quoteForm.quoted_price || !quoteForm.quoted_quantity || !quoteForm.quote_valid_until) {
@@ -79,6 +80,7 @@ export default function AdminSourcingPage() {
     }
   };
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   const ADMIN_NAV_WITH_SOURCING = [
@@ -90,7 +92,6 @@ export default function AdminSourcingPage() {
     <DashboardLayout navItems={ADMIN_NAV_WITH_SOURCING} title="Sourcing Requests">
       <div className="space-y-6">
 
-        {/* Header */}
         <div>
           <h2 className="text-2xl font-black text-white">Sourcing Requests</h2>
           <p className="text-gray-500 text-sm mt-1">
@@ -101,21 +102,19 @@ export default function AdminSourcingPage() {
           </p>
         </div>
 
-        {/* Status filters */}
         <div className="flex gap-2 overflow-x-auto">
-          {["all", "open", "quoted", "accepted", "REJECTED"].map(s => (
+          {["all", "OPEN", "QUOTED", "ACCEPTED", "REJECTED"].map(s => (
             <button key={s} onClick={() => setStatusFilter(s)}
               className={`px-4 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all capitalize ${
                 statusFilter === s
                   ? "bg-green-600 text-white"
                   : "bg-white/[0.04] text-gray-400 hover:text-white border border-white/[0.06]"
               }`}>
-              {s === "all" ? "All" : s}
+              {s === "all" ? "All" : s.toLowerCase()}
             </button>
           ))}
         </div>
 
-        {/* Requests list */}
         <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
           {isLoading ? (
             <div className="p-6 space-y-3">
@@ -143,14 +142,13 @@ export default function AdminSourcingPage() {
                     onClick={() => {
                       setSelectedRFQ(rfq);
                       setQuoteForm({
-                        quoted_price:    rfq.target_price?.toString() || "",
-                        quoted_quantity: rfq.quantity?.toString() || "",
+                        quoted_price:      rfq.target_price?.toString() || "",
+                        quoted_quantity:   rfq.quantity?.toString() || "",
                         quote_valid_until: "",
-                        quote_notes: "",
+                        quote_notes:       "",
                       });
                     }}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-4 px-5 py-4 hover:bg-white/[0.04] transition-colors cursor-pointer group items-center"
-                  >
+                    className="grid grid-cols-1 md:grid-cols-12 gap-4 px-5 py-4 hover:bg-white/[0.04] transition-colors cursor-pointer group items-center">
                     <div className="col-span-1">
                       <p className="text-gray-500 text-xs font-mono">{rfq.rfq_number?.slice(-6)}</p>
                     </div>
@@ -161,7 +159,7 @@ export default function AdminSourcingPage() {
                       <p className="text-gray-600 text-xs">{rfq.delivery_country || "—"}</p>
                     </div>
                     <div className="col-span-2">
-                      <p className="text-white text-sm">{rfq.quantity} {rfq.unit}</p>
+                      <p className="text-white text-sm">{rfq.quantity} {rfq.unit?.toLowerCase()}</p>
                     </div>
                     <div className="col-span-2">
                       <p className="text-green-400 font-bold text-sm">
@@ -175,7 +173,7 @@ export default function AdminSourcingPage() {
                       <span className={`text-[10px] font-bold px-2 py-1 rounded-full border capitalize ${
                         STATUS_COLORS[rfq.status] ?? "bg-gray-500/20 text-gray-400 border-gray-700/40"
                       }`}>
-                        {rfq.status}
+                        {rfq.status?.toLowerCase()}
                       </span>
                     </div>
                   </div>
@@ -186,7 +184,6 @@ export default function AdminSourcingPage() {
         </div>
       </div>
 
-      {/* Detail + Quote Modal */}
       {selectedRFQ && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSelectedRFQ(null)} />
@@ -204,13 +201,12 @@ export default function AdminSourcingPage() {
               </button>
             </div>
 
-            {/* Request details */}
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 mb-5">
               <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wide mb-3">Buyer Request</h4>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: "Product",      value: selectedRFQ.product_name },
-                  { label: "Quantity",     value: `${selectedRFQ.quantity} ${selectedRFQ.unit}` },
+                  { label: "Quantity",     value: `${selectedRFQ.quantity} ${selectedRFQ.unit?.toLowerCase()}` },
                   { label: "Target Price", value: selectedRFQ.target_price ? formatPrice(selectedRFQ.target_price, selectedRFQ.currency) : "Open to offers" },
                   { label: "Delivery To",  value: selectedRFQ.delivery_country || "—" },
                   { label: "Deadline",     value: selectedRFQ.delivery_date ? formatDate(selectedRFQ.delivery_date) : "—" },
@@ -236,8 +232,7 @@ export default function AdminSourcingPage() {
               )}
             </div>
 
-            {/* Already quoted */}
-            {selectedRFQ.status === "quoted" && (
+            {selectedRFQ.status === "QUOTED" && (
               <div className="bg-blue-950/30 border border-blue-800/30 rounded-2xl p-4 mb-5">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-400" />
@@ -250,7 +245,7 @@ export default function AdminSourcingPage() {
                   </div>
                   <div>
                     <p className="text-gray-600 text-xs">Quantity</p>
-                    <p className="text-white font-bold">{selectedRFQ.quoted_quantity} {selectedRFQ.unit}</p>
+                    <p className="text-white font-bold">{selectedRFQ.quoted_quantity} {selectedRFQ.unit?.toLowerCase()}</p>
                   </div>
                 </div>
                 {selectedRFQ.quote_notes && (
@@ -259,7 +254,7 @@ export default function AdminSourcingPage() {
               </div>
             )}
 
-            {selectedRFQ.status === "accepted" && (
+            {selectedRFQ.status === "ACCEPTED" && (
               <div className="bg-green-950/30 border border-green-800/30 rounded-2xl p-4 mb-5 text-center">
                 <CheckCircle2 className="w-8 h-8 text-green-400 mx-auto mb-2" />
                 <p className="text-green-400 font-bold">Buyer Accepted the Quote!</p>
@@ -267,8 +262,7 @@ export default function AdminSourcingPage() {
               </div>
             )}
 
-            {/* Quote form — only for open requests */}
-            {selectedRFQ.status === "open" && (
+            {selectedRFQ.status === "OPEN" && (
               <div className="space-y-4">
                 <h4 className="text-white font-bold text-sm flex items-center gap-2">
                   <Clock className="w-4 h-4 text-green-500" />
@@ -285,11 +279,11 @@ export default function AdminSourcingPage() {
                       onChange={e => setQuoteForm({ ...quoteForm, quoted_price: e.target.value })}
                       placeholder="e.g. 1500.00"
                       className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
-                    <p className="text-gray-700 text-[10px] mt-0.5">per {selectedRFQ.unit}</p>
+                    <p className="text-gray-700 text-[10px] mt-0.5">per {selectedRFQ.unit?.toLowerCase()}</p>
                   </div>
                   <div>
                     <label className="text-xs text-gray-500 mb-1.5 block">
-                      Quantity You Can Supply <span className="text-red-400">*</span>
+                      Quantity Available <span className="text-red-400">*</span>
                     </label>
                     <input type="number"
                       value={quoteForm.quoted_quantity}
@@ -340,4 +334,3 @@ export default function AdminSourcingPage() {
     </DashboardLayout>
   );
 }
-

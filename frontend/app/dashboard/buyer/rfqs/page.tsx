@@ -8,51 +8,52 @@ import apiClient from "@/lib/api/client";
 import {
   LayoutDashboard, ShoppingCart, Heart,
   MessageSquare, FileText, Bell,
-  Plus, Loader2, CheckCircle2, XCircle, X, Search,
+  Plus, Loader2, CheckCircle2, XCircle, X, Search, Users,
 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 const NAV_ITEMS = [
-  { label: "Overview",         href: "/dashboard/buyer",          icon: LayoutDashboard },
-  { label: "My Orders",        href: "/dashboard/buyer/orders",   icon: ShoppingCart },
-  { label: "Wishlist",         href: "/dashboard/buyer/wishlist", icon: Heart },
-  { label: "Messages",         href: "/dashboard/buyer/messages", icon: MessageSquare },
-  { label: "Sourcing Requests",href: "/dashboard/buyer/rfqs",     icon: FileText },
-  { label: "Alerts",           href: "/dashboard/buyer/alerts",   icon: Bell },
+  { label: "Overview",          href: "/dashboard/buyer",           icon: LayoutDashboard },
+  { label: "My Orders",         href: "/dashboard/buyer/orders",    icon: ShoppingCart },
+  { label: "Wishlist",          href: "/dashboard/buyer/wishlist",  icon: Heart },
+  { label: "My Suppliers",      href: "/dashboard/buyer/suppliers", icon: Users },
+  { label: "Messages",          href: "/dashboard/buyer/messages",  icon: MessageSquare },
+  { label: "Sourcing Requests", href: "/dashboard/buyer/rfqs",      icon: FileText },
+  { label: "Alerts",            href: "/dashboard/buyer/alerts",    icon: Bell },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  open:      "bg-green-500/20 text-green-400 border-green-700/40",
-  quoted:    "bg-blue-500/20 text-blue-400 border-blue-700/40",
-  accepted:  "bg-emerald-500/20 text-emerald-400 border-emerald-700/40",
-  rejected:  "bg-red-500/20 text-red-400 border-red-700/40",
-  expired:   "bg-gray-500/20 text-gray-400 border-gray-700/40",
-  cancelled: "bg-gray-500/20 text-gray-400 border-gray-700/40",
+  OPEN:      "bg-green-500/20 text-green-400 border-green-700/40",
+  QUOTED:    "bg-blue-500/20 text-blue-400 border-blue-700/40",
+  ACCEPTED:  "bg-emerald-500/20 text-emerald-400 border-emerald-700/40",
+  REJECTED:  "bg-red-500/20 text-red-400 border-red-700/40",
+  EXPIRED:   "bg-gray-500/20 text-gray-400 border-gray-700/40",
+  CANCELLED: "bg-gray-500/20 text-gray-400 border-gray-700/40",
 };
 
 export default function BuyerSourcingPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
-  const [showForm,     setShowForm]     = useState(false);
-  const [submitting,   setSubmitting]   = useState(false);
-  const [selectedRFQ,  setSelectedRFQ]  = useState<any>(null);
-  const [responding,   setResponding]   = useState(false);
+  const [showForm,    setShowForm]    = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [selectedRFQ, setSelectedRFQ] = useState<any>(null);
+  const [responding,  setResponding]  = useState(false);
   const [form, setForm] = useState({
-    product_name:     "",
-    quantity:         "",
-    unit:             "kg",
-    currency:         "NGN",
-    delivery_country: "Nigeria",
-    target_price:     "",
-    deadline:         "",
-    specifications:   "",
+    product_name:            "",
+    quantity:                "",
+    unit:                    "KG",
+    currency:                "NGN",
+    delivery_country:        "Nigeria",
+    target_price:            "",
+    deadline:                "",
+    specifications:          "",
     additional_requirements: "",
   });
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated, router]);
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated, router]);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["buyer-sourcing-requests"],
@@ -60,7 +61,7 @@ export default function BuyerSourcingPage() {
       const res = await apiClient.get("/rfqs?role=buyer&page_size=50");
       return res.data;
     },
-    enabled: isAuthenticated,
+    enabled:         isAuthenticated,
     refetchInterval: 30_000,
   });
 
@@ -73,7 +74,6 @@ export default function BuyerSourcingPage() {
     }
     setSubmitting(true);
     try {
-      // Submit to admin — no seller_id
       await apiClient.post("/rfqs", {
         product_name:            form.product_name,
         quantity:                Number(form.quantity),
@@ -84,12 +84,11 @@ export default function BuyerSourcingPage() {
         delivery_date:           form.deadline || undefined,
         specifications:          form.specifications || undefined,
         additional_requirements: form.additional_requirements || undefined,
-        // No seller_id — goes to admin
       });
       toast.success("Sourcing request submitted! Our team will find matching suppliers.");
       setShowForm(false);
       setForm({
-        product_name: "", quantity: "", unit: "kg",
+        product_name: "", quantity: "", unit: "KG",
         currency: "NGN", delivery_country: "Nigeria",
         target_price: "", deadline: "", specifications: "",
         additional_requirements: "",
@@ -130,13 +129,13 @@ export default function BuyerSourcingPage() {
     }
   };
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   return (
     <DashboardLayout navItems={NAV_ITEMS} title="Sourcing Requests">
       <div className="space-y-6">
 
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-black text-white">Sourcing Requests</h2>
@@ -144,15 +143,12 @@ export default function BuyerSourcingPage() {
               Can&apos;t find what you need? Submit a sourcing request and our team will find matching suppliers.
             </p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold px-5 py-3 rounded-xl transition-colors text-sm"
-          >
+          <button onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold px-5 py-3 rounded-xl transition-colors text-sm">
             <Plus className="w-4 h-4" /> New Request
           </button>
         </div>
 
-        {/* Info banner */}
         <div className="bg-green-950/30 border border-green-800/30 rounded-2xl p-4 flex items-start gap-3">
           <Search className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
           <div>
@@ -165,7 +161,6 @@ export default function BuyerSourcingPage() {
           </div>
         </div>
 
-        {/* Sourcing request form */}
         {showForm && (
           <div className="bg-white/[0.03] border border-green-800/40 rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
@@ -200,8 +195,8 @@ export default function BuyerSourcingPage() {
                   />
                   <select value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })}
                     className="bg-white/[0.05] border border-white/[0.08] text-white text-sm rounded-xl px-3 py-3 focus:outline-none appearance-none">
-                    {["kg","tonne","piece","bag","litre","head"].map(u => (
-                      <option key={u} value={u} className="bg-[#0a1a0f]">{u}</option>
+                    {["KG","TONNE","PIECE","BAG","LITRE","HEAD"].map(u => (
+                      <option key={u} value={u} className="bg-[#0a1a0f]">{u.toLowerCase()}</option>
                     ))}
                   </select>
                 </div>
@@ -286,7 +281,6 @@ export default function BuyerSourcingPage() {
           </div>
         )}
 
-        {/* Requests list */}
         <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
           {isLoading ? (
             <div className="p-6 space-y-3">
@@ -316,14 +310,14 @@ export default function BuyerSourcingPage() {
                       <p className="text-white font-semibold text-sm group-hover:text-green-400 transition-colors">
                         {rfq.product_name}
                       </p>
-                      {rfq.status === "quoted" && (
+                      {rfq.status === "QUOTED" && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-700/40 animate-pulse">
                           Quote Ready!
                         </span>
                       )}
                     </div>
                     <p className="text-gray-600 text-xs">
-                      {rfq.quantity} {rfq.unit}
+                      {rfq.quantity} {rfq.unit?.toLowerCase()}
                       {rfq.delivery_country ? ` · ${rfq.delivery_country}` : ""}
                       {" · "}{formatDate(rfq.created_at)}
                     </p>
@@ -340,7 +334,7 @@ export default function BuyerSourcingPage() {
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-full border capitalize ${
                       STATUS_COLORS[rfq.status] ?? "bg-gray-500/20 text-gray-400 border-gray-700/40"
                     }`}>
-                      {rfq.status}
+                      {rfq.status?.toLowerCase()}
                     </span>
                   </div>
                 </div>
@@ -350,7 +344,6 @@ export default function BuyerSourcingPage() {
         </div>
       </div>
 
-      {/* Detail Modal */}
       {selectedRFQ && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setSelectedRFQ(null)} />
@@ -366,12 +359,11 @@ export default function BuyerSourcingPage() {
               </button>
             </div>
 
-            {/* Request details */}
             <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 mb-4">
               <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wide mb-3">Your Request</h4>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: "Quantity",     value: `${selectedRFQ.quantity} ${selectedRFQ.unit}` },
+                  { label: "Quantity",     value: `${selectedRFQ.quantity} ${selectedRFQ.unit?.toLowerCase()}` },
                   { label: "Target Price", value: selectedRFQ.target_price ? formatPrice(selectedRFQ.target_price, selectedRFQ.currency) : "Open" },
                   { label: "Delivery To",  value: selectedRFQ.delivery_country || "—" },
                   { label: "Submitted",    value: formatDate(selectedRFQ.created_at) },
@@ -390,8 +382,7 @@ export default function BuyerSourcingPage() {
               )}
             </div>
 
-            {/* Quote from admin/team */}
-            {selectedRFQ.status === "quoted" && (
+            {selectedRFQ.status === "QUOTED" && (
               <div className="bg-blue-950/30 border border-blue-800/40 rounded-2xl p-5 mb-5">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
@@ -403,12 +394,12 @@ export default function BuyerSourcingPage() {
                     <p className="text-white font-black text-xl">
                       {formatPrice(selectedRFQ.quoted_price, selectedRFQ.currency)}
                     </p>
-                    <p className="text-gray-600 text-xs">per {selectedRFQ.unit}</p>
+                    <p className="text-gray-600 text-xs">per {selectedRFQ.unit?.toLowerCase()}</p>
                   </div>
                   <div>
                     <p className="text-gray-500 text-xs mb-1">Can Supply</p>
                     <p className="text-white font-black text-xl">{selectedRFQ.quoted_quantity}</p>
-                    <p className="text-gray-600 text-xs">{selectedRFQ.unit}</p>
+                    <p className="text-gray-600 text-xs">{selectedRFQ.unit?.toLowerCase()}</p>
                   </div>
                 </div>
                 {selectedRFQ.quote_valid_until && (
@@ -425,7 +416,10 @@ export default function BuyerSourcingPage() {
                 <div className="flex gap-3">
                   <button onClick={() => handleAccept(selectedRFQ.id)} disabled={responding}
                     className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-green-900 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm">
-                    {responding ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle2 className="w-4 h-4" /> Accept & Proceed to Pay</>}
+                    {responding
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <><CheckCircle2 className="w-4 h-4" /> Accept & Proceed to Pay</>
+                    }
                   </button>
                   <button onClick={() => handleReject(selectedRFQ.id)} disabled={responding}
                     className="flex-1 bg-red-600/20 hover:bg-red-600/30 border border-red-700/40 text-red-400 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-sm">
@@ -435,7 +429,7 @@ export default function BuyerSourcingPage() {
               </div>
             )}
 
-            {selectedRFQ.status === "accepted" && (
+            {selectedRFQ.status === "ACCEPTED" && (
               <div className="bg-green-950/30 border border-green-800/30 rounded-2xl p-5 text-center">
                 <CheckCircle2 className="w-10 h-10 text-green-400 mx-auto mb-2" />
                 <p className="text-green-400 font-bold">Quotation Accepted</p>
@@ -452,7 +446,7 @@ export default function BuyerSourcingPage() {
               </div>
             )}
 
-            {selectedRFQ.status === "open" && (
+            {selectedRFQ.status === "OPEN" && (
               <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 text-center">
                 <div className="w-10 h-10 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin mx-auto mb-3" />
                 <p className="text-gray-400 font-medium">Request Under Review</p>
