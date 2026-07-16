@@ -16,12 +16,12 @@ import { formatPrice, formatNumber, getCategoryLabel } from "@/lib/utils";
 import Link from "next/link";
 
 const NAV_ITEMS = [
-  { label: "Overview",    href: "/dashboard/farmer",           icon: LayoutDashboard },
-  { label: "My Products", href: "/dashboard/farmer/products",  icon: Package },
-  { label: "Orders",      href: "/dashboard/farmer/orders",    icon: ShoppingCart },
-  { label: "Messages",    href: "/dashboard/farmer/messages",  icon: MessageSquare },
-  { label: "RFQs",        href: "/dashboard/farmer/rfqs",      icon: FileText },
-  { label: "Analytics",   href: "/dashboard/farmer/analytics", icon: BarChart3 },
+  { label: "Overview",  href: "/dashboard/farmer",           icon: LayoutDashboard },
+  { label: "Listings",  href: "/dashboard/farmer/products",  icon: Package },
+  { label: "Orders",    href: "/dashboard/farmer/orders",    icon: ShoppingCart },
+  { label: "Messages",  href: "/dashboard/farmer/messages",  icon: MessageSquare },
+  { label: "RFQs",      href: "/dashboard/farmer/rfqs",      icon: FileText },
+  { label: "Analytics", href: "/dashboard/farmer/analytics", icon: BarChart3 },
 ];
 
 interface Props { user: User; }
@@ -47,19 +47,30 @@ export default function FarmerDashboard({ user }: Props) {
 
   const products        = productsData?.data || [];
   const recentOrders    = ordersData?.data   || [];
-  const activeProducts  = products.filter(p => p.status === "ACTIVE").length;
-  const pendingProducts = products.filter(p => p.status === "PENDING_REVIEW").length;
-  const totalViews      = products.reduce((sum, p) => sum + p.view_count, 0);
-  const totalOrders     = products.reduce((sum, p) => sum + p.order_count, 0);
+  const activeProducts  = products.filter((p: any) => p.status === "ACTIVE").length;
+  const pendingProducts = products.filter((p: any) => p.status === "PENDING_REVIEW").length;
+  const totalViews      = products.reduce((sum: number, p: any) => sum + p.view_count, 0);
+  const totalOrders     = products.reduce((sum: number, p: any) => sum + p.order_count, 0);
   const pendingOrders   = recentOrders.filter((o: any) =>
     o.status === "PENDING" || o.status === "CONFIRMED"
   ).length;
 
+  const getDashboardTitle = (): string => {
+    switch (user.role) {
+      case "LOGISTICS_PROVIDER": return "Logistics Dashboard";
+      case "WAREHOUSE_OPERATOR": return "Warehouse Dashboard";
+      case "PROCESSING_COMPANY": return "Processing Dashboard";
+      case "EXPORTER":           return "Exporter Dashboard";
+      case "COOPERATIVE":        return "Cooperative Dashboard";
+      default:                   return "Farmer Dashboard";
+    }
+  };
+
   const stats = [
-    { label: "Active Listings", value: activeProducts,           icon: Package,     color: "text-green-400", bg: "bg-green-950/50 border-green-900/50",  trend: `${pendingProducts} pending` },
-    { label: "Total Views",     value: formatNumber(totalViews), icon: Eye,         color: "text-sky-400",   bg: "bg-sky-950/50 border-sky-900/50",      trend: "all time" },
-    { label: "Total Orders",    value: totalOrders,              icon: ShoppingCart,color: "text-amber-400", bg: "bg-amber-950/50 border-amber-900/50",  trend: `${pendingOrders} to fulfill` },
-    { label: "Avg. Rating",     value: user.rating_average.toFixed(1), icon: Star,  color: "text-rose-400",  bg: "bg-rose-950/50 border-rose-900/50",    trend: `${user.rating_count} reviews` },
+    { label: "Active Listings", value: activeProducts,                 icon: Package,     color: "text-green-400", bg: "bg-green-950/50 border-green-900/50", trend: `${pendingProducts} pending` },
+    { label: "Total Views",     value: formatNumber(totalViews),       icon: Eye,         color: "text-sky-400",   bg: "bg-sky-950/50 border-sky-900/50",     trend: "all time" },
+    { label: "Total Orders",    value: totalOrders,                    icon: ShoppingCart,color: "text-amber-400", bg: "bg-amber-950/50 border-amber-900/50", trend: `${pendingOrders} to fulfill` },
+    { label: "Avg. Rating",     value: user.rating_average.toFixed(1), icon: Star,        color: "text-rose-400",  bg: "bg-rose-950/50 border-rose-900/50",   trend: `${user.rating_count} reviews` },
   ];
 
   const ORDER_STATUS_COLORS: Record<string, string> = {
@@ -73,7 +84,7 @@ export default function FarmerDashboard({ user }: Props) {
   };
 
   return (
-    <DashboardLayout navItems={NAV_ITEMS} title="Farmer Dashboard">
+    <DashboardLayout navItems={NAV_ITEMS} title={getDashboardTitle()}>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -91,13 +102,13 @@ export default function FarmerDashboard({ user }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-        {/* My Products */}
+        {/* My Listings */}
         <div className="lg:col-span-2 bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
             <h2 className="text-white font-bold">My Listings</h2>
             <Link href="/products/new"
               className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors">
-              <Plus className="w-3.5 h-3.5" /> Add Product
+              <Plus className="w-3.5 h-3.5" /> Add Listing
             </Link>
           </div>
 
@@ -112,18 +123,18 @@ export default function FarmerDashboard({ user }: Props) {
               <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-4">
                 <Package className="w-8 h-8 text-gray-700" />
               </div>
-              <h3 className="text-white font-bold mb-2">No products yet</h3>
+              <h3 className="text-white font-bold mb-2">No listings yet</h3>
               <p className="text-gray-600 text-sm mb-5 max-w-xs">
-                Start listing your agricultural products to reach buyers worldwide.
+                Start listing your products and services to reach buyers worldwide.
               </p>
               <Link href="/products/new"
                 className="bg-green-600 hover:bg-green-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2">
-                <Plus className="w-4 h-4" /> List First Product
+                <Plus className="w-4 h-4" /> Add First Listing
               </Link>
             </div>
           ) : (
             <div className="divide-y divide-white/[0.04]">
-              {products.slice(0, 6).map((product) => (
+              {products.slice(0, 6).map((product: any) => (
                 <div key={product.id} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] transition-colors">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-green-950/50 border border-white/[0.06] flex-shrink-0">
                     {product.main_image
@@ -150,7 +161,7 @@ export default function FarmerDashboard({ user }: Props) {
                 <div className="p-4 text-center">
                   <Link href="/dashboard/farmer/products"
                     className="text-green-400 hover:text-green-300 text-sm font-medium transition-colors">
-                    View all {products.length} products →
+                    View all {products.length} listings →
                   </Link>
                 </div>
               )}
@@ -196,7 +207,7 @@ export default function FarmerDashboard({ user }: Props) {
             <h3 className="text-white font-bold mb-4 text-sm">Quick Actions</h3>
             <div className="space-y-2">
               {[
-                { label: "Add New Product",  href: "/products/new",              icon: Plus,         color: "text-green-400" },
+                { label: "Add New Listing",  href: "/products/new",              icon: Plus,         color: "text-green-400" },
                 { label: "View Marketplace", href: "/marketplace",               icon: Eye,          color: "text-sky-400" },
                 { label: "Check Messages",   href: "/dashboard/farmer/messages", icon: MessageSquare,color: "text-violet-400" },
                 { label: "View RFQs",        href: "/dashboard/farmer/rfqs",     icon: FileText,     color: "text-amber-400" },
@@ -219,7 +230,7 @@ export default function FarmerDashboard({ user }: Props) {
                 <span className="text-amber-400 font-bold text-sm">Pending Review</span>
               </div>
               <p className="text-amber-600 text-xs">
-                {pendingProducts} product{pendingProducts > 1 ? "s" : ""} awaiting admin approval.
+                {pendingProducts} listing{pendingProducts > 1 ? "s" : ""} awaiting admin approval.
               </p>
             </div>
           )}
@@ -269,10 +280,10 @@ export default function FarmerDashboard({ user }: Props) {
         <h2 className="text-white font-bold mb-6">Performance Overview</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Response Rate",   value: `${user.response_rate.toFixed(0)}%`,   desc: "of inquiries answered",    good: user.response_rate > 80 },
-            { label: "Rating Average",  value: `${user.rating_average.toFixed(1)}★`,  desc: `from ${user.rating_count} reviews`, good: user.rating_average >= 4 },
-            { label: "Total Sales",     value: user.total_sales,                       desc: "completed orders",         good: user.total_sales > 0 },
-            { label: "Active Products", value: activeProducts,                         desc: "live listings",            good: activeProducts > 0 },
+            { label: "Response Rate",   value: `${user.response_rate.toFixed(0)}%`,  desc: "of inquiries answered",     good: user.response_rate > 80 },
+            { label: "Rating Average",  value: `${user.rating_average.toFixed(1)}★`, desc: `from ${user.rating_count} reviews`, good: user.rating_average >= 4 },
+            { label: "Total Sales",     value: user.total_sales,                      desc: "completed orders",          good: user.total_sales > 0 },
+            { label: "Active Listings", value: activeProducts,                        desc: "live listings",             good: activeProducts > 0 },
           ].map(({ label, value, desc, good }) => (
             <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-center">
               <div className={`text-2xl font-black mb-1 ${good ? "text-green-400" : "text-gray-500"}`}>{value}</div>
@@ -288,15 +299,15 @@ export default function FarmerDashboard({ user }: Props) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const config = {
-    active:         { label: "ACTIVE",    class: "bg-green-500/20 text-green-400 border-green-700/40" },
-    pending_review: { label: "PENDING",   class: "bg-amber-500/20 text-amber-400 border-amber-700/40" },
-    draft:          { label: "DRAFT",     class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
-    out_of_stock:   { label: "No Stock",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
-    suspended:      { label: "SUSPENDED", class: "bg-red-500/20 text-red-400 border-red-700/40" },
-    rejected:       { label: "REJECTED",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
-    archived:       { label: "ARCHIVED",  class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
-  } as Record<string, { label: string; class: string }>;
+  const config: Record<string, { label: string; class: string }> = {
+    ACTIVE:         { label: "Active",    class: "bg-green-500/20 text-green-400 border-green-700/40" },
+    PENDING_REVIEW: { label: "Pending",   class: "bg-amber-500/20 text-amber-400 border-amber-700/40" },
+    DRAFT:          { label: "Draft",     class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
+    OUT_OF_STOCK:   { label: "No Stock",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
+    SUSPENDED:      { label: "Suspended", class: "bg-red-500/20 text-red-400 border-red-700/40" },
+    REJECTED:       { label: "Rejected",  class: "bg-red-500/20 text-red-400 border-red-700/40" },
+    ARCHIVED:       { label: "Archived",  class: "bg-gray-500/20 text-gray-400 border-gray-700/40" },
+  };
 
   const c = config[status] ?? { label: status, class: "bg-gray-500/20 text-gray-400 border-gray-700/40" };
 
