@@ -4,14 +4,26 @@ import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { ADMIN_NAV } from "@/components/dashboard/AdminNav";
 import apiClient from "@/lib/api/client";
 import {
-  X, Loader2, CheckCircle2,
-  FileText, Clock, Package,
+  LayoutDashboard, Users, Package, ShoppingCart,
+  TrendingUp, Shield, Megaphone, BarChart3,
+  X, Loader2, CheckCircle2, FileText, Clock,
 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
+
+const NAV_ITEMS = [
+  { label: "Overview",      href: "/dashboard/admin",              icon: LayoutDashboard },
+  { label: "Users",         href: "/dashboard/admin/users",        icon: Users },
+  { label: "Products",      href: "/dashboard/admin/products",     icon: Package },
+  { label: "Orders",        href: "/dashboard/admin/orders",       icon: ShoppingCart },
+  { label: "Sourcing",      href: "/dashboard/admin/sourcing",     icon: FileText },
+  { label: "Commodities",   href: "/dashboard/admin/commodities",  icon: TrendingUp },
+  { label: "Certificates",  href: "/dashboard/admin/certificates", icon: Shield },
+  { label: "Announcements", href: "/dashboard/admin/announce",     icon: Megaphone },
+  { label: "Analytics",     href: "/dashboard/admin/analytics",    icon: BarChart3 },
+];
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN:      "bg-green-500/20 text-green-400 border-green-700/40",
@@ -83,13 +95,8 @@ export default function AdminSourcingPage() {
   if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
-  const ADMIN_NAV_WITH_SOURCING = [
-    ...ADMIN_NAV,
-    { label: "Sourcing", href: "/dashboard/admin/sourcing", icon: Package },
-  ];
-
   return (
-    <DashboardLayout navItems={ADMIN_NAV_WITH_SOURCING} title="Sourcing Requests">
+    <DashboardLayout navItems={NAV_ITEMS} title="Sourcing Requests">
       <div className="space-y-6">
 
         <div>
