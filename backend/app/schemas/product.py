@@ -136,7 +136,6 @@ class SellerSummarySchema(BaseModel):
     state:               Optional[str]  = None
     city:                Optional[str]  = None
     bio:                 Optional[str]  = None
-    website:             Optional[str]  = None
     rating_average:      float          = 0.0
     rating_count:        int            = 0
     total_sales:         int            = 0

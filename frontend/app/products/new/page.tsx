@@ -10,7 +10,7 @@ import Footer from "@/components/layout/Footer";
 import { productsApi } from "@/lib/api/products.api";
 import { ProductCategory } from "@/types";
 import {
-  ArrowLeft, ArrowRight, Loader2, Package, Upload, X, Truck,
+  ArrowLeft, ArrowRight, Loader2, Package, Upload, X, Truck, Shield,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -22,7 +22,7 @@ const schema = z.object({
   short_description:      z.string().optional(),
   category:               z.enum(["LIVESTOCK","DAIRY","CASH_CROPS","FRUITS","VEGETABLES","FISHERY","POULTRY","MACHINERY","SEEDS","FERTILIZERS"]),
   price:                  z.number().positive("Price must be greater than 0"),
-  currency:               z.string().min(1).default("USD"),
+  currency:               z.string().min(1).default("NGN"),
   is_negotiable:          z.boolean().default(false),
   minimum_order_quantity: z.number().positive().default(1),
   unit:                   z.enum(["KG","TONNE","GRAM","LITRE","PIECE","BAG","CRATE","DOZEN","BUNCH","HEAD","UNIT"]),
@@ -52,7 +52,7 @@ const CATEGORIES = [
 ];
 
 const UNITS      = ["KG","TONNE","GRAM","LITRE","PIECE","BAG","CRATE","DOZEN","BUNCH","HEAD","UNIT"];
-const CURRENCIES = ["USD","NGN","GBP","EUR","GHS","CFA"];
+const CURRENCIES = ["NGN","USD","GBP","EUR","GHS","CFA"];
 
 const DELIVERY_OPTIONS = [
   { value: "standard", label: "Standard Delivery", desc: "7-14 business days" },
@@ -61,15 +61,32 @@ const DELIVERY_OPTIONS = [
   { value: "freight",  label: "Freight/Logistics",  desc: "For bulk orders" },
 ];
 
+const CERTIFICATION_OPTIONS = [
+  "NAFDAC", "USDA Organic", "EU Organic", "SGS Certified",
+  "Halal", "ISO 22000", "GlobalGAP", "Fairtrade",
+];
+
 export default function NewProductPage() {
   const { isAuthenticated, hasHydrated } = useAuthStore();
   const router  = useRouter();
-  const [loading,         setLoading]         = useState(false);
-  const [step,            setStep]            = useState(1);
-  const [images,          setImages]          = useState<string[]>([]);
-  const [uploadingImage,  setUploadingImage]  = useState(false);
-  const [deliveryOptions, setDeliveryOptions] = useState<string[]>(["standard"]);
-  const [priceTiers,      setPriceTiers]      = useState<{min_qty: number, max_qty: number | null, price: number}[]>([]);
+  const [loading,          setLoading]          = useState(false);
+  const [step,             setStep]             = useState(1);
+  const [images,           setImages]           = useState<string[]>([]);
+  const [uploadingImage,   setUploadingImage]   = useState(false);
+  const [deliveryOptions,  setDeliveryOptions]  = useState<string[]>(["standard"]);
+  const [priceTiers,       setPriceTiers]       = useState<{min_qty: number, max_qty: number | null, price: number}[]>([]);
+  const [certifications,   setCertifications]   = useState<string[]>([]);
+  const [labReportUrl,     setLabReportUrl]     = useState("");
+  const [inspCertUrl,      setInspCertUrl]      = useState("");
+  const [uploadingDoc,     setUploadingDoc]     = useState<"lab" | "insp" | null>(null);
+  const [qualitySpecs,     setQualitySpecs]     = useState({
+    moisture_percentage:       "",
+    purity_percentage:         "",
+    foreign_matter_percentage: "",
+    protein_percentage:        "",
+    oil_content_percentage:    "",
+    broken_grain_percentage:   "",
+  });
 
   useEffect(() => {
     if (hasHydrated && !isAuthenticated) router.push("/login");
@@ -114,11 +131,33 @@ export default function NewProductPage() {
     }
   };
 
-  const toggleDelivery = (value: string) => {
-    setDeliveryOptions(prev =>
-      prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value]
-    );
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "lab" | "insp") => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { toast.error("File must be under 10MB"); return; }
+    setUploadingDoc(type);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiClient.post("/certificates/upload-doc", formData);
+      if (res.data.success) {
+        const url = res.data.data.document_url;
+        if (type === "lab") setLabReportUrl(url);
+        else setInspCertUrl(url);
+        toast.success("Document uploaded");
+      }
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setUploadingDoc(null);
+    }
   };
+
+  const toggleDelivery      = (value: string) => setDeliveryOptions(prev =>
+    prev.includes(value) ? prev.filter(d => d !== value) : [...prev, value]);
+
+  const toggleCertification = (value: string) => setCertifications(prev =>
+    prev.includes(value) ? prev.filter(c => c !== value) : [...prev, value]);
 
   const addTier    = () => setPriceTiers(prev => [...prev, { min_qty: 1, max_qty: null, price: 0 }]);
   const removeTier = (i: number) => setPriceTiers(prev => prev.filter((_, idx) => idx !== i));
@@ -135,6 +174,15 @@ export default function NewProductPage() {
         main_image:       images[0] || undefined,
         delivery_options: deliveryOptions,
         price_tiers:      priceTiers.length > 0 ? priceTiers : undefined,
+        certifications:   certifications.length > 0 ? certifications : undefined,
+        lab_report_url:             labReportUrl || undefined,
+        inspection_certificate_url: inspCertUrl  || undefined,
+        moisture_percentage:        qualitySpecs.moisture_percentage       ? Number(qualitySpecs.moisture_percentage)       : undefined,
+        purity_percentage:          qualitySpecs.purity_percentage         ? Number(qualitySpecs.purity_percentage)         : undefined,
+        foreign_matter_percentage:  qualitySpecs.foreign_matter_percentage ? Number(qualitySpecs.foreign_matter_percentage) : undefined,
+        protein_percentage:         qualitySpecs.protein_percentage        ? Number(qualitySpecs.protein_percentage)        : undefined,
+        oil_content_percentage:     qualitySpecs.oil_content_percentage    ? Number(qualitySpecs.oil_content_percentage)    : undefined,
+        broken_grain_percentage:    qualitySpecs.broken_grain_percentage   ? Number(qualitySpecs.broken_grain_percentage)   : undefined,
       };
       const res = await productsApi.create(payload);
       if (res.success) {
@@ -155,7 +203,8 @@ export default function NewProductPage() {
     { n: 1, label: "Basic Info" },
     { n: 2, label: "Pricing & Stock" },
     { n: 3, label: "Location" },
-    { n: 4, label: "Images & Delivery" },
+    { n: 4, label: "Quality" },
+    { n: 5, label: "Images & Delivery" },
   ];
 
   return (
@@ -189,7 +238,7 @@ export default function NewProductPage() {
               <span className={`text-sm font-medium hidden sm:block ${step === n ? "text-white" : "text-gray-600"}`}>
                 {label}
               </span>
-              {n < 4 && <div className="w-8 h-px bg-white/[0.08] mx-1" />}
+              {n < 5 && <div className="w-8 h-px bg-white/[0.08] mx-1" />}
             </div>
           ))}
         </div>
@@ -373,7 +422,7 @@ export default function NewProductPage() {
                         watch(key as any) ? "bg-green-500 border-green-500" : "border-white/[0.15]"
                       }`}>
                         {watch(key as any) && (
-                          <svg className="w-3 h-3 text-white" fill="NONE" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         )}
@@ -425,7 +474,7 @@ export default function NewProductPage() {
                   </h3>
                   <div className="space-y-2 text-sm">
                     {[
-                      { label: "Title",    value: watch("title") || "—" },
+                      { label: "Title",    value: watch("title")    || "—" },
                       { label: "Category", value: watch("category") || "—" },
                       { label: "Price",    value: watch("price") ? `${watch("currency")} ${watch("price")} / ${watch("unit")}` : "—" },
                       { label: "Stock",    value: watch("quantity_available") ? `${watch("quantity_available")} ${watch("unit")}` : "—" },
@@ -440,8 +489,123 @@ export default function NewProductPage() {
               </>
             )}
 
-            {/* Step 4 — Images & Delivery */}
+            {/* Step 4 — Quality & Certifications */}
             {step === 4 && (
+              <>
+                <div>
+                  <h3 className="text-white font-bold text-sm flex items-center gap-2 mb-1">
+                    <Shield className="w-4 h-4 text-green-400" /> Quality Specifications
+                  </h3>
+                  <p className="text-gray-600 text-xs mb-4">All fields are optional — fill in what applies to your product</p>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { key: "moisture_percentage",       label: "Moisture %",       placeholder: "e.g. 12.5" },
+                      { key: "purity_percentage",         label: "Purity %",         placeholder: "e.g. 98.0" },
+                      { key: "foreign_matter_percentage", label: "Foreign Matter %",  placeholder: "e.g. 0.5" },
+                      { key: "protein_percentage",        label: "Protein %",        placeholder: "e.g. 18.0" },
+                      { key: "oil_content_percentage",    label: "Oil Content %",    placeholder: "e.g. 45.0" },
+                      { key: "broken_grain_percentage",   label: "Broken Grain %",   placeholder: "e.g. 2.0" },
+                    ].map(({ key, label, placeholder }) => (
+                      <div key={key}>
+                        <label className="block text-xs font-medium text-gray-500 mb-1.5">{label}</label>
+                        <input
+                          type="number" step="0.01" placeholder={placeholder}
+                          value={qualitySpecs[key as keyof typeof qualitySpecs]}
+                          onChange={e => setQualitySpecs(prev => ({ ...prev, [key]: e.target.value }))}
+                          className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Certifications */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-3">Certifications</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {CERTIFICATION_OPTIONS.map(cert => (
+                      <div key={cert} onClick={() => toggleCertification(cert)}
+                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                          certifications.includes(cert)
+                            ? "border-green-600/60 bg-green-950/30 text-white"
+                            : "border-white/[0.07] bg-white/[0.02] text-gray-400 hover:border-white/[0.12] hover:text-white"
+                        }`}>
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all ${
+                          certifications.includes(cert) ? "bg-green-500 border-green-500" : "border-white/[0.2]"
+                        }`}>
+                          {certifications.includes(cert) && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className="text-xs font-medium">{cert}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Document uploads */}
+                <div className="space-y-4">
+                  <label className="block text-sm font-medium text-gray-400">Quality Documents</label>
+
+                  {/* Lab Report */}
+                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-white text-sm font-medium">Laboratory Report</p>
+                        <p className="text-gray-600 text-xs">PDF only · Max 10MB</p>
+                      </div>
+                      {labReportUrl
+                        ? <div className="flex items-center gap-2">
+                            <span className="text-green-400 text-xs font-medium">✓ Uploaded</span>
+                            <button type="button" onClick={() => setLabReportUrl("")}
+                              className="text-red-400 hover:text-red-300 text-xs">Remove</button>
+                          </div>
+                        : <label className="cursor-pointer flex items-center gap-1.5 text-xs font-bold text-green-400 hover:text-green-300 bg-green-950/40 border border-green-800/40 px-3 py-1.5 rounded-xl transition-colors">
+                            {uploadingDoc === "lab"
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              : <Upload className="w-3.5 h-3.5" />
+                            }
+                            Upload
+                            <input type="file" accept=".pdf" className="hidden"
+                              onChange={e => handleDocUpload(e, "lab")} />
+                          </label>
+                      }
+                    </div>
+                  </div>
+
+                  {/* Inspection Certificate */}
+                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="text-white text-sm font-medium">Inspection Certificate</p>
+                        <p className="text-gray-600 text-xs">PDF only · Max 10MB</p>
+                      </div>
+                      {inspCertUrl
+                        ? <div className="flex items-center gap-2">
+                            <span className="text-green-400 text-xs font-medium">✓ Uploaded</span>
+                            <button type="button" onClick={() => setInspCertUrl("")}
+                              className="text-red-400 hover:text-red-300 text-xs">Remove</button>
+                          </div>
+                        : <label className="cursor-pointer flex items-center gap-1.5 text-xs font-bold text-green-400 hover:text-green-300 bg-green-950/40 border border-green-800/40 px-3 py-1.5 rounded-xl transition-colors">
+                            {uploadingDoc === "insp"
+                              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              : <Upload className="w-3.5 h-3.5" />
+                            }
+                            Upload
+                            <input type="file" accept=".pdf" className="hidden"
+                              onChange={e => handleDocUpload(e, "insp")} />
+                          </label>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 5 — Images & Delivery */}
+            {step === 5 && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-3">
@@ -502,7 +666,7 @@ export default function NewProductPage() {
                           deliveryOptions.includes(opt.value) ? "bg-green-500 border-green-500" : "border-white/[0.15]"
                         }`}>
                           {deliveryOptions.includes(opt.value) && (
-                            <svg className="w-3 h-3 text-white" fill="NONE" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           )}
@@ -527,14 +691,13 @@ export default function NewProductPage() {
               {step === 1 ? "Cancel" : "Back"}
             </button>
 
-            {step < 4 ? (
+            {step < 5 ? (
               <button type="button" onClick={() => setStep(step + 1)}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-3 rounded-xl transition-colors text-sm">
                 Next <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
-              <button type="button"
-                disabled={loading}
+              <button type="button" disabled={loading}
                 onClick={() => handleSubmit(onSubmit)()}
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold px-8 py-3 rounded-xl transition-all text-sm shadow-xl shadow-green-900/30">
                 {loading
@@ -560,4 +723,3 @@ export default function NewProductPage() {
     </main>
   );
 }
-
