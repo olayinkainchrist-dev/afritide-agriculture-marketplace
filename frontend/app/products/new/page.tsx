@@ -139,7 +139,9 @@ export default function NewProductPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await apiClient.post("/certificates/upload-doc", formData);
+      const res = await apiClient.post("/certificates/upload-doc", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       if (res.data.success) {
         const url = res.data.data.document_url;
         if (type === "lab") setLabReportUrl(url);
