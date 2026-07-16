@@ -10,13 +10,14 @@ interface AuthState {
   hasHydrated:     boolean;
   setAuth:         (user: User, access_token: string, refresh_token: string) => void;
   updateUser:      (user: User) => void;
+  refreshUser:     () => Promise<void>;
   logout:          () => void;
   setHasHydrated:  (state: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user:            null,
       access_token:    null,
       refresh_token:   null,
@@ -30,6 +31,22 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateUser: (user) => set({ user }),
+
+      refreshUser: async () => {
+        const token = get().access_token;
+        if (!token) return;
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.data) set({ user: data.data });
+          }
+        } catch {
+          // silent fail — stale data is acceptable
+        }
+      },
 
       logout: () => {
         localStorage.removeItem("access_token");
@@ -50,6 +67,8 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
+        // Refresh user data on every app load
+        state?.refreshUser();
       },
     }
   )
