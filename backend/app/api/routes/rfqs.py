@@ -10,91 +10,6 @@ from datetime import datetime
 import uuid
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user, get_pagination, PaginationParams
-from app.core.responses import success_response, paginated_response
-from app.models.rfq import RFQ, RFQStatus
-from app.schemas.common import RFQCreateSchema, RFQQuoteSchema, RFQResponseSchema
-
-router = APIRouter()
-
-
-def generate_rfq_number():
-    return f"RFQ-{uuid.uuid4().hex[:8].upper()}"
-
-
-@router.post("", summary="Create a Request for Quotation")
-async def create_rfq(
-    payload: RFQCreateSchema,
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    rfq = RFQ(
-        rfq_number=generate_rfq_number(),
-        buyer_id=current_user.id,
-        seller_id=payload.seller_id,
-        product_id=payload.product_id,
-        product_name=payload.product_name,
-        category=payload.category,
-        quantity=payload.quantity,
-        unit=payload.unit,
-        target_price=payload.target_price,
-        currency=payload.currency,
-        delivery_country=payload.delivery_country,
-        delivery_date=payload.delivery_date,
-        specifications=payload.specifications,
-        additional_requirements=payload.additional_requirements,
-        status=RFQStatus.OPEN,
-    )
-    db.add(rfq)
-    db.commit()
-    db.refresh(rfq)
-
-    return success_response(
-        data=RFQResponseSchema.model_validate(rfq).model_dump(mode="json"),
-        message="RFQ submitted successfully",
-        status_code=201,
-    )
-
-
-@router.get("", summary="Get my RFQs")
-async def get_my_rfqs(
-    role: str = "buyer",
-    status: RFQStatus = None,
-    pagination: PaginationParams = Depends(get_pagination),
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    if role == "seller":
-        query = db.query(RFQ).filter(
-            or_(RFQ.seller_id == current_user.id, RFQ.seller_id.is_(None))
-        )
-    else:
-        query = db.query(RFQ).filter(RFQ.buyer_id == current_user.id)
-
-    if status:
-        query = query.filter(RFQ.status == status)
-
-    query = query.order_by(desc(RFQ.created_at))
-    total = query.count()
-    rfqs = query.offset(pagination.offset).limit(pagination.page_size).all()
-
-    return paginated_response(
-        data=[RFQResponseSchema.model_validate(r).model_dump(mode="json") for r in rfqs],
-        total=total, page=pagination.page, page_size=pagination.page_size,
-    )
-
-"""
-Afritide - Request for Quotation (RFQ) Routes
-Folder: backend/app/api/routes/rfqs.py
-"""
-
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, or_
-from datetime import datetime
-import uuid
-
-from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_admin_user, get_pagination, PaginationParams
 from app.core.responses import success_response, paginated_response
 from app.models.rfq import RFQ, RFQStatus
@@ -114,23 +29,22 @@ async def create_rfq(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Always route to admin — no direct seller contact
     rfq = RFQ(
-        rfq_number=       generate_rfq_number(),
-        buyer_id=         current_user.id,
-        seller_id=        None,  # Always None — admin handles it
-        product_id=       payload.product_id,
-        product_name=     payload.product_name,
-        category=         payload.category,
-        quantity=         payload.quantity,
-        unit=             payload.unit,
-        target_price=     payload.target_price,
-        currency=         payload.currency,
-        delivery_country= payload.delivery_country,
-        delivery_date=    payload.delivery_date,
-        specifications=   payload.specifications,
-        additional_requirements=payload.additional_requirements,
-        status=           RFQStatus.OPEN,
+        rfq_number=              generate_rfq_number(),
+        buyer_id=                current_user.id,
+        seller_id=               None,
+        product_id=              payload.product_id,
+        product_name=            payload.product_name,
+        category=                payload.category,
+        quantity=                payload.quantity,
+        unit=                    payload.unit,
+        target_price=            payload.target_price,
+        currency=                payload.currency,
+        delivery_country=        payload.delivery_country,
+        delivery_date=           payload.delivery_date,
+        specifications=          payload.specifications,
+        additional_requirements= payload.additional_requirements,
+        status=                  RFQStatus.OPEN,
     )
     db.add(rfq)
     db.commit()
@@ -151,14 +65,11 @@ async def get_my_rfqs(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if current_user.role == "admin":
-        # Admin sees ALL sourcing requests
+    if str(current_user.role).upper() == "ADMIN":
         query = db.query(RFQ)
     elif role == "buyer":
-        # Buyer sees only their own requests
         query = db.query(RFQ).filter(RFQ.buyer_id == current_user.id)
     else:
-        # Sellers can no longer see unassigned RFQs
         raise HTTPException(status_code=403, detail="Access denied")
 
     if status:
@@ -184,8 +95,7 @@ async def get_rfq(
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
 
-    # Only buyer who created it or admin can view
-    if rfq.buyer_id != current_user.id and current_user.role != "admin":
+    if rfq.buyer_id != current_user.id and str(current_user.role).upper() != "ADMIN":
         raise HTTPException(status_code=403, detail="Access denied")
 
     return success_response(
@@ -235,7 +145,7 @@ async def accept_quote(
     if rfq.status != RFQStatus.QUOTED:
         raise HTTPException(status_code=400, detail="No quote available to accept")
 
-    rfq.status = RFQStatus.ACCEPTED
+    rfq.status      = RFQStatus.ACCEPTED
     rfq.accepted_at = datetime.utcnow()
     db.commit()
 
