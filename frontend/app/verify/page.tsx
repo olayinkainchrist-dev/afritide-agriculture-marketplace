@@ -14,27 +14,35 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 
 const KYC_STEPS = [
-  { n: 1, label: "Identity",     desc: "Government-issued ID" },
-  { n: 2, label: "Business",     desc: "Business registration" },
-  { n: 3, label: "Review",       desc: "Admin verification" },
+  { n: 1, label: "Identity",  desc: "Government-issued ID" },
+  { n: 2, label: "Business",  desc: "Business registration" },
+  { n: 3, label: "Review",    desc: "Admin verification" },
 ];
 
 export default function VerifyPage() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [docUrl, setDocUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const [step,            setStep]            = useState(1);
+  const [submitting,      setSubmitting]      = useState(false);
+  const [submitted,       setSubmitted]       = useState(false);
+  const [docUrl,          setDocUrl]          = useState("");
+  const [uploading,       setUploading]       = useState(false);
   const [selectedDocType, setSelectedDocType] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) router.push("/login");
-    if (user?.kyc_approved) setSubmitted(true);
+    if (user?.kyc_approved)  setSubmitted(true);
     else if (user?.kyc_submitted) setSubmitted(true);
-  }, [isAuthenticated, user, router]);
+  }, [hasHydrated, isAuthenticated, user, router]);
+
+  const getDashboardHref = () => {
+    const role = user?.role?.toUpperCase();
+    if (role === "BUYER") return "/dashboard/buyer";
+    if (role === "ADMIN") return "/dashboard/admin";
+    return "/dashboard/farmer";
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,7 +52,6 @@ export default function VerifyPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      // No Content-Type header — let axios set it automatically with boundary
       const res = await apiClient.post("/certificates/upload-doc", formData);
       if (res.data.success) {
         setDocUrl(res.data.data.document_url);
@@ -59,11 +66,11 @@ export default function VerifyPage() {
 
   const handleSubmit = async () => {
     if (!selectedDocType) { toast.error("Please select a document type"); return; }
-    if (!docUrl) { toast.error("Please upload your document first"); return; }
+    if (!docUrl)          { toast.error("Please upload your document first"); return; }
     setSubmitting(true);
     try {
       await apiClient.put("/users/me", {
-        kyc_submitted: true,
+        kyc_submitted:    true,
         kyc_document_url: docUrl,
       });
       await apiClient.post(
@@ -78,6 +85,7 @@ export default function VerifyPage() {
     }
   };
 
+  if (!hasHydrated) return null;
   if (!isAuthenticated || !user) return null;
 
   return (
@@ -85,7 +93,6 @@ export default function VerifyPage() {
       <Navbar />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
 
-        {/* Header */}
         <div className="text-center mb-10">
           <div className="w-16 h-16 rounded-2xl bg-green-950/60 border border-green-800/40 flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-green-400" />
@@ -94,13 +101,13 @@ export default function VerifyPage() {
           <p className="text-gray-500">Get verified to unlock full platform features and build buyer trust</p>
         </div>
 
-        {/* Already approved */}
         {user.kyc_approved ? (
           <div className="bg-green-950/40 border border-green-800/40 rounded-3xl p-10 text-center">
             <BadgeCheck className="w-16 h-16 text-green-400 mx-auto mb-4" />
             <h2 className="text-2xl font-black text-white mb-2">You&apos;re Verified! 🎉</h2>
             <p className="text-gray-400 mb-6">Your account has been verified. You have a verified badge on your profile.</p>
-            <Link href="/profile" className="bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-3 rounded-xl transition-colors">
+            <Link href="/profile"
+              className="bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-3 rounded-xl transition-colors">
               View Profile →
             </Link>
           </div>
@@ -110,7 +117,8 @@ export default function VerifyPage() {
             <h2 className="text-2xl font-black text-white mb-2">Under Review</h2>
             <p className="text-gray-400 mb-2">Your documents have been submitted and are being reviewed by our team.</p>
             <p className="text-amber-400 text-sm font-medium mb-6">Expected review time: 24-48 hours</p>
-            <Link href="/dashboard/farmer" className="bg-white/[0.06] hover:bg-white/[0.09] border border-white/[0.1] text-white font-bold px-8 py-3 rounded-xl transition-colors">
+            <Link href={getDashboardHref()}
+              className="bg-white/[0.06] hover:bg-white/[0.09] border border-white/[0.1] text-white font-bold px-8 py-3 rounded-xl transition-colors">
               Back to Dashboard
             </Link>
           </div>
@@ -122,7 +130,7 @@ export default function VerifyPage() {
                 <div key={n} className="flex items-center gap-3">
                   <div className={`flex flex-col items-center ${n <= step ? "opacity-100" : "opacity-40"}`}>
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-sm mb-1 transition-all ${
-                      step > n ? "bg-green-600 text-white"
+                      step > n  ? "bg-green-600 text-white"
                       : step === n ? "bg-green-600 text-white ring-4 ring-green-600/20"
                       : "bg-white/[0.06] text-gray-500 border border-white/[0.1]"
                     }`}>
@@ -166,16 +174,12 @@ export default function VerifyPage() {
 
                 <div className="space-y-3">
                   {["National ID Card", "International Passport", "Driver's License", "Voter's Card"].map((doc) => (
-                    <button
-                      key={doc}
-                      type="button"
-                      onClick={() => setSelectedDocType(doc)}
+                    <button key={doc} type="button" onClick={() => setSelectedDocType(doc)}
                       className={`w-full flex items-center gap-3 p-3.5 border rounded-xl transition-all text-left ${
                         selectedDocType === doc
                           ? "border-green-600/70 bg-green-950/40 text-white"
                           : "border-white/[0.06] bg-white/[0.02] text-gray-300 hover:border-white/[0.14] hover:text-white"
-                      }`}
-                    >
+                      }`}>
                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
                         selectedDocType === doc ? "border-green-500" : "border-white/[0.2]"
                       }`}>
@@ -186,13 +190,10 @@ export default function VerifyPage() {
                   ))}
                 </div>
 
-                {/* Upload area */}
-                <div
-                  onClick={() => fileRef.current?.click()}
+                <div onClick={() => fileRef.current?.click()}
                   className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
                     docUrl ? "border-green-600/60 bg-green-950/20" : "border-white/[0.1] hover:border-green-700/40 hover:bg-white/[0.02]"
-                  }`}
-                >
+                  }`}>
                   <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={handleFileUpload} className="hidden" />
                   {uploading ? (
                     <div className="flex flex-col items-center gap-3">
@@ -203,8 +204,8 @@ export default function VerifyPage() {
                     <div className="flex flex-col items-center gap-3">
                       <CheckCircle2 className="w-8 h-8 text-green-400" />
                       <p className="text-green-400 font-medium text-sm">Document uploaded</p>
-                      <p className="text-gray-600 text-xs">{docUrl.replace("uploaded:", "")}</p>
-                      <button onClick={(e) => { e.stopPropagation(); setDocUrl(""); }} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                      <button onClick={(e) => { e.stopPropagation(); setDocUrl(""); }}
+                        className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
                         <X className="w-3 h-3" /> Remove
                       </button>
                     </div>
@@ -219,11 +220,8 @@ export default function VerifyPage() {
                   )}
                 </div>
 
-                <button
-                  onClick={() => setStep(2)}
-                  disabled={!docUrl || !selectedDocType}
-                  className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2"
-                >
+                <button onClick={() => setStep(2)} disabled={!docUrl || !selectedDocType}
+                  className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
                   Continue <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -245,16 +243,12 @@ export default function VerifyPage() {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => setStep(3)}
-                    className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2"
-                  >
+                  <button onClick={() => setStep(3)}
+                    className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
                     Continue to Review <ArrowRight className="w-4 h-4" />
                   </button>
-                  <button
-                    onClick={() => setStep(1)}
-                    className="w-full bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-gray-400 hover:text-white font-medium py-3 rounded-2xl transition-all text-sm"
-                  >
+                  <button onClick={() => setStep(1)}
+                    className="w-full bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-gray-400 hover:text-white font-medium py-3 rounded-2xl transition-all text-sm">
                     ← Back
                   </button>
                 </div>
@@ -293,20 +287,15 @@ export default function VerifyPage() {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                    className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
-                  >
+                  <button onClick={handleSubmit} disabled={submitting}
+                    className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30">
                     {submitting
                       ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
                       : <><Shield className="w-4 h-4" /> Submit for Verification</>
                     }
                   </button>
-                  <button
-                    onClick={() => setStep(2)}
-                    className="w-full bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-gray-400 hover:text-white font-medium py-3 rounded-2xl transition-all text-sm"
-                  >
+                  <button onClick={() => setStep(2)}
+                    className="w-full bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-gray-400 hover:text-white font-medium py-3 rounded-2xl transition-all text-sm">
                     ← Back
                   </button>
                 </div>
