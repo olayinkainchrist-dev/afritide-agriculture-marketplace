@@ -13,7 +13,7 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_admin_user, get_pagination, PaginationParams
 from app.core.responses import success_response, paginated_response
 from app.models.rfq import RFQ, RFQStatus
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.common import RFQCreateSchema, RFQQuoteSchema, RFQResponseSchema
 
 router = APIRouter()
@@ -65,7 +65,7 @@ async def get_my_rfqs(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if str(current_user.role).upper() == "ADMIN":
+    if current_user.role == UserRole.ADMIN:
         query = db.query(RFQ)
     elif role == "buyer":
         query = db.query(RFQ).filter(RFQ.buyer_id == current_user.id)
@@ -95,7 +95,7 @@ async def get_rfq(
     if not rfq:
         raise HTTPException(status_code=404, detail="RFQ not found")
 
-    if rfq.buyer_id != current_user.id and str(current_user.role).upper() != "ADMIN":
+    if rfq.buyer_id != current_user.id and current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Access denied")
 
     return success_response(
