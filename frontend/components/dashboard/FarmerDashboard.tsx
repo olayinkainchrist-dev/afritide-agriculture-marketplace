@@ -24,15 +24,18 @@ const NAV_ITEMS = [
   { label: "Analytics", href: "/dashboard/farmer/analytics", icon: BarChart3 },
 ];
 
+const PRODUCT_SELLER_ROLES = ["FARMER", "COOPERATIVE", "EXPORTER"];
+
 interface Props { user: User; }
 
 export default function FarmerDashboard({ user }: Props) {
   const { isAuthenticated } = useAuthStore();
+  const isProductSeller = PRODUCT_SELLER_ROLES.includes(user.role);
 
   const { data: productsData, isLoading: productsLoading } = useQuery({
     queryKey: ["my-products"],
     queryFn:  () => productsApi.getMyProducts({ page_size: 50 }),
-    enabled:  isAuthenticated,
+    enabled:  isAuthenticated && isProductSeller,
   });
 
   const { data: ordersData } = useQuery({
@@ -102,75 +105,77 @@ export default function FarmerDashboard({ user }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-        {/* My Listings */}
-        <div className="lg:col-span-2 bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
-            <h2 className="text-white font-bold">My Listings</h2>
-            <Link href="/products/new"
-              className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors">
-              <Plus className="w-3.5 h-3.5" /> Add Listing
-            </Link>
-          </div>
-
-          {productsLoading ? (
-            <div className="p-5 space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-16 bg-white/[0.03] rounded-xl animate-pulse" />
-              ))}
-            </div>
-          ) : products.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center px-5">
-              <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-4">
-                <Package className="w-8 h-8 text-gray-700" />
-              </div>
-              <h3 className="text-white font-bold mb-2">No listings yet</h3>
-              <p className="text-gray-600 text-sm mb-5 max-w-xs">
-                Start listing your products and services to reach buyers worldwide.
-              </p>
+        {/* My Listings — only for product sellers */}
+        {isProductSeller && (
+          <div className="lg:col-span-2 bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between p-5 border-b border-white/[0.06]">
+              <h2 className="text-white font-bold">My Listings</h2>
               <Link href="/products/new"
-                className="bg-green-600 hover:bg-green-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2">
-                <Plus className="w-4 h-4" /> Add First Listing
+                className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-colors">
+                <Plus className="w-3.5 h-3.5" /> Add Listing
               </Link>
             </div>
-          ) : (
-            <div className="divide-y divide-white/[0.04]">
-              {products.slice(0, 6).map((product: any) => (
-                <div key={product.id} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] transition-colors">
-                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-green-950/50 border border-white/[0.06] flex-shrink-0">
-                    {product.main_image
-                      ? <img src={product.main_image} alt="" className="w-full h-full object-cover" />
-                      : <Package className="w-5 h-5 text-green-800 m-auto mt-3.5" />
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm truncate">{product.title}</p>
-                    <p className="text-gray-600 text-xs">
-                      {getCategoryLabel(product.category)} · {formatPrice(product.price, product.currency)}/{product.unit}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-white text-xs font-bold">{formatNumber(product.view_count)} views</p>
-                      <p className="text-gray-600 text-[10px]">{product.order_count} orders</p>
+
+            {productsLoading ? (
+              <div className="p-5 space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-16 bg-white/[0.03] rounded-xl animate-pulse" />
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center px-5">
+                <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-4">
+                  <Package className="w-8 h-8 text-gray-700" />
+                </div>
+                <h3 className="text-white font-bold mb-2">No listings yet</h3>
+                <p className="text-gray-600 text-sm mb-5 max-w-xs">
+                  Start listing your products and services to reach buyers worldwide.
+                </p>
+                <Link href="/products/new"
+                  className="bg-green-600 hover:bg-green-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2">
+                  <Plus className="w-4 h-4" /> Add First Listing
+                </Link>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/[0.04]">
+                {products.slice(0, 6).map((product: any) => (
+                  <div key={product.id} className="flex items-center gap-4 p-4 hover:bg-white/[0.02] transition-colors">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-green-950/50 border border-white/[0.06] flex-shrink-0">
+                      {product.main_image
+                        ? <img src={product.main_image} alt="" className="w-full h-full object-cover" />
+                        : <Package className="w-5 h-5 text-green-800 m-auto mt-3.5" />
+                      }
                     </div>
-                    <StatusBadge status={product.status} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-semibold text-sm truncate">{product.title}</p>
+                      <p className="text-gray-600 text-xs">
+                        {getCategoryLabel(product.category)} · {formatPrice(product.price, product.currency)}/{product.unit}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="text-right hidden sm:block">
+                        <p className="text-white text-xs font-bold">{formatNumber(product.view_count)} views</p>
+                        <p className="text-gray-600 text-[10px]">{product.order_count} orders</p>
+                      </div>
+                      <StatusBadge status={product.status} />
+                    </div>
                   </div>
-                </div>
-              ))}
-              {products.length > 6 && (
-                <div className="p-4 text-center">
-                  <Link href="/dashboard/farmer/products"
-                    className="text-green-400 hover:text-green-300 text-sm font-medium transition-colors">
-                    View all {products.length} listings →
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                ))}
+                {products.length > 6 && (
+                  <div className="p-4 text-center">
+                    <Link href="/dashboard/farmer/products"
+                      className="text-green-400 hover:text-green-300 text-sm font-medium transition-colors">
+                      View all {products.length} listings →
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Sidebar */}
-        <div className="space-y-4">
+        <div className={isProductSeller ? "space-y-4" : "lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4"}>
 
           {/* Account status */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
@@ -207,7 +212,7 @@ export default function FarmerDashboard({ user }: Props) {
             <h3 className="text-white font-bold mb-4 text-sm">Quick Actions</h3>
             <div className="space-y-2">
               {[
-                { label: "Add New Listing",  href: "/products/new",              icon: Plus,         color: "text-green-400" },
+                ...(isProductSeller ? [{ label: "Add New Listing", href: "/products/new", icon: Plus, color: "text-green-400" }] : []),
                 { label: "View Marketplace", href: "/marketplace",               icon: Eye,          color: "text-sky-400" },
                 { label: "Check Messages",   href: "/dashboard/farmer/messages", icon: MessageSquare,color: "text-violet-400" },
                 { label: "View RFQs",        href: "/dashboard/farmer/rfqs",     icon: FileText,     color: "text-amber-400" },
@@ -223,7 +228,7 @@ export default function FarmerDashboard({ user }: Props) {
             </div>
           </div>
 
-          {pendingProducts > 0 && (
+          {pendingProducts > 0 && isProductSeller && (
             <div className="bg-amber-950/40 border border-amber-800/40 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="w-4 h-4 text-amber-400" />
