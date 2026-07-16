@@ -22,10 +22,10 @@ router = APIRouter()
 
 @router.post("", summary="Upload a certificate/document")
 async def upload_certificate(
-    type: CertificateType = Form(...),
-    certificate_number: str = Form(None),
-    issuing_authority: str = Form(None),
-    file: UploadFile = File(...),
+    type:                 CertificateType = Form(...),
+    certificate_number:   str             = Form(None),
+    issuing_authority:    str             = Form(None),
+    file:                 UploadFile      = File(...),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -34,19 +34,19 @@ async def upload_certificate(
         raise HTTPException(status_code=400, detail="Document upload failed")
 
     certificate = Certificate(
-        user_id=current_user.id,
-        type=type,
+        user_id=           current_user.id,
+        type=              type,
         certificate_number=certificate_number,
-        issuing_authority=issuing_authority,
-        document_url=url,
-        status=CertificateStatus.PENDING,
+        issuing_authority= issuing_authority,
+        document_url=      url,
+        status=            CertificateStatus.PENDING,
     )
     db.add(certificate)
     db.commit()
     db.refresh(certificate)
 
     return success_response(
-        data=CertificateResponseSchema.from_orm(certificate).dict(),
+        data=CertificateResponseSchema.model_validate(certificate).model_dump(mode="json"),
         message="Certificate uploaded and pending review",
         status_code=201,
     )
@@ -69,18 +69,18 @@ async def upload_kyc_document(
 
 @router.post("/from-url", summary="Submit certificate from URL")
 async def submit_certificate_from_url(
-    type: str,
+    type:         str,
     document_url: str,
-    notes: str = None,
+    notes:        str = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     certificate = Certificate(
-        user_id=current_user.id,
-        type=CertificateType.OTHER,
+        user_id=     current_user.id,
+        type=        CertificateType.OTHER,
         document_url=document_url,
-        notes=notes,
-        status=CertificateStatus.PENDING,
+        notes=       notes,
+        status=      CertificateStatus.PENDING,
     )
     db.add(certificate)
     db.commit()
@@ -97,29 +97,60 @@ async def get_my_certificates(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    certificates = db.query(Certificate).filter(Certificate.user_id == current_user.id).all()
-    return success_response(data=[CertificateResponseSchema.from_orm(c).dict() for c in certificates])
+    certificates = db.query(Certificate).filter(
+        Certificate.user_id == current_user.id
+    ).order_by(Certificate.created_at.desc()).all()
+    return success_response(
+        data=[CertificateResponseSchema.model_validate(c).model_dump(mode="json") for c in certificates]
+    )
+
+
+@router.get("/user/{user_id}", summary="Get certificates for a specific user (admin)")
+async def get_user_certificates(
+    user_id:     uuid.UUID,
+    current_user=Depends(get_admin_user),
+    db: Session  = Depends(get_db),
+):
+    certificates = db.query(Certificate).filter(
+        Certificate.user_id == user_id
+    ).order_by(Certificate.created_at.desc()).all()
+    return success_response(
+        data=[{
+            "id":           str(c.id),
+            "user_id":      str(c.user_id),
+            "type":         c.type,
+            "document_url": c.document_url,
+            "notes":        c.notes,
+            "status":       c.status,
+            "created_at":   c.created_at,
+        } for c in certificates]
+    )
 
 
 @router.get("/pending", summary="Get pending certificates for review (admin)")
 async def get_pending_certificates(
     current_user=Depends(get_admin_user),
-    db: Session = Depends(get_db),
+    db: Session  = Depends(get_db),
 ):
-    certificates = db.query(Certificate).filter(Certificate.status == CertificateStatus.PENDING).all()
+    certificates = db.query(Certificate).filter(
+        Certificate.status == CertificateStatus.PENDING
+    ).all()
     return success_response(data=[
         {
-            "id": str(c.id), "user_id": str(c.user_id), "type": c.type,
-            "certificate_number": c.certificate_number, "document_url": c.document_url,
-            "created_at": c.created_at,
+            "id":                 str(c.id),
+            "user_id":            str(c.user_id),
+            "type":               c.type,
+            "certificate_number": c.certificate_number,
+            "document_url":       c.document_url,
+            "created_at":         c.created_at,
         } for c in certificates
     ])
 
 
 @router.put("/{certificate_id}/review", summary="Approve or reject certificate (admin)")
 async def review_certificate(
-    certificate_id: uuid.UUID,
-    approved: bool,
+    certificate_id:   uuid.UUID,
+    approved:         bool,
     rejection_reason: str = None,
     current_user=Depends(get_admin_user),
     db: Session = Depends(get_db),
@@ -128,10 +159,10 @@ async def review_certificate(
     if not certificate:
         raise HTTPException(status_code=404, detail="Certificate not found")
 
-    certificate.status = CertificateStatus.APPROVED if approved else CertificateStatus.REJECTED
+    certificate.status           = CertificateStatus.APPROVED if approved else CertificateStatus.REJECTED
     certificate.rejection_reason = rejection_reason if not approved else None
-    certificate.verified_by = current_user.id
-    certificate.verified_at = datetime.utcnow()
+    certificate.verified_by      = current_user.id
+    certificate.verified_at      = datetime.utcnow()
     db.commit()
 
     return success_response(message=f"Certificate {'approved' if approved else 'rejected'}")
