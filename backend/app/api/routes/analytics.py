@@ -48,6 +48,7 @@ async def seller_analytics(
         "total_orders": total_orders,
         "completed_orders": completed_orders,
         "total_revenue": round(total_revenue, 2),
+        "currency":      "NGN",
         "total_views": total_views,
         "rating_average": current_user.rating_average,
         "rating_count": current_user.rating_count,
@@ -97,5 +98,6 @@ async def admin_analytics(
         "pending_products": pending_products,
         "total_orders": total_orders,
         "total_revenue": round(total_revenue, 2),
+        "currency":      "NGN",
         "top_countries": [{"country": c[0], "count": c[1]} for c in top_countries],
     })
