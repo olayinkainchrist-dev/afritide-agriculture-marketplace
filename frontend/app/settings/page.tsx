@@ -412,7 +412,7 @@ export default function SettingsPage() {
 
                     <button
                       onClick={() => handleSubscribe(plan.id)}
-                      disabled={isActive || plan.id === "free" || subscribing === plan.id}
+                      disabled={isActive || plan.id === "free" || (subscribing === plan.id && plan.id !== "enterprise")}
                       className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
                         isActive || plan.id === "free"
                           ? "bg-white/[0.04] text-gray-600 cursor-default"
