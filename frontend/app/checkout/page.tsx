@@ -9,41 +9,140 @@ import { cartApi } from "@/lib/api/cart.api";
 import apiClient from "@/lib/api/client";
 import {
   Loader2, ArrowLeft, CheckCircle2,
-  MapPin, Package, Shield,
+  MapPin, Package, Shield, Truck, Info,
 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
 
+const LOGISTICS_OPTIONS = {
+  COURIER: [
+    { id: "dhl_express",      label: "DHL Express",          desc: "3-5 business days · International & domestic",  price: "Calculated at delivery" },
+    { id: "fedex",            label: "FedEx",                desc: "3-7 business days · International",             price: "Calculated at delivery" },
+    { id: "ups",              label: "UPS",                  desc: "3-7 business days · International",             price: "Calculated at delivery" },
+    { id: "afritide",         label: "Afritide Logistics",   desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
+  ],
+  ROAD_FREIGHT: [
+    { id: "gig_logistics",    label: "GIG Logistics",        desc: "3-7 business days · Nigeria & West Africa",     price: "Negotiated with seller" },
+    { id: "abc_transport",    label: "ABC Transport",        desc: "3-7 business days · Nigeria",                   price: "Negotiated with seller" },
+    { id: "afritide",         label: "Afritide Logistics",   desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
+    { id: "local_haulier",    label: "Local Haulier",        desc: "Arrange directly with seller",                  price: "Negotiated with seller" },
+  ],
+  HEAVY_TRUCK: [
+    { id: "kobo360",          label: "Kobo360",              desc: "Pan-Africa trucking network",                   price: "Quote on request" },
+    { id: "lori_systems",     label: "Lori Systems",         desc: "Pan-Africa freight platform",                   price: "Quote on request" },
+    { id: "afritide",         label: "Afritide Logistics",   desc: "Coordinated freight solution",                  price: "Quote on request" },
+    { id: "local_trucking",   label: "Local Trucking",       desc: "Arrange directly with seller",                  price: "Negotiated with seller" },
+  ],
+  OCEAN_FREIGHT: [
+    { id: "maersk",           label: "Maersk",               desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
+    { id: "msc",              label: "MSC",                  desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
+    { id: "cma_cgm",          label: "CMA CGM",              desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
+    { id: "dhl_forwarding",   label: "DHL Global Forwarding",desc: "Full container & LCL options",                  price: "Quote on request" },
+    { id: "afritide",         label: "Afritide Logistics",   desc: "We coordinate your shipment",                   price: "Quote on request" },
+  ],
+  AIR_FREIGHT: [
+    { id: "dhl_forwarding",   label: "DHL Global Forwarding",desc: "Express air cargo · 2-5 days",                 price: "Quote on request" },
+    { id: "emirates_cargo",   label: "Emirates SkyCargo",    desc: "Premium air freight · 2-4 days",               price: "Quote on request" },
+    { id: "qatar_cargo",      label: "Qatar Cargo",          desc: "Air freight · 2-5 days",                       price: "Quote on request" },
+    { id: "afritide",         label: "Afritide Logistics",   desc: "We arrange your air shipment",                  price: "Quote on request" },
+  ],
+  PICKUP: [
+    { id: "pickup",           label: "Farm / Warehouse Pickup", desc: "Collect directly from seller's location",   price: "Free" },
+  ],
+};
+
+const SHIPMENT_TYPES = [
+  {
+    id:       "COURIER",
+    label:    "Courier",
+    desc:     "Under 70 kg",
+    emoji:    "📦",
+    weight:   "< 70 kg",
+    color:    "text-sky-400",
+    bg:       "bg-sky-950/30 border-sky-800/40",
+  },
+  {
+    id:       "ROAD_FREIGHT",
+    label:    "Road Freight",
+    desc:     "70 kg – 2 tonnes",
+    emoji:    "🚐",
+    weight:   "70 kg – 2T",
+    color:    "text-green-400",
+    bg:       "bg-green-950/30 border-green-800/40",
+  },
+  {
+    id:       "HEAVY_TRUCK",
+    label:    "Heavy Truck",
+    desc:     "2 – 20 tonnes",
+    emoji:    "🚛",
+    weight:   "2T – 20T",
+    color:    "text-amber-400",
+    bg:       "bg-amber-950/30 border-amber-800/40",
+  },
+  {
+    id:       "OCEAN_FREIGHT",
+    label:    "Ocean Freight",
+    desc:     "20+ tonnes / Containers",
+    emoji:    "🚢",
+    weight:   "20T+",
+    color:    "text-violet-400",
+    bg:       "bg-violet-950/30 border-violet-800/40",
+  },
+  {
+    id:       "AIR_FREIGHT",
+    label:    "Air Freight",
+    desc:     "Urgent international cargo",
+    emoji:    "✈️",
+    weight:   "Any weight",
+    color:    "text-rose-400",
+    bg:       "bg-rose-950/30 border-rose-800/40",
+  },
+  {
+    id:       "PICKUP",
+    label:    "Pickup",
+    desc:     "Collect from seller",
+    emoji:    "🏭",
+    weight:   "Any",
+    color:    "text-gray-400",
+    bg:       "bg-white/[0.03] border-white/[0.08]",
+  },
+];
+
+function getRecommendedShipmentType(totalWeightKg: number): string {
+  if (totalWeightKg < 70)    return "COURIER";
+  if (totalWeightKg < 2000)  return "ROAD_FREIGHT";
+  if (totalWeightKg < 20000) return "HEAVY_TRUCK";
+  return "OCEAN_FREIGHT";
+}
+
 export default function CheckoutPage() {
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const { items, setItems, clearCart }          = useCartStore();
   const router                                  = useRouter();
-  const [loading,    setLoading]    = useState(true);
-  const [processing, setProcessing] = useState(false);
-  const [orderDone,  setOrderDone]  = useState(false);
-  const [orderId,    setOrderId]    = useState<string | null>(null);
+  const [loading,          setLoading]          = useState(true);
+  const [processing,       setProcessing]       = useState(false);
+  const [orderDone,        setOrderDone]        = useState(false);
+  const [orderId,          setOrderId]          = useState<string | null>(null);
+  const [shipmentType,     setShipmentType]     = useState("COURIER");
+  const [logisticsPartner, setLogisticsPartner] = useState("dhl_express");
   const [form, setForm] = useState({
     shipping_address: "",
     shipping_city:    "",
     shipping_country: "Nigeria",
-    shipping_method:  "standard",
     buyer_notes:      "",
   });
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
+    if (!isAuthenticated) { router.push("/login"); return; }
     loadCart();
   }, [hasHydrated, isAuthenticated]);
 
   useEffect(() => {
-    const script = document.createElement("script");
-    script.src   = "https://js.paystack.co/v1/inline.js";
-    script.async = true;
+    const script   = document.createElement("script");
+    script.src     = "https://js.paystack.co/v1/inline.js";
+    script.async   = true;
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
   }, []);
@@ -51,7 +150,21 @@ export default function CheckoutPage() {
   const loadCart = async () => {
     try {
       const res = await cartApi.get();
-      setItems(res.data?.items || []);
+      const cartItems = res.data?.items || [];
+      setItems(cartItems);
+
+      // Auto-recommend shipment type based on total weight
+      const totalWeight = cartItems.reduce((sum: number, item: any) => {
+        const weightKg = item.unit === "TONNE" ? item.quantity * 1000
+                       : item.unit === "GRAM"  ? item.quantity / 1000
+                       : item.quantity;
+        return sum + weightKg;
+      }, 0);
+      setShipmentType(getRecommendedShipmentType(totalWeight));
+      const recommended = getRecommendedShipmentType(totalWeight);
+      setShipmentType(recommended);
+      const firstOption = LOGISTICS_OPTIONS[recommended as keyof typeof LOGISTICS_OPTIONS]?.[0];
+      if (firstOption) setLogisticsPartner(firstOption.id);
     } catch {
       toast.error("Failed to load cart");
     } finally {
@@ -59,23 +172,42 @@ export default function CheckoutPage() {
     }
   };
 
-  const subtotal    = items.reduce((sum, item) => sum + item.item_total, 0);
-  const total       = subtotal;
-  const currency    = items[0]?.currency || "NGN";
+  const subtotal = items.reduce((sum, item) => sum + item.item_total, 0);
+  const total    = subtotal;
+  const currency = items[0]?.currency || "NGN";
+
+  const totalWeightKg = items.reduce((sum: number, item: any) => {
+    const w = item.unit === "TONNE" ? item.quantity * 1000
+            : item.unit === "GRAM"  ? item.quantity / 1000
+            : item.quantity;
+    return sum + w;
+  }, 0);
+
+  const selectedType    = SHIPMENT_TYPES.find(t => t.id === shipmentType);
+  const currentPartners = LOGISTICS_OPTIONS[shipmentType as keyof typeof LOGISTICS_OPTIONS] || [];
+  const selectedPartner = currentPartners.find(p => p.id === logisticsPartner);
+
+  const handleShipmentTypeChange = (type: string) => {
+    setShipmentType(type);
+    const first = LOGISTICS_OPTIONS[type as keyof typeof LOGISTICS_OPTIONS]?.[0];
+    if (first) setLogisticsPartner(first.id);
+  };
 
   const handlePaystackSuccess = async (response: any) => {
     setProcessing(true);
     try {
       const res = await apiClient.post("/payments/paystack/verify", {
-        reference:        response.reference,
-        cart_items:       items,
+        reference:          response.reference,
+        cart_items:         items,
         shipping_address: {
           address: form.shipping_address,
           city:    form.shipping_city,
           country: form.shipping_country,
         },
-        shipping_method: form.shipping_method,
-        buyer_notes:     form.buyer_notes || undefined,
+        shipping_method:    selectedPartner?.label || shipmentType,
+        shipment_type:      shipmentType,
+        logistics_provider: logisticsPartner,
+        buyer_notes:        form.buyer_notes || undefined,
       });
 
       if (res.data?.success) {
@@ -104,8 +236,7 @@ export default function CheckoutPage() {
     }
 
     const reference = `AFR-${Date.now()}`;
-
-    const handler = (window as any).PaystackPop.setup({
+    const handler   = (window as any).PaystackPop.setup({
       key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
       email:    user?.email,
       amount:   Math.round(total * 100),
@@ -113,14 +244,15 @@ export default function CheckoutPage() {
       reference,
       metadata: {
         custom_fields: [
-          { display_name: "Buyer Name", variable_name: "buyer_name", value: `${user?.first_name} ${user?.last_name}` },
-          { display_name: "Platform",   variable_name: "platform",   value: "Afritide" },
+          { display_name: "Buyer Name",          variable_name: "buyer_name",          value: `${user?.first_name} ${user?.last_name}` },
+          { display_name: "Shipment Type",       variable_name: "shipment_type",       value: shipmentType },
+          { display_name: "Logistics Partner",   variable_name: "logistics_partner",   value: logisticsPartner },
+          { display_name: "Platform",            variable_name: "platform",            value: "Afritide" },
         ],
       },
       callback: (response: any) => handlePaystackSuccess(response),
       onClose:  () => toast("Payment cancelled"),
     });
-
     handler.openIframe();
   };
 
@@ -144,7 +276,8 @@ export default function CheckoutPage() {
               ✅ Payment received and confirmed<br />
               📧 Confirmation email sent to {user?.email}<br />
               🚚 Seller has been notified to process your order<br />
-              📦 Track your order in your dashboard
+              📦 Logistics: {selectedPartner?.label || shipmentType}<br />
+              🗂 Track your order in your dashboard
             </p>
           </div>
           <div className="flex gap-3 justify-center">
@@ -194,6 +327,7 @@ export default function CheckoutPage() {
 
             <div className="lg:col-span-2 space-y-6">
 
+              {/* Shipping Address */}
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
                 <h2 className="text-white font-bold text-lg mb-5 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-green-500" /> Shipping Address
@@ -201,78 +335,101 @@ export default function CheckoutPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs text-gray-500 mb-1.5 block">Street Address *</label>
-                    <input
-                      value={form.shipping_address}
+                    <input value={form.shipping_address}
                       onChange={e => setForm({ ...form, shipping_address: e.target.value })}
                       placeholder="e.g. 12 Lagos Road, Ikeja"
-                      className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-                    />
+                      className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-gray-500 mb-1.5 block">City *</label>
-                      <input
-                        value={form.shipping_city}
+                      <input value={form.shipping_city}
                         onChange={e => setForm({ ...form, shipping_city: e.target.value })}
                         placeholder="e.g. Lagos"
-                        className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-                      />
+                        className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
                     </div>
                     <div>
                       <label className="text-xs text-gray-500 mb-1.5 block">Country</label>
-                      <input
-                        value={form.shipping_country}
+                      <input value={form.shipping_country}
                         onChange={e => setForm({ ...form, shipping_country: e.target.value })}
                         placeholder="e.g. Nigeria"
-                        className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors"
-                      />
+                        className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* Shipment Type */}
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-                <h2 className="text-white font-bold text-lg mb-5 flex items-center gap-2">
-                  <Package className="w-5 h-5 text-green-500" /> Shipping Method
-                </h2>
-                <div className="space-y-3">
-                  {[
-                    { value: "standard", label: "Standard Delivery", desc: "7-14 business days",         price: "Free" },
-                    { value: "express",  label: "Express Delivery",  desc: "3-5 business days",          price: "Negotiated with seller" },
-                    { value: "pickup",   label: "Farm Pickup",       desc: "Pick up directly from farm", price: "Free" },
-                  ].map(method => (
-                    <label key={method.value}
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-white font-bold text-lg flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-green-500" /> Shipment Type
+                  </h2>
+                </div>
+
+                {/* Auto recommendation */}
+                <div className="bg-green-950/30 border border-green-800/30 rounded-xl p-3 flex items-start gap-2 mb-5">
+                  <Info className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-green-300 text-xs leading-relaxed">
+                    Based on your order weight (~{totalWeightKg.toFixed(1)} kg), we recommend{" "}
+                    <strong>{selectedType?.label}</strong>. You can change this below.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                  {SHIPMENT_TYPES.map(type => (
+                    <button key={type.id} type="button"
+                      onClick={() => handleShipmentTypeChange(type.id)}
+                      className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all text-center ${
+                        shipmentType === type.id
+                          ? `${type.bg} ${type.color} border-opacity-100`
+                          : "border-white/[0.07] bg-white/[0.02] text-gray-500 hover:border-white/[0.12] hover:text-white"
+                      }`}>
+                      <span className="text-2xl">{type.emoji}</span>
+                      <div>
+                        <p className="font-bold text-xs">{type.label}</p>
+                        <p className="text-[10px] opacity-70 mt-0.5">{type.weight}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Logistics Partner */}
+                <h3 className="text-gray-400 text-sm font-medium mb-3">Select Logistics Partner</h3>
+                <div className="space-y-2">
+                  {currentPartners.map(partner => (
+                    <label key={partner.id}
                       className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                        form.shipping_method === method.value
+                        logisticsPartner === partner.id
                           ? "border-green-600/60 bg-green-950/30"
                           : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]"
                       }`}>
-                      <input type="radio" name="shipping_method" value={method.value}
-                        checked={form.shipping_method === method.value}
-                        onChange={e => setForm({ ...form, shipping_method: e.target.value })}
-                        className="accent-green-500" />
+                      <input type="radio" name="logistics" value={partner.id}
+                        checked={logisticsPartner === partner.id}
+                        onChange={() => setLogisticsPartner(partner.id)}
+                        className="accent-green-500 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="text-white font-medium text-sm">{method.label}</p>
-                        <p className="text-gray-500 text-xs">{method.desc}</p>
+                        <p className="text-white font-medium text-sm">{partner.label}</p>
+                        <p className="text-gray-500 text-xs">{partner.desc}</p>
                       </div>
-                      <span className="text-green-400 text-sm font-bold">{method.price}</span>
+                      <span className="text-green-400 text-xs font-bold flex-shrink-0">{partner.price}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
+              {/* Order Notes */}
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
                 <h2 className="text-white font-bold text-lg mb-4">Order Notes (optional)</h2>
-                <textarea
-                  value={form.buyer_notes}
+                <textarea value={form.buyer_notes}
                   onChange={e => setForm({ ...form, buyer_notes: e.target.value })}
                   rows={3}
                   placeholder="Special instructions, delivery preferences..."
-                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors resize-none"
-                />
+                  className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors resize-none" />
               </div>
             </div>
 
+            {/* Order Summary */}
             <div className="lg:col-span-1">
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6 sticky top-24 space-y-5">
                 <h2 className="text-white font-bold text-lg">Order Summary</h2>
@@ -303,18 +460,28 @@ export default function CheckoutPage() {
                     <span className="text-white">{formatPrice(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Service fee</span>
-                    <span className="text-green-400">Included</span>
+                    <span className="text-gray-500">Logistics</span>
+                    <span className="text-gray-300 text-xs">{selectedPartner?.label || "—"}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Shipping</span>
-                    <span className="text-green-400">Free</span>
+                    <span className="text-gray-500">Shipping cost</span>
+                    <span className="text-amber-400 text-xs">Negotiated</span>
                   </div>
                   <div className="border-t border-white/[0.07] pt-3 flex justify-between">
                     <span className="text-white font-bold">Total</span>
                     <span className="text-green-400 font-black text-xl">{formatPrice(total, currency)}</span>
                   </div>
                 </div>
+
+                {/* Selected logistics summary */}
+                {selectedType && (
+                  <div className={`rounded-xl p-3 border ${selectedType.bg}`}>
+                    <p className={`text-xs font-bold mb-0.5 ${selectedType.color}`}>
+                      {selectedType.emoji} {selectedType.label}
+                    </p>
+                    <p className="text-gray-500 text-[10px]">{selectedPartner?.desc}</p>
+                  </div>
+                )}
 
                 <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-3 flex items-center gap-2">
                   <Shield className="w-4 h-4 text-green-500 flex-shrink-0" />

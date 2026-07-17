@@ -24,6 +24,15 @@ class OrderStatus(str, enum.Enum):
     REFUNDED   = "REFUNDED"
 
 
+class ShipmentType(str, enum.Enum):
+    COURIER        = "COURIER"
+    ROAD_FREIGHT   = "ROAD_FREIGHT"
+    HEAVY_TRUCK    = "HEAVY_TRUCK"
+    OCEAN_FREIGHT  = "OCEAN_FREIGHT"
+    AIR_FREIGHT    = "AIR_FREIGHT"
+    PICKUP         = "PICKUP"
+
+
 class Order(Base):
     __tablename__ = "orders"
 
@@ -50,6 +59,8 @@ class Order(Base):
     # Shipping
     shipping_address   = Column(JSON,        nullable=True)
     shipping_method    = Column(String(100), nullable=True)
+    shipment_type      = Column(Enum(ShipmentType), nullable=True)
+    logistics_provider = Column(String(100), nullable=True)
     tracking_number    = Column(String(100), nullable=True)
     estimated_delivery = Column(DateTime,    nullable=True)
     delivered_at       = Column(DateTime,    nullable=True)
