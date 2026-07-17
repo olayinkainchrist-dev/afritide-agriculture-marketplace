@@ -7,74 +7,112 @@ import Footer from "@/components/layout/Footer";
 import apiClient from "@/lib/api/client";
 import {
   User, Bell, Globe, Loader2, CheckCircle2,
-  Crown, Zap, Building2, Check, X,
+  Crown, Zap, Building2, Check, X, Sparkles,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 const PLANS = [
   {
-    id:       "free",
-    label:    "Free",
-    icon:     User,
-    color:    "text-gray-400",
-    bg:       "bg-white/[0.03] border-white/[0.08]",
-    active:   "border-gray-500/50 bg-white/[0.05]",
+    id:    "free",
+    label: "Free",
+    icon:  User,
+    color: "text-gray-400",
+    bg:    "bg-white/[0.03] border-white/[0.08]",
+    active:"border-gray-500/50 bg-white/[0.05]",
     price_ngn_monthly: 0,
     price_ngn_annual:  0,
     price_usd_monthly: 0,
     price_usd_annual:  0,
-    features: [
-      { label: "5 product listings",          included: true },
-      { label: "Basic marketplace access",    included: true },
-      { label: "Standard support",            included: true },
-      { label: "Priority search placement",   included: false },
-      { label: "Analytics dashboard",         included: false },
-      { label: "Top Seller badge",            included: false },
-      { label: "3 promoted listings",         included: false },
+    commission: "5%",
+    impact: [
+      { label: "10 product listings",                   good: true },
+      { label: "Basic marketplace access",              good: true },
+      { label: "Buyer messaging & order management",    good: true },
+      { label: "Basic analytics",                       good: true },
+      { label: "Community support",                     good: true },
+      { label: "Priority search placement",             good: false },
+      { label: "Verified Seller badge",                 good: false },
+      { label: "Promoted listings",                     good: false },
     ],
   },
   {
-    id:       "pro",
-    label:    "Pro",
-    icon:     Zap,
-    color:    "text-green-400",
-    bg:       "bg-green-950/30 border-green-800/40",
-    active:   "border-green-500 bg-green-950/50",
+    id:    "pro",
+    label: "Pro",
+    icon:  Zap,
+    color: "text-green-400",
+    bg:    "bg-green-950/30 border-green-800/40",
+    active:"border-green-500 bg-green-950/50",
     price_ngn_monthly: 5000,
     price_ngn_annual:  50000,
     price_usd_monthly: 10,
     price_usd_annual:  100,
-    badge:    "Most Popular",
-    features: [
-      { label: "20 product listings",         included: true },
-      { label: "Priority search placement",   included: true },
-      { label: "Analytics dashboard",         included: true },
-      { label: "Top Seller badge",            included: true },
-      { label: "3 promoted listings/month",   included: true },
-      { label: "Priority support",            included: true },
-      { label: "Dedicated account manager",   included: false },
+    badge:      "Most Popular",
+    commission: "3.5%",
+    impact: [
+      { label: "50 product listings",                   good: true },
+      { label: "💰 Save 30% on marketplace commission", good: true },
+      { label: "📈 5× more product visibility",         good: true },
+      { label: "⭐ Verified Seller badge",              good: true },
+      { label: "5 promoted listings/month",             good: true },
+      { label: "Analytics + price trend reports",       good: true },
+      { label: "🚚 Discounted shipping quotes",         good: true },
+      { label: "🌍 Export buyer inquiries",             good: true },
+      { label: "Priority support",                      good: true },
+      { label: "Dedicated account manager",             good: false },
+      { label: "Custom storefront",                     good: false },
     ],
   },
   {
-    id:       "business",
-    label:    "Business",
-    icon:     Building2,
-    color:    "text-amber-400",
-    bg:       "bg-amber-950/30 border-amber-800/40",
-    active:   "border-amber-500 bg-amber-950/50",
+    id:    "business",
+    label: "Business",
+    icon:  Building2,
+    color: "text-amber-400",
+    bg:    "bg-amber-950/30 border-amber-800/40",
+    active:"border-amber-500 bg-amber-950/50",
     price_ngn_monthly: 15000,
     price_ngn_annual:  150000,
     price_usd_monthly: 30,
     price_usd_annual:  300,
-    badge:    "Best Value",
-    features: [
-      { label: "Unlimited listings",          included: true },
-      { label: "Priority search placement",   included: true },
-      { label: "Advanced analytics",          included: true },
-      { label: "Top Seller badge",            included: true },
-      { label: "10 promoted listings/month",  included: true },
-      { label: "Dedicated account manager",   included: true },
-      { label: "Branded storefront",          included: true },
+    badge:      "Best Value",
+    commission: "2%",
+    impact: [
+      { label: "Unlimited listings",                       good: true },
+      { label: "💰 Save 60% on marketplace commission",    good: true },
+      { label: "📈 Premium placement in search",           good: true },
+      { label: "🏢 Business Verified badge",               good: true },
+      { label: "Unlimited promoted listings",              good: true },
+      { label: "🚚 Priority logistics support",            good: true },
+      { label: "🌍 Freight forwarding assistance",         good: true },
+      { label: "Export documentation tools",               good: true },
+      { label: "Historical price charts & forecasts",      good: true },
+      { label: "RFQ management",                           good: true },
+      { label: "Dedicated account manager",                good: true },
+      { label: "Custom branded storefront",                good: true },
+    ],
+  },
+  {
+    id:    "enterprise",
+    label: "Enterprise",
+    icon:  Crown,
+    color: "text-violet-400",
+    bg:    "bg-violet-950/30 border-violet-800/40",
+    active:"border-violet-500 bg-violet-950/50",
+    price_ngn_monthly: 0,
+    price_ngn_annual:  0,
+    price_usd_monthly: 0,
+    price_usd_annual:  0,
+    badge:      "Custom Pricing",
+    commission: "Negotiated",
+    impact: [
+      { label: "Unlimited everything",                     good: true },
+      { label: "Multi-user accounts",                      good: true },
+      { label: "API access & ERP integration",             good: true },
+      { label: "White-label storefront",                   good: true },
+      { label: "Dedicated success manager",                good: true },
+      { label: "Bulk procurement & contract management",   good: true },
+      { label: "AI demand predictions",                    good: true },
+      { label: "Custom reporting & SLA support",           good: true },
+      { label: "Negotiated commission rates",              good: true },
     ],
   },
 ];
@@ -82,10 +120,10 @@ const PLANS = [
 export default function SettingsPage() {
   const { user, isAuthenticated, updateUser } = useAuthStore();
   const router = useRouter();
-  const [saving,        setSaving]        = useState(false);
-  const [billing,       setBilling]       = useState<"monthly" | "annual">("monthly");
-  const [currency,      setCurrency]      = useState<"NGN" | "USD">("NGN");
-  const [subscribing,   setSubscribing]   = useState<string | null>(null);
+  const [saving,      setSaving]      = useState(false);
+  const [billing,     setBilling]     = useState<"monthly" | "annual">("monthly");
+  const [currency,    setCurrency]    = useState<"NGN" | "USD">("NGN");
+  const [subscribing, setSubscribing] = useState<string | null>(null);
   const [form, setForm] = useState({
     first_name:          "",
     last_name:           "",
@@ -103,14 +141,14 @@ export default function SettingsPage() {
     if (!isAuthenticated) router.push("/login");
     if (user) {
       setForm({
-        first_name:          user.first_name || "",
-        last_name:           user.last_name  || "",
-        bio:                 (user as any).bio      || "",
-        country:             user.country           || "",
-        state:               user.state             || "",
-        city:                (user as any).city     || "",
-        language:            (user as any).language || "en",
-        currency:            user.currency          || "USD",
+        first_name:          user.first_name          || "",
+        last_name:           user.last_name           || "",
+        bio:                 (user as any).bio        || "",
+        country:             user.country             || "",
+        state:               user.state               || "",
+        city:                (user as any).city       || "",
+        language:            (user as any).language   || "en",
+        currency:            user.currency            || "USD",
         email_notifications: (user as any).email_notifications ?? true,
         sms_notifications:   (user as any).sms_notifications   ?? true,
       });
@@ -123,6 +161,33 @@ export default function SettingsPage() {
     script.async = true;
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
+  }, []);
+
+  // Handle Stripe subscription return
+  useEffect(() => {
+    const params    = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    const subPlan   = params.get("sub_plan") || sessionStorage.getItem("sub_plan");
+    const subCycle  = params.get("sub_cycle") || sessionStorage.getItem("sub_cycle");
+
+    if (sessionId && subPlan && subCycle) {
+      apiClient.post("/subscriptions/verify", {
+        plan:          subPlan,
+        billing_cycle: subCycle,
+        currency:      "USD",
+        reference:     sessionId,
+      }).then(res => {
+        if (res.data.success) {
+          toast.success(`Upgraded to ${subPlan.charAt(0).toUpperCase() + subPlan.slice(1)} plan!`);
+          updateUser({ ...(user as any), subscription_plan: subPlan });
+          sessionStorage.removeItem("sub_plan");
+          sessionStorage.removeItem("sub_cycle");
+          window.history.replaceState({}, "", "/settings");
+        }
+      }).catch(() => {
+        toast.error("Failed to activate subscription");
+      });
+    }
   }, []);
 
   const handleSave = async () => {
@@ -142,6 +207,10 @@ export default function SettingsPage() {
 
   const handleSubscribe = async (planId: string) => {
     if (planId === "free") return;
+    if (planId === "enterprise") {
+      window.location.href = "mailto:hello@afritidegroup.com?subject=Enterprise Plan Inquiry";
+      return;
+    }
     if ((user as any)?.subscription_plan === planId) {
       toast("You are already on this plan");
       return;
@@ -192,7 +261,6 @@ export default function SettingsPage() {
       });
       handler.openIframe();
     } else {
-      // Stripe for USD
       try {
         const res = await apiClient.post("/payments/stripe/create-session", {
           cart_items: [{
@@ -225,33 +293,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Handle Stripe subscription return
-  useEffect(() => {
-    const params    = new URLSearchParams(window.location.search);
-    const sessionId = params.get("session_id");
-    const subPlan   = params.get("sub_plan") || sessionStorage.getItem("sub_plan");
-    const subCycle  = params.get("sub_cycle") || sessionStorage.getItem("sub_cycle");
-
-    if (sessionId && subPlan && subCycle) {
-      apiClient.post("/subscriptions/verify", {
-        plan:          subPlan,
-        billing_cycle: subCycle,
-        currency:      "USD",
-        reference:     sessionId,
-      }).then(res => {
-        if (res.data.success) {
-          toast.success(`Upgraded to ${subPlan.charAt(0).toUpperCase() + subPlan.slice(1)} plan!`);
-          updateUser({ ...(user as any), subscription_plan: subPlan });
-          sessionStorage.removeItem("sub_plan");
-          sessionStorage.removeItem("sub_cycle");
-          window.history.replaceState({}, "", "/settings");
-        }
-      }).catch(() => {
-        toast.error("Failed to activate subscription");
-      });
-    }
-  }, []);
-
   if (!isAuthenticated || !user) return null;
 
   const currentPlan = (user as any)?.subscription_plan || "free";
@@ -259,7 +300,7 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-[#060f08]">
       <Navbar />
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-black text-white mb-2">Settings</h1>
           <p className="text-gray-500">Manage your account preferences</p>
@@ -269,12 +310,11 @@ export default function SettingsPage() {
 
           {/* Subscription Plans */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <h2 className="text-white font-bold flex items-center gap-2">
                 <Crown className="w-4 h-4 text-amber-400" /> Subscription Plan
               </h2>
-              <div className="flex items-center gap-3">
-                {/* Currency toggle */}
+              <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-1">
                   {(["NGN", "USD"] as const).map(c => (
                     <button key={c} onClick={() => setCurrency(c)}
@@ -283,11 +323,10 @@ export default function SettingsPage() {
                       }`}>{c}</button>
                   ))}
                 </div>
-                {/* Billing toggle */}
                 <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-1">
                   {(["monthly", "annual"] as const).map(b => (
                     <button key={b} onClick={() => setBilling(b)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all capitalize ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                         billing === b ? "bg-green-600 text-white" : "text-gray-500 hover:text-white"
                       }`}>
                       {b === "annual" ? "Annual (Save 17%)" : "Monthly"}
@@ -297,7 +336,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Current plan badge */}
             <div className="bg-green-950/30 border border-green-800/30 rounded-xl p-3 mb-5 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
               <p className="text-green-300 text-sm">
@@ -310,47 +348,63 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {PLANS.map(plan => {
-                const Icon      = plan.icon;
-                const isActive  = currentPlan === plan.id;
-                const price     = currency === "NGN"
+                const Icon     = plan.icon;
+                const isActive = currentPlan === plan.id;
+                const price    = currency === "NGN"
                   ? (billing === "monthly" ? plan.price_ngn_monthly : plan.price_ngn_annual)
                   : (billing === "monthly" ? plan.price_usd_monthly : plan.price_usd_annual);
-                const symbol    = currency === "NGN" ? "₦" : "$";
-                const period    = billing === "monthly" ? "/mo" : "/yr";
+                const symbol   = currency === "NGN" ? "₦" : "$";
+                const period   = billing === "monthly" ? "/mo" : "/yr";
 
                 return (
                   <div key={plan.id}
-                    className={`relative border rounded-2xl p-5 transition-all ${
+                    className={`relative border rounded-2xl p-5 transition-all flex flex-col ${
                       isActive ? plan.active : plan.bg
                     }`}>
                     {plan.badge && (
                       <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-black px-3 py-1 rounded-full bg-green-600 text-white whitespace-nowrap">
-                        {plan.badge}
+                        {(plan as any).badge}
                       </span>
                     )}
+
                     <div className="flex items-center gap-2 mb-3">
                       <Icon className={`w-4 h-4 ${plan.color}`} />
                       <span className={`font-bold text-sm ${plan.color}`}>{plan.label}</span>
-                      {isActive && <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-700/40 px-2 py-0.5 rounded-full font-bold ml-auto">Active</span>}
+                      {isActive && (
+                        <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-700/40 px-2 py-0.5 rounded-full font-bold ml-auto">
+                          Active
+                        </span>
+                      )}
                     </div>
 
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <span className={`text-2xl font-black ${plan.color}`}>
-                        {price === 0 ? "Free" : `${symbol}${price.toLocaleString()}`}
+                        {plan.id === "enterprise" ? "Custom"
+                          : price === 0 ? "Free"
+                          : `${symbol}${price.toLocaleString()}`}
                       </span>
-                      {price > 0 && <span className="text-gray-600 text-xs">{period}</span>}
+                      {price > 0 && plan.id !== "enterprise" && (
+                        <span className="text-gray-600 text-xs">{period}</span>
+                      )}
                     </div>
 
-                    <div className="space-y-2 mb-5">
-                      {plan.features.map(f => (
-                        <div key={f.label} className="flex items-center gap-2">
-                          {f.included
-                            ? <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                            : <X     className="w-3.5 h-3.5 text-gray-700 flex-shrink-0" />
+                    {/* Commission badge */}
+                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-1.5 mb-4 flex items-center justify-between">
+                      <span className="text-gray-600 text-[10px] uppercase tracking-wide">Commission</span>
+                      <span className={`font-black text-xs ${plan.color}`}>{plan.commission}</span>
+                    </div>
+
+                    {/* Features */}
+                    <div className="space-y-2 mb-5 flex-1 max-h-52 overflow-y-auto scrollbar-hide">
+                      {plan.impact.map((f: any) => (
+                        <div key={f.label} className="flex items-start gap-2">
+                          {f.good
+                            ? <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" />
+                            : <X     className="w-3.5 h-3.5 text-gray-700 flex-shrink-0 mt-0.5" />
                           }
-                          <span className={`text-xs ${f.included ? "text-gray-300" : "text-gray-600"}`}>
+                          <span className={`text-xs leading-relaxed ${f.good ? "text-gray-300" : "text-gray-600"}`}>
                             {f.label}
                           </span>
                         </div>
@@ -365,12 +419,15 @@ export default function SettingsPage() {
                           ? "bg-white/[0.04] text-gray-600 cursor-default"
                           : plan.id === "pro"
                           ? "bg-green-600 hover:bg-green-500 text-white"
-                          : "bg-amber-600 hover:bg-amber-500 text-white"
+                          : plan.id === "business"
+                          ? "bg-amber-600 hover:bg-amber-500 text-white"
+                          : "bg-violet-600 hover:bg-violet-500 text-white"
                       }`}>
                       {subscribing === plan.id
                         ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        : isActive ? "Current Plan"
+                        : isActive           ? "Current Plan"
                         : plan.id === "free" ? "Free Plan"
+                        : plan.id === "enterprise" ? <><Sparkles className="w-3.5 h-3.5" /> Contact Us</>
                         : `Upgrade to ${plan.label}`
                       }
                     </button>
