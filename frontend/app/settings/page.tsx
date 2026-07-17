@@ -411,9 +411,9 @@ export default function SettingsPage() {
                     </div>
 
                     {plan.id === "enterprise" ? (
-                      <a href="mailto:hello@afritidegroup.com?subject=Enterprise Plan Inquiry"
+                      <a href="/enterprise"
                         className="w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white">
-                        <Sparkles className="w-3.5 h-3.5" /> Contact Us
+                        <Sparkles className="w-3.5 h-3.5" /> Contact Sales
                       </a>
                     ) : (
                       <button

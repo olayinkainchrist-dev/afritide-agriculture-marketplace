@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime
+from typing import Optional
 import uuid
 
 from app.core.database import get_db
@@ -28,6 +29,17 @@ class SupportTicketCreate(BaseModel):
 
 class SupportReplySchema(BaseModel):
     reply: str
+
+
+class EnterpriseInquiryPayload(BaseModel):
+    full_name:      str
+    email:          str
+    phone:          Optional[str] = None
+    company_name:   str
+    role:           Optional[str] = None
+    country:        Optional[str] = None
+    monthly_volume: Optional[str] = None
+    message:        str
 
 
 @router.post("/contact", summary="Submit a support ticket")
@@ -61,6 +73,44 @@ async def submit_support_ticket(
         message="Support ticket submitted successfully",
         status_code=201,
     )
+
+
+@router.post("/enterprise-inquiry", summary="Submit enterprise inquiry")
+async def enterprise_inquiry(
+    payload: EnterpriseInquiryPayload,
+    db: Session = Depends(get_db),
+):
+    try:
+        from app.services.email import _send_email, _email_wrapper
+        content = f"""
+            <h2 style="color: #1A1A1A;">🏢 New Enterprise Inquiry</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr><td style="padding: 8px; color: #555;"><strong>Name:</strong></td><td style="padding: 8px;">{payload.full_name}</td></tr>
+                <tr><td style="padding: 8px; color: #555;"><strong>Email:</strong></td><td style="padding: 8px;">{payload.email}</td></tr>
+                <tr><td style="padding: 8px; color: #555;"><strong>Phone:</strong></td><td style="padding: 8px;">{payload.phone or '—'}</td></tr>
+                <tr><td style="padding: 8px; color: #555;"><strong>Company:</strong></td><td style="padding: 8px;">{payload.company_name}</td></tr>
+                <tr><td style="padding: 8px; color: #555;"><strong>Role:</strong></td><td style="padding: 8px;">{payload.role or '—'}</td></tr>
+                <tr><td style="padding: 8px; color: #555;"><strong>Country:</strong></td><td style="padding: 8px;">{payload.country or '—'}</td></tr>
+                <tr><td style="padding: 8px; color: #555;"><strong>Monthly Volume:</strong></td><td style="padding: 8px;">{payload.monthly_volume or '—'}</td></tr>
+            </table>
+            <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 16px;">
+                <p style="color: #333; font-size: 14px; margin: 0;">{payload.message}</p>
+            </div>
+        """
+        _send_email("afritidegroup@gmail.com", f"[Enterprise] {payload.company_name} — {payload.full_name}", _email_wrapper(content))
+
+        # Confirmation to user
+        confirm = f"""
+            <h2 style="color: #1A1A1A;">Thank you, {payload.full_name}! 🎉</h2>
+            <p style="color: #555;">We've received your Enterprise inquiry for <strong>{payload.company_name}</strong>.</p>
+            <p style="color: #555;">Our sales team will contact you within <strong>24 hours</strong>.</p>
+            <p style="color: #555;">For urgent inquiries, WhatsApp us directly.</p>
+        """
+        _send_email(payload.email, "Afritide Enterprise — We'll be in touch!", _email_wrapper(confirm))
+    except Exception:
+        pass
+
+    return success_response(message="Enterprise inquiry submitted successfully")
 
 
 @router.get("/tickets", summary="Get all support tickets (admin only)")

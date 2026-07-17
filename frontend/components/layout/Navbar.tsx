@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, Search, ChevronDown, Leaf, TrendingUp, ShoppingCart, Calendar } from "lucide-react";
+import { Menu, X, Search, ChevronDown, Leaf, TrendingUp, ShoppingCart, Calendar, Crown } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { getInitials } from "@/lib/utils";
 import NotificationBell from "@/components/shared/NotificationBell";
@@ -179,6 +179,10 @@ export default function Navbar() {
             <Link href="/farmers"
               className="text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
               Farmers
+            </Link>
+            <Link href="/enterprise"
+              className="flex items-center gap-1.5 text-violet-400 hover:text-violet-300 text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
+              <Crown className="w-3.5 h-3.5" /> Enterprise
             </Link>
           </div>
 
