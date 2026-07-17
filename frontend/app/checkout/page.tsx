@@ -2,14 +2,14 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useCartStore } from "@/lib/store/cart.store";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { cartApi } from "@/lib/api/cart.api";
 import apiClient from "@/lib/api/client";
 import {
   Loader2, ArrowLeft, CheckCircle2,
-  MapPin, Package, Shield, Truck, Info,
+  MapPin, Package, Shield, Truck, Info, CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
@@ -17,96 +17,48 @@ import toast from "react-hot-toast";
 
 const LOGISTICS_OPTIONS = {
   COURIER: [
-    { id: "dhl_express",      label: "DHL Express",          desc: "3-5 business days · International & domestic",  price: "Calculated at delivery" },
-    { id: "fedex",            label: "FedEx",                desc: "3-7 business days · International",             price: "Calculated at delivery" },
-    { id: "ups",              label: "UPS",                  desc: "3-7 business days · International",             price: "Calculated at delivery" },
-    { id: "afritide",         label: "Afritide Logistics",   desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
+    { id: "dhl_express",    label: "DHL Express",           desc: "3-5 business days · International & domestic",  price: "Calculated at delivery" },
+    { id: "fedex",          label: "FedEx",                 desc: "3-7 business days · International",             price: "Calculated at delivery" },
+    { id: "ups",            label: "UPS",                   desc: "3-7 business days · International",             price: "Calculated at delivery" },
+    { id: "afritide",       label: "Afritide Logistics",    desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
   ],
   ROAD_FREIGHT: [
-    { id: "gig_logistics",    label: "GIG Logistics",        desc: "3-7 business days · Nigeria & West Africa",     price: "Negotiated with seller" },
-    { id: "abc_transport",    label: "ABC Transport",        desc: "3-7 business days · Nigeria",                   price: "Negotiated with seller" },
-    { id: "afritide",         label: "Afritide Logistics",   desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
-    { id: "local_haulier",    label: "Local Haulier",        desc: "Arrange directly with seller",                  price: "Negotiated with seller" },
+    { id: "gig_logistics",  label: "GIG Logistics",         desc: "3-7 business days · Nigeria & West Africa",     price: "Negotiated with seller" },
+    { id: "abc_transport",  label: "ABC Transport",         desc: "3-7 business days · Nigeria",                   price: "Negotiated with seller" },
+    { id: "afritide",       label: "Afritide Logistics",    desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
+    { id: "local_haulier",  label: "Local Haulier",         desc: "Arrange directly with seller",                  price: "Negotiated with seller" },
   ],
   HEAVY_TRUCK: [
-    { id: "kobo360",          label: "Kobo360",              desc: "Pan-Africa trucking network",                   price: "Quote on request" },
-    { id: "lori_systems",     label: "Lori Systems",         desc: "Pan-Africa freight platform",                   price: "Quote on request" },
-    { id: "afritide",         label: "Afritide Logistics",   desc: "Coordinated freight solution",                  price: "Quote on request" },
-    { id: "local_trucking",   label: "Local Trucking",       desc: "Arrange directly with seller",                  price: "Negotiated with seller" },
+    { id: "kobo360",        label: "Kobo360",               desc: "Pan-Africa trucking network",                   price: "Quote on request" },
+    { id: "lori_systems",   label: "Lori Systems",          desc: "Pan-Africa freight platform",                   price: "Quote on request" },
+    { id: "afritide",       label: "Afritide Logistics",    desc: "Coordinated freight solution",                  price: "Quote on request" },
+    { id: "local_trucking", label: "Local Trucking",        desc: "Arrange directly with seller",                  price: "Negotiated with seller" },
   ],
   OCEAN_FREIGHT: [
-    { id: "maersk",           label: "Maersk",               desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
-    { id: "msc",              label: "MSC",                  desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
-    { id: "cma_cgm",          label: "CMA CGM",              desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
-    { id: "dhl_forwarding",   label: "DHL Global Forwarding",desc: "Full container & LCL options",                  price: "Quote on request" },
-    { id: "afritide",         label: "Afritide Logistics",   desc: "We coordinate your shipment",                   price: "Quote on request" },
+    { id: "maersk",         label: "Maersk",                desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
+    { id: "msc",            label: "MSC",                   desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
+    { id: "cma_cgm",        label: "CMA CGM",               desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
+    { id: "dhl_forwarding", label: "DHL Global Forwarding", desc: "Full container & LCL options",                  price: "Quote on request" },
+    { id: "afritide",       label: "Afritide Logistics",    desc: "We coordinate your shipment",                   price: "Quote on request" },
   ],
   AIR_FREIGHT: [
-    { id: "dhl_forwarding",   label: "DHL Global Forwarding",desc: "Express air cargo · 2-5 days",                 price: "Quote on request" },
-    { id: "emirates_cargo",   label: "Emirates SkyCargo",    desc: "Premium air freight · 2-4 days",               price: "Quote on request" },
-    { id: "qatar_cargo",      label: "Qatar Cargo",          desc: "Air freight · 2-5 days",                       price: "Quote on request" },
-    { id: "afritide",         label: "Afritide Logistics",   desc: "We arrange your air shipment",                  price: "Quote on request" },
+    { id: "dhl_forwarding",  label: "DHL Global Forwarding",desc: "Express air cargo · 2-5 days",                 price: "Quote on request" },
+    { id: "emirates_cargo",  label: "Emirates SkyCargo",    desc: "Premium air freight · 2-4 days",               price: "Quote on request" },
+    { id: "qatar_cargo",     label: "Qatar Cargo",          desc: "Air freight · 2-5 days",                       price: "Quote on request" },
+    { id: "afritide",        label: "Afritide Logistics",   desc: "We arrange your air shipment",                  price: "Quote on request" },
   ],
   PICKUP: [
-    { id: "pickup",           label: "Farm / Warehouse Pickup", desc: "Collect directly from seller's location",   price: "Free" },
+    { id: "pickup",          label: "Farm / Warehouse Pickup", desc: "Collect directly from seller's location",   price: "Free" },
   ],
 };
 
 const SHIPMENT_TYPES = [
-  {
-    id:       "COURIER",
-    label:    "Courier",
-    desc:     "Under 70 kg",
-    emoji:    "📦",
-    weight:   "< 70 kg",
-    color:    "text-sky-400",
-    bg:       "bg-sky-950/30 border-sky-800/40",
-  },
-  {
-    id:       "ROAD_FREIGHT",
-    label:    "Road Freight",
-    desc:     "70 kg – 2 tonnes",
-    emoji:    "🚐",
-    weight:   "70 kg – 2T",
-    color:    "text-green-400",
-    bg:       "bg-green-950/30 border-green-800/40",
-  },
-  {
-    id:       "HEAVY_TRUCK",
-    label:    "Heavy Truck",
-    desc:     "2 – 20 tonnes",
-    emoji:    "🚛",
-    weight:   "2T – 20T",
-    color:    "text-amber-400",
-    bg:       "bg-amber-950/30 border-amber-800/40",
-  },
-  {
-    id:       "OCEAN_FREIGHT",
-    label:    "Ocean Freight",
-    desc:     "20+ tonnes / Containers",
-    emoji:    "🚢",
-    weight:   "20T+",
-    color:    "text-violet-400",
-    bg:       "bg-violet-950/30 border-violet-800/40",
-  },
-  {
-    id:       "AIR_FREIGHT",
-    label:    "Air Freight",
-    desc:     "Urgent international cargo",
-    emoji:    "✈️",
-    weight:   "Any weight",
-    color:    "text-rose-400",
-    bg:       "bg-rose-950/30 border-rose-800/40",
-  },
-  {
-    id:       "PICKUP",
-    label:    "Pickup",
-    desc:     "Collect from seller",
-    emoji:    "🏭",
-    weight:   "Any",
-    color:    "text-gray-400",
-    bg:       "bg-white/[0.03] border-white/[0.08]",
-  },
+  { id: "COURIER",       label: "Courier",       desc: "Under 70 kg",            emoji: "📦", weight: "< 70 kg",   color: "text-sky-400",    bg: "bg-sky-950/30 border-sky-800/40" },
+  { id: "ROAD_FREIGHT",  label: "Road Freight",  desc: "70 kg – 2 tonnes",       emoji: "🚐", weight: "70 kg – 2T",color: "text-green-400",  bg: "bg-green-950/30 border-green-800/40" },
+  { id: "HEAVY_TRUCK",   label: "Heavy Truck",   desc: "2 – 20 tonnes",          emoji: "🚛", weight: "2T – 20T",  color: "text-amber-400",  bg: "bg-amber-950/30 border-amber-800/40" },
+  { id: "OCEAN_FREIGHT", label: "Ocean Freight", desc: "20+ tonnes / Containers",emoji: "🚢", weight: "20T+",      color: "text-violet-400", bg: "bg-violet-950/30 border-violet-800/40" },
+  { id: "AIR_FREIGHT",   label: "Air Freight",   desc: "Urgent international",   emoji: "✈️", weight: "Any weight",color: "text-rose-400",   bg: "bg-rose-950/30 border-rose-800/40" },
+  { id: "PICKUP",        label: "Pickup",        desc: "Collect from seller",    emoji: "🏭", weight: "Any",       color: "text-gray-400",   bg: "bg-white/[0.03] border-white/[0.08]" },
 ];
 
 function getRecommendedShipmentType(totalWeightKg: number): string {
@@ -116,10 +68,13 @@ function getRecommendedShipmentType(totalWeightKg: number): string {
   return "OCEAN_FREIGHT";
 }
 
+const STRIPE_CURRENCIES = ["USD", "GBP", "EUR", "GHS", "KES", "ZAR"];
+
 export default function CheckoutPage() {
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const { items, setItems, clearCart }          = useCartStore();
   const router                                  = useRouter();
+  const searchParams                            = useSearchParams();
   const [loading,          setLoading]          = useState(true);
   const [processing,       setProcessing]       = useState(false);
   const [orderDone,        setOrderDone]        = useState(false);
@@ -139,28 +94,35 @@ export default function CheckoutPage() {
     loadCart();
   }, [hasHydrated, isAuthenticated]);
 
+  // Handle Stripe redirect return
   useEffect(() => {
-    const script   = document.createElement("script");
-    script.src     = "https://js.paystack.co/v1/inline.js";
-    script.async   = true;
+    const sessionId = searchParams.get("session_id");
+    if (sessionId && items.length > 0) {
+      handleStripeSuccess(sessionId);
+    }
+  }, [searchParams, items]);
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src   = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
   }, []);
 
   const loadCart = async () => {
     try {
-      const res = await cartApi.get();
+      const res       = await cartApi.get();
       const cartItems = res.data?.items || [];
       setItems(cartItems);
 
-      // Auto-recommend shipment type based on total weight
       const totalWeight = cartItems.reduce((sum: number, item: any) => {
-        const weightKg = item.unit === "TONNE" ? item.quantity * 1000
-                       : item.unit === "GRAM"  ? item.quantity / 1000
-                       : item.quantity;
-        return sum + weightKg;
+        const w = item.unit === "TONNE" ? item.quantity * 1000
+                : item.unit === "GRAM"  ? item.quantity / 1000
+                : item.quantity;
+        return sum + w;
       }, 0);
-      setShipmentType(getRecommendedShipmentType(totalWeight));
+
       const recommended = getRecommendedShipmentType(totalWeight);
       setShipmentType(recommended);
       const firstOption = LOGISTICS_OPTIONS[recommended as keyof typeof LOGISTICS_OPTIONS]?.[0];
@@ -175,6 +137,7 @@ export default function CheckoutPage() {
   const subtotal = items.reduce((sum, item) => sum + item.item_total, 0);
   const total    = subtotal;
   const currency = items[0]?.currency || "NGN";
+  const useStripe = STRIPE_CURRENCIES.includes(currency.toUpperCase());
 
   const totalWeightKg = items.reduce((sum: number, item: any) => {
     const w = item.unit === "TONNE" ? item.quantity * 1000
@@ -193,21 +156,76 @@ export default function CheckoutPage() {
     if (first) setLogisticsPartner(first.id);
   };
 
+  const getShippingPayload = () => ({
+    cart_items:         items,
+    shipping_address: {
+      address: form.shipping_address,
+      city:    form.shipping_city,
+      country: form.shipping_country,
+    },
+    shipping_method:    selectedPartner?.label || shipmentType,
+    shipment_type:      shipmentType,
+    logistics_provider: logisticsPartner,
+    buyer_notes:        form.buyer_notes || undefined,
+  });
+
+  const handleStripeCheckout = async () => {
+    if (!form.shipping_address || !form.shipping_city) {
+      toast.error("Please enter your shipping address");
+      return;
+    }
+    setProcessing(true);
+    try {
+      const res = await apiClient.post("/payments/stripe/create-session", {
+        ...getShippingPayload(),
+        currency:    currency,
+        success_url: `${window.location.origin}/checkout`,
+        cancel_url:  `${window.location.origin}/checkout`,
+      });
+
+      if (res.data?.success) {
+        // Store cart data in sessionStorage for after redirect
+        sessionStorage.setItem("checkout_payload", JSON.stringify(getShippingPayload()));
+        window.location.href = res.data.data.checkout_url;
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to create payment session");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleStripeSuccess = async (sessionId: string) => {
+    setProcessing(true);
+    try {
+      const savedPayload = sessionStorage.getItem("checkout_payload");
+      const checkoutData = savedPayload ? JSON.parse(savedPayload) : getShippingPayload();
+
+      const res = await apiClient.post("/payments/stripe/verify", {
+        session_id: sessionId,
+        ...checkoutData,
+      });
+
+      if (res.data?.success) {
+        setOrderId(res.data?.data?.order_id);
+        setOrderDone(true);
+        clearCart();
+        await cartApi.clear();
+        sessionStorage.removeItem("checkout_payload");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to process order");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handlePaystackSuccess = async (response: any) => {
     setProcessing(true);
     try {
       const res = await apiClient.post("/payments/paystack/verify", {
-        reference:          response.reference,
-        cart_items:         items,
-        shipping_address: {
-          address: form.shipping_address,
-          city:    form.shipping_city,
-          country: form.shipping_country,
-        },
-        shipping_method:    selectedPartner?.label || shipmentType,
-        shipment_type:      shipmentType,
-        logistics_provider: logisticsPartner,
-        buyer_notes:        form.buyer_notes || undefined,
+        reference: response.reference,
+        ...getShippingPayload(),
       });
 
       if (res.data?.success) {
@@ -225,16 +243,11 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleCheckout = () => {
+  const handlePaystackCheckout = () => {
     if (!form.shipping_address || !form.shipping_city) {
       toast.error("Please enter your shipping address");
       return;
     }
-    if (items.length === 0) {
-      toast.error("Your cart is empty");
-      return;
-    }
-
     const reference = `AFR-${Date.now()}`;
     const handler   = (window as any).PaystackPop.setup({
       key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
@@ -244,16 +257,21 @@ export default function CheckoutPage() {
       reference,
       metadata: {
         custom_fields: [
-          { display_name: "Buyer Name",          variable_name: "buyer_name",          value: `${user?.first_name} ${user?.last_name}` },
-          { display_name: "Shipment Type",       variable_name: "shipment_type",       value: shipmentType },
-          { display_name: "Logistics Partner",   variable_name: "logistics_partner",   value: logisticsPartner },
-          { display_name: "Platform",            variable_name: "platform",            value: "Afritide" },
+          { display_name: "Buyer Name",        variable_name: "buyer_name",        value: `${user?.first_name} ${user?.last_name}` },
+          { display_name: "Shipment Type",     variable_name: "shipment_type",     value: shipmentType },
+          { display_name: "Logistics Partner", variable_name: "logistics_partner", value: logisticsPartner },
+          { display_name: "Platform",          variable_name: "platform",          value: "Afritide" },
         ],
       },
       callback: (response: any) => handlePaystackSuccess(response),
       onClose:  () => toast("Payment cancelled"),
     });
     handler.openIframe();
+  };
+
+  const handleCheckout = () => {
+    if (useStripe) handleStripeCheckout();
+    else           handlePaystackCheckout();
   };
 
   if (!hasHydrated) return null;
@@ -361,13 +379,10 @@ export default function CheckoutPage() {
 
               {/* Shipment Type */}
               <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h2 className="text-white font-bold text-lg flex items-center gap-2">
-                    <Truck className="w-5 h-5 text-green-500" /> Shipment Type
-                  </h2>
-                </div>
+                <h2 className="text-white font-bold text-lg mb-2 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-green-500" /> Shipment Type
+                </h2>
 
-                {/* Auto recommendation */}
                 <div className="bg-green-950/30 border border-green-800/30 rounded-xl p-3 flex items-start gap-2 mb-5">
                   <Info className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                   <p className="text-green-300 text-xs leading-relaxed">
@@ -394,7 +409,6 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                {/* Logistics Partner */}
                 <h3 className="text-gray-400 text-sm font-medium mb-3">Select Logistics Partner</h3>
                 <div className="space-y-2">
                   {currentPartners.map(partner => (
@@ -473,7 +487,6 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Selected logistics summary */}
                 {selectedType && (
                   <div className={`rounded-xl p-3 border ${selectedType.bg}`}>
                     <p className={`text-xs font-bold mb-0.5 ${selectedType.color}`}>
@@ -483,16 +496,29 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                <div className="bg-green-950/20 border border-green-900/30 rounded-xl p-3 flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-green-500 flex-shrink-0" />
-                  <p className="text-gray-400 text-xs">Secured by Paystack. Your payment is protected.</p>
+                {/* Payment method indicator */}
+                <div className={`rounded-xl p-3 border flex items-center gap-2 ${
+                  useStripe
+                    ? "bg-violet-950/20 border-violet-800/30"
+                    : "bg-green-950/20 border-green-900/30"
+                }`}>
+                  <CreditCard className={`w-4 h-4 flex-shrink-0 ${useStripe ? "text-violet-400" : "text-green-500"}`} />
+                  <p className="text-gray-400 text-xs">
+                    {useStripe
+                      ? "International payment via Stripe · Secure checkout"
+                      : "Nigerian payment via Paystack · Your payment is protected"
+                    }
+                  </p>
                 </div>
 
                 <button onClick={handleCheckout} disabled={processing}
                   className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30">
                   {processing
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
-                    : <>Pay {formatPrice(total, currency)}</>
+                    : <>
+                        <Shield className="w-4 h-4" />
+                        {useStripe ? `Pay ${formatPrice(total, currency)} via Stripe` : `Pay ${formatPrice(total, currency)}`}
+                      </>
                   }
                 </button>
 

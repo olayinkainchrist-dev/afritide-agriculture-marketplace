@@ -43,6 +43,8 @@ class VerifyPaymentPayload(BaseModel):
     cart_items:       List[CartItemPayload]
     shipping_address: Dict
     shipping_method:  str
+    shipment_type:      Optional[str] = None
+    logistics_provider: Optional[str] = None
     buyer_notes:      Optional[str] = None
 
 
@@ -98,6 +100,8 @@ async def verify_paystack_payment(
             currency=         seller_items[0].currency,
             shipping_address= payload.shipping_address,
             shipping_method=  payload.shipping_method,
+            shipment_type=    payload.shipment_type,
+            logistics_provider=payload.logistics_provider,
             buyer_notes=      payload.buyer_notes,
             payment_method=   "paystack",
             payment_reference=payload.reference,

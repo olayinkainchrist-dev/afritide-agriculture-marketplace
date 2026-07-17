@@ -28,7 +28,7 @@ from app.api.routes import (
     notifications, logistics as logistics_router,
     warehouses, certificates, advertisements,
     analytics as analytics_router, admin, search, support,
-    price_alerts, cart, paystack as paystack_router
+    price_alerts, cart, paystack as paystack_router, stripe as stripe_router
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -118,6 +118,7 @@ app.include_router(support.router,          prefix=f"{API_PREFIX}/support",     
 app.include_router(price_alerts.router,     prefix=f"{API_PREFIX}/price-alerts",   tags=["🔔 Price Alerts"])
 app.include_router(cart.router,             prefix=f"{API_PREFIX}/cart",           tags=["🛒 Cart"])
 app.include_router(paystack_router.router, prefix=f"{API_PREFIX}/payments", tags=["💳 Payments"])
+app.include_router(stripe_router.router, prefix=f"{API_PREFIX}/payments", tags=["💳 Payments"])
 # ── HEALTH CHECK ────────────────────────────────────────────────────────────
 
 @app.get("/", tags=["Health"])
