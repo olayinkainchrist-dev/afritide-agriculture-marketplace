@@ -124,10 +124,13 @@ class User(Base):
     following_count    = Column(Integer, default=0, nullable=False)
 
     # Subscription
-    is_featured         = Column(Boolean, default=False, nullable=False)
-    featured_until      = Column(DateTime, nullable=True)
-    subscription_plan   = Column(String(50), default="free", nullable=False)
-    subscription_expires= Column(DateTime, nullable=True)
+    is_featured              = Column(Boolean, default=False, nullable=False)
+    featured_until           = Column(DateTime, nullable=True)
+    subscription_plan        = Column(String(50), default="free", nullable=False)
+    subscription_expires     = Column(DateTime, nullable=True)
+    subscription_started_at  = Column(DateTime, nullable=True)
+    max_listings             = Column(Integer, default=5, nullable=False)
+    listing_count            = Column(Integer, default=0, nullable=False)
 
     # Timestamps
     last_login = Column(DateTime, nullable=True)
