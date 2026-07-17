@@ -111,8 +111,8 @@ const PLANS = [
       { label: "Dedicated success manager",                good: true },
       { label: "Bulk procurement & contract management",   good: true },
       { label: "AI demand predictions",                    good: true },
-      { label: "Custom reporting & SLA support",           good: true },
-      { label: "Negotiated commission rates",              good: true },
+      { label: "Custom reporting & SLA support",            good: true },
+      { label: "Negotiated commission rates",               good: true },
     ],
   },
 ];
@@ -239,23 +239,22 @@ export default function SettingsPage() {
             { display_name: "Billing Cycle", variable_name: "billing_cycle", value: billing },
           ],
         },
-        callback: async (response: any) => {
-          try {
-            const res = await apiClient.post("/subscriptions/verify", {
-              plan:          planId,
-              billing_cycle: billing,
-              currency:      "NGN",
-              reference:     response.reference,
-            });
+        callback: (response: any) => {
+          apiClient.post("/subscriptions/verify", {
+            plan:          planId,
+            billing_cycle: billing,
+            currency:      "NGN",
+            reference:     response.reference,
+          }).then(res => {
             if (res.data.success) {
               toast.success(`Upgraded to ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan!`);
               updateUser({ ...(user as any), subscription_plan: planId });
             }
-          } catch (err: any) {
+          }).catch((err: any) => {
             toast.error(err.response?.data?.detail || "Failed to activate plan");
-          } finally {
+          }).finally(() => {
             setSubscribing(null);
-          }
+          });
         },
         onClose: () => setSubscribing(null),
       });
