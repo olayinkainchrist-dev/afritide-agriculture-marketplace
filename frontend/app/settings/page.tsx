@@ -410,32 +410,30 @@ export default function SettingsPage() {
                       ))}
                     </div>
 
-                    <button
-                      onClick={() => {
-                        if (plan.id === "enterprise") {
-                          window.open("mailto:hello@afritidegroup.com?subject=Enterprise Plan Inquiry", "_blank");
-                          return;
+                    {plan.id === "enterprise" ? (
+                      <a href="mailto:hello@afritidegroup.com?subject=Enterprise Plan Inquiry"
+                        className="w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white">
+                        <Sparkles className="w-3.5 h-3.5" /> Contact Us
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => handleSubscribe(plan.id)}
+                        disabled={isActive || plan.id === "free" || subscribing === plan.id}
+                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                          isActive || plan.id === "free"
+                            ? "bg-white/[0.04] text-gray-600 cursor-default"
+                            : plan.id === "pro"
+                            ? "bg-green-600 hover:bg-green-500 text-white"
+                            : "bg-amber-600 hover:bg-amber-500 text-white"
+                        }`}>
+                        {subscribing === plan.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : isActive           ? "Current Plan"
+                          : plan.id === "free" ? "Free Plan"
+                          : `Upgrade to ${plan.label}`
                         }
-                        handleSubscribe(plan.id);
-                      }}
-                      disabled={isActive || plan.id === "free" || (subscribing === plan.id && plan.id !== "enterprise")}
-                      className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                        isActive || plan.id === "free"
-                          ? "bg-white/[0.04] text-gray-600 cursor-default"
-                          : plan.id === "pro"
-                          ? "bg-green-600 hover:bg-green-500 text-white"
-                          : plan.id === "business"
-                          ? "bg-amber-600 hover:bg-amber-500 text-white"
-                          : "bg-violet-600 hover:bg-violet-500 text-white"
-                      }`}>
-                      {subscribing === plan.id
-                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        : isActive           ? "Current Plan"
-                        : plan.id === "free" ? "Free Plan"
-                        : plan.id === "enterprise" ? <><Sparkles className="w-3.5 h-3.5" /> Contact Us</>
-                        : `Upgrade to ${plan.label}`
-                      }
-                    </button>
+                      </button>
+                    )}
                   </div>
                 );
               })}
