@@ -91,7 +91,7 @@ export default function EnterprisePage() {
                 Contact Sales <ArrowRight className="w-4 h-4" />
               </a>
               <a
-                href="https://wa.me/2348000000000?text=Hi%20Afritide%2C%20I%27m%20interested%20in%20the%20Enterprise%20plan"
+                href="https://wa.me/2349030320363?text=Hi%20Afritide%2C%20I%27m%20interested%20in%20the%20Enterprise%20plan"
                 target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold px-8 py-4 rounded-2xl transition-colors text-sm">
                 <MessageCircle className="w-4 h-4" /> Chat on WhatsApp
@@ -257,7 +257,7 @@ export default function EnterprisePage() {
             <div>
               <h3 className="text-white font-bold text-lg mb-6">Other Ways to Reach Us</h3>
               <div className="space-y-4">
-                <a href="https://wa.me/2348000000000?text=Hi%20Afritide%2C%20I%27m%20interested%20in%20the%20Enterprise%20plan"
+                <a href="https://wa.me/2349030320363?text=Hi%20Afritide%2C%20I%27m%20interested%20in%20the%20Enterprise%20plan"
                   target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-4 p-5 bg-green-950/30 border border-green-800/40 rounded-2xl hover:bg-green-950/50 transition-colors group">
                   <div className="w-12 h-12 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
