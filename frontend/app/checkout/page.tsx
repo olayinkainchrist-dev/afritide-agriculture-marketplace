@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useCartStore } from "@/lib/store/cart.store";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -70,7 +70,7 @@ function getRecommendedShipmentType(totalWeightKg: number): string {
 
 const STRIPE_CURRENCIES = ["USD", "GBP", "EUR", "GHS", "KES", "ZAR"];
 
-export default function CheckoutPage() {
+function CheckoutPage() {
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const { items, setItems, clearCart }          = useCartStore();
   const router                                  = useRouter();
@@ -532,5 +532,13 @@ export default function CheckoutPage() {
       </div>
       <Footer />
     </main>
+  );
+}
+
+export default function CheckoutPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutPage />
+    </Suspense>
   );
 }
