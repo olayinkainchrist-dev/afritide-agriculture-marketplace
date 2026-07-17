@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { Menu, X, Search, ChevronDown, Leaf, TrendingUp, ShoppingCart } from "lucide-react";
+import { Menu, X, Search, ChevronDown, Leaf, TrendingUp, ShoppingCart, Calendar } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { getInitials } from "@/lib/utils";
 import NotificationBell from "@/components/shared/NotificationBell";
@@ -20,12 +20,12 @@ const categories = [
 ];
 
 export default function Navbar() {
-  const [mobileOpen,   setMobileOpen]   = useState(false);
-  const [catOpen,      setCatOpen]      = useState(false);
-  const [query,        setQuery]        = useState("");
-  const [suggestions,  setSuggestions]  = useState<string[]>([]);
-  const [showDrop,     setShowDrop]     = useState(false);
-  const [loading,      setLoading]      = useState(false);
+  const [mobileOpen,  setMobileOpen]  = useState(false);
+  const [catOpen,     setCatOpen]     = useState(false);
+  const [query,       setQuery]       = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showDrop,    setShowDrop]    = useState(false);
+  const [loading,     setLoading]     = useState(false);
   const searchRef   = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const router = useRouter();
@@ -168,10 +168,16 @@ export default function Navbar() {
                 </div>
               )}
             </div>
-            <Link href="/commodities" className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
+            <Link href="/commodities"
+              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
               <TrendingUp className="w-3.5 h-3.5" /> Price Board
             </Link>
-            <Link href="/farmers" className="text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
+            <Link href="/harvest-calendar"
+              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
+              <Calendar className="w-3.5 h-3.5" /> Harvest
+            </Link>
+            <Link href="/farmers"
+              className="text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
               Farmers
             </Link>
           </div>
@@ -271,6 +277,14 @@ export default function Navbar() {
               {c.label}
             </Link>
           ))}
+          <Link href="/harvest-calendar" onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-2 py-2.5 px-3 text-gray-400 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors text-sm">
+            <Calendar className="w-4 h-4" /> Harvest Calendar
+          </Link>
+          <Link href="/commodities" onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-2 py-2.5 px-3 text-gray-400 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors text-sm">
+            <TrendingUp className="w-4 h-4" /> Price Board
+          </Link>
           <Link href="/cart" onClick={() => setMobileOpen(false)}
             className="block py-2.5 px-3 text-gray-400 hover:text-white hover:bg-white/[0.04] rounded-lg transition-colors text-sm">
             🛒 Cart {itemCount() > 0 && `(${itemCount()})`}
