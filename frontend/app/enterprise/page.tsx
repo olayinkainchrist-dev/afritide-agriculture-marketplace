@@ -270,17 +270,16 @@ export default function EnterprisePage() {
                   <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-green-400 ml-auto transition-colors" />
                 </a>
 
-                <a href="mailto:afritidegroup@gmail.com?subject=Enterprise Plan Inquiry"
-                  className="flex items-center gap-4 p-5 bg-white/[0.03] border border-white/[0.07] rounded-2xl hover:bg-white/[0.06] transition-colors group">
+                <div className="flex items-center gap-4 p-5 bg-white/[0.03] border border-white/[0.07] rounded-2xl">
                   <div className="w-12 h-12 rounded-xl bg-violet-950/50 border border-violet-800/40 flex items-center justify-center flex-shrink-0">
                     <Mail className="w-6 h-6 text-violet-400" />
                   </div>
                   <div>
                     <p className="text-white font-bold text-sm">Email Sales Team</p>
-                    <p className="text-gray-500 text-xs">afritidegroup@gmail.com</p>
+                    <p className="text-green-400 text-xs font-medium">afritidegroup@gmail.com</p>
+                    <p className="text-gray-600 text-xs">Copy and send us an email directly</p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-violet-400 ml-auto transition-colors" />
-                </a>
+                </div>
               </div>
             </div>
 

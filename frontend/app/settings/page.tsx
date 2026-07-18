@@ -180,6 +180,8 @@ export default function SettingsPage() {
         if (res.data.success) {
           toast.success(`Upgraded to ${subPlan.charAt(0).toUpperCase() + subPlan.slice(1)} plan!`);
           updateUser({ ...(user as any), subscription_plan: subPlan });
+          const { refreshUser } = useAuthStore.getState();
+          refreshUser();
           sessionStorage.removeItem("sub_plan");
           sessionStorage.removeItem("sub_cycle");
           window.history.replaceState({}, "", "/settings");
@@ -249,6 +251,8 @@ export default function SettingsPage() {
             if (res.data.success) {
               toast.success(`Upgraded to ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan!`);
               updateUser({ ...(user as any), subscription_plan: planId });
+              const { refreshUser } = useAuthStore.getState();
+              refreshUser();
             }
           }).catch((err: any) => {
             toast.error(err.response?.data?.detail || "Failed to activate plan");
@@ -307,138 +311,140 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
 
-          {/* Subscription Plans */}
-          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h2 className="text-white font-bold flex items-center gap-2">
-                <Crown className="w-4 h-4 text-amber-400" /> Subscription Plan
-              </h2>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-1">
-                  {(["NGN", "USD"] as const).map(c => (
-                    <button key={c} onClick={() => setCurrency(c)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        currency === c ? "bg-green-600 text-white" : "text-gray-500 hover:text-white"
-                      }`}>{c}</button>
-                  ))}
-                </div>
-                <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-1">
-                  {(["monthly", "annual"] as const).map(b => (
-                    <button key={b} onClick={() => setBilling(b)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                        billing === b ? "bg-green-600 text-white" : "text-gray-500 hover:text-white"
-                      }`}>
-                      {b === "annual" ? "Annual (Save 17%)" : "Monthly"}
-                    </button>
-                  ))}
+          {/* Subscription Plans — sellers only */}
+          {user?.role !== "BUYER" && (
+            <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <h2 className="text-white font-bold flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-amber-400" /> Subscription Plan
+                </h2>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-1">
+                    {(["NGN", "USD"] as const).map(c => (
+                      <button key={c} onClick={() => setCurrency(c)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          currency === c ? "bg-green-600 text-white" : "text-gray-500 hover:text-white"
+                        }`}>{c}</button>
+                    ))}
+                  </div>
+                  <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-1">
+                    {(["monthly", "annual"] as const).map(b => (
+                      <button key={b} onClick={() => setBilling(b)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          billing === b ? "bg-green-600 text-white" : "text-gray-500 hover:text-white"
+                        }`}>
+                        {b === "annual" ? "Annual (Save 17%)" : "Monthly"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-green-950/30 border border-green-800/30 rounded-xl p-3 mb-5 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
-              <p className="text-green-300 text-sm">
-                Current plan: <strong className="capitalize">{currentPlan}</strong>
-                {(user as any)?.subscription_expires && (
-                  <span className="text-gray-500 text-xs ml-2">
-                    · Expires {new Date((user as any).subscription_expires).toLocaleDateString()}
-                  </span>
-                )}
-              </p>
-            </div>
+              <div className="bg-green-950/30 border border-green-800/30 rounded-xl p-3 mb-5 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <p className="text-green-300 text-sm">
+                  Current plan: <strong className="capitalize">{currentPlan}</strong>
+                  {(user as any)?.subscription_expires && (
+                    <span className="text-gray-500 text-xs ml-2">
+                      · Expires {new Date((user as any).subscription_expires).toLocaleDateString()}
+                    </span>
+                  )}
+                </p>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {PLANS.map(plan => {
-                const Icon     = plan.icon;
-                const isActive = currentPlan === plan.id;
-                const price    = currency === "NGN"
-                  ? (billing === "monthly" ? plan.price_ngn_monthly : plan.price_ngn_annual)
-                  : (billing === "monthly" ? plan.price_usd_monthly : plan.price_usd_annual);
-                const symbol   = currency === "NGN" ? "₦" : "$";
-                const period   = billing === "monthly" ? "/mo" : "/yr";
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {PLANS.map(plan => {
+                  const Icon     = plan.icon;
+                  const isActive = currentPlan === plan.id;
+                  const price    = currency === "NGN"
+                    ? (billing === "monthly" ? plan.price_ngn_monthly : plan.price_ngn_annual)
+                    : (billing === "monthly" ? plan.price_usd_monthly : plan.price_usd_annual);
+                  const symbol   = currency === "NGN" ? "₦" : "$";
+                  const period   = billing === "monthly" ? "/mo" : "/yr";
 
-                return (
-                  <div key={plan.id}
-                    className={`relative border rounded-2xl p-5 transition-all flex flex-col ${
-                      isActive ? plan.active : plan.bg
-                    }`}>
-                    {plan.badge && (
-                      <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-black px-3 py-1 rounded-full bg-green-600 text-white whitespace-nowrap">
-                        {(plan as any).badge}
-                      </span>
-                    )}
-
-                    <div className="flex items-center gap-2 mb-3">
-                      <Icon className={`w-4 h-4 ${plan.color}`} />
-                      <span className={`font-bold text-sm ${plan.color}`}>{plan.label}</span>
-                      {isActive && (
-                        <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-700/40 px-2 py-0.5 rounded-full font-bold ml-auto">
-                          Active
+                  return (
+                    <div key={plan.id}
+                      className={`relative border rounded-2xl p-5 transition-all flex flex-col ${
+                        isActive ? plan.active : plan.bg
+                      }`}>
+                      {plan.badge && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] font-black px-3 py-1 rounded-full bg-green-600 text-white whitespace-nowrap">
+                          {(plan as any).badge}
                         </span>
                       )}
-                    </div>
 
-                    <div className="mb-3">
-                      <span className={`text-2xl font-black ${plan.color}`}>
-                        {plan.id === "enterprise" ? "Custom"
-                          : price === 0 ? "Free"
-                          : `${symbol}${price.toLocaleString()}`}
-                      </span>
-                      {price > 0 && plan.id !== "enterprise" && (
-                        <span className="text-gray-600 text-xs">{period}</span>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Icon className={`w-4 h-4 ${plan.color}`} />
+                        <span className={`font-bold text-sm ${plan.color}`}>{plan.label}</span>
+                        {isActive && (
+                          <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-700/40 px-2 py-0.5 rounded-full font-bold ml-auto">
+                            Active
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mb-3">
+                        <span className={`text-2xl font-black ${plan.color}`}>
+                          {plan.id === "enterprise" ? "Custom"
+                            : price === 0 ? "Free"
+                            : `${symbol}${price.toLocaleString()}`}
+                        </span>
+                        {price > 0 && plan.id !== "enterprise" && (
+                          <span className="text-gray-600 text-xs">{period}</span>
+                        )}
+                      </div>
+
+                      {/* Commission badge */}
+                      <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-1.5 mb-4 flex items-center justify-between">
+                        <span className="text-gray-600 text-[10px] uppercase tracking-wide">Commission</span>
+                        <span className={`font-black text-xs ${plan.color}`}>{plan.commission}</span>
+                      </div>
+
+                      {/* Features */}
+                      <div className="space-y-2 mb-5 flex-1 max-h-52 overflow-y-auto scrollbar-hide">
+                        {plan.impact.map((f: any) => (
+                          <div key={f.label} className="flex items-start gap-2">
+                            {f.good
+                              ? <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" />
+                              : <X     className="w-3.5 h-3.5 text-gray-700 flex-shrink-0 mt-0.5" />
+                            }
+                            <span className={`text-xs leading-relaxed ${f.good ? "text-gray-300" : "text-gray-600"}`}>
+                              {f.label}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {plan.id === "enterprise" ? (
+                        <a href="/enterprise"
+                          className="w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white">
+                          <Sparkles className="w-3.5 h-3.5" /> Contact Sales
+                        </a>
+                      ) : (
+                        <button
+                          onClick={() => handleSubscribe(plan.id)}
+                          disabled={isActive || plan.id === "free" || subscribing === plan.id}
+                          className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                            isActive || plan.id === "free"
+                              ? "bg-white/[0.04] text-gray-600 cursor-default"
+                              : plan.id === "pro"
+                              ? "bg-green-600 hover:bg-green-500 text-white"
+                              : "bg-amber-600 hover:bg-amber-500 text-white"
+                          }`}>
+                          {subscribing === plan.id
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : isActive           ? "Current Plan"
+                            : plan.id === "free" ? "Free Plan"
+                            : `Upgrade to ${plan.label}`
+                          }
+                        </button>
                       )}
                     </div>
-
-                    {/* Commission badge */}
-                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-1.5 mb-4 flex items-center justify-between">
-                      <span className="text-gray-600 text-[10px] uppercase tracking-wide">Commission</span>
-                      <span className={`font-black text-xs ${plan.color}`}>{plan.commission}</span>
-                    </div>
-
-                    {/* Features */}
-                    <div className="space-y-2 mb-5 flex-1 max-h-52 overflow-y-auto scrollbar-hide">
-                      {plan.impact.map((f: any) => (
-                        <div key={f.label} className="flex items-start gap-2">
-                          {f.good
-                            ? <Check className="w-3.5 h-3.5 text-green-400 flex-shrink-0 mt-0.5" />
-                            : <X     className="w-3.5 h-3.5 text-gray-700 flex-shrink-0 mt-0.5" />
-                          }
-                          <span className={`text-xs leading-relaxed ${f.good ? "text-gray-300" : "text-gray-600"}`}>
-                            {f.label}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {plan.id === "enterprise" ? (
-                      <a href="/enterprise"
-                        className="w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 text-white">
-                        <Sparkles className="w-3.5 h-3.5" /> Contact Sales
-                      </a>
-                    ) : (
-                      <button
-                        onClick={() => handleSubscribe(plan.id)}
-                        disabled={isActive || plan.id === "free" || subscribing === plan.id}
-                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                          isActive || plan.id === "free"
-                            ? "bg-white/[0.04] text-gray-600 cursor-default"
-                            : plan.id === "pro"
-                            ? "bg-green-600 hover:bg-green-500 text-white"
-                            : "bg-amber-600 hover:bg-amber-500 text-white"
-                        }`}>
-                        {subscribing === plan.id
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : isActive           ? "Current Plan"
-                          : plan.id === "free" ? "Free Plan"
-                          : `Upgrade to ${plan.label}`
-                        }
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Profile */}
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
