@@ -510,41 +510,128 @@ export default function ProductDetailClient({ id }: Props) {
               </div>
             )}
 
-            {/* Specs tab */}
+            {/* Specs tab - UPDATED with Quality Analysis, Certifications, Lab Reports */}
             {activeTab === "specs" && (
-              <div>
-                <h3 className="text-white font-bold text-lg mb-5">Technical Specifications</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {[
-                    { label: "Category", value: getCategoryLabel(product.category) },
-                    { label: "Unit of Measure", value: product.unit },
-                    { label: "Grade", value: product.grade?.replace("_", " ") },
-                    { label: "Minimum Order", value: `${product.minimum_order_quantity} ${product.unit}` },
-                    { label: "Available Stock", value: `${product.quantity_available} ${product.unit}` },
-                    { label: "Currency", value: product.currency },
-                    { label: "Organic", value: product.is_organic ? "Yes" : "No" },
-                    { label: "Export Ready", value: product.is_export_ready ? "Yes" : "No" },
-                    { label: "Price Negotiable", value: product.is_negotiable ? "Yes" : "No" },
-                    { label: "Delivery Time", value: `${product.delivery_time_days ?? "3-7"} days` },
-                    { label: "Country", value: product.country },
-                    { label: "Listed", value: product.published_at ? formatDate(product.published_at) : "—" },
-                    ...(product.moisture_percentage ? [{ label: "Moisture %", value: `${product.moisture_percentage}%` }] : []),
-                    ...(product.harvest_date ? [{ label: "Harvest Date", value: formatDate(product.harvest_date) }] : []),
-                    ...(product.packaging ? [{ label: "Packaging", value: product.packaging }] : []),
-                    ...(product.storage_condition ? [{ label: "Storage", value: product.storage_condition }] : []),
-                    ...(product.shelf_life_days ? [{ label: "Shelf Life", value: `${product.shelf_life_days} days` }] : []),
-                    ...(product.breed ? [{ label: "Breed", value: product.breed }] : []),
-                    ...(product.weight_kg ? [{ label: "Weight", value: `${product.weight_kg} kg` }] : []),
-                    ...(product.age_months ? [{ label: "Age", value: `${product.age_months} months` }] : []),
-                    ...(product.gender ? [{ label: "Gender", value: product.gender }] : []),
-                    ...(product.vaccination_status ? [{ label: "Vaccination", value: product.vaccination_status }] : []),
-                  ].filter(s => s.value && s.value !== "undefined").map(({ label, value }) => (
-                    <div key={label} className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
-                      <span className="text-gray-500 text-sm">{label}</span>
-                      <span className="text-white text-sm font-semibold capitalize">{value}</span>
-                    </div>
-                  ))}
+              <div className="space-y-8">
+                {/* Basic specs */}
+                <div>
+                  <h3 className="text-white font-bold text-lg mb-5">Technical Specifications</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[
+                      { label: "Category",       value: getCategoryLabel(product.category) },
+                      { label: "Unit of Measure",value: product.unit },
+                      { label: "Grade",          value: product.grade?.replace("_", " ") },
+                      { label: "Minimum Order",  value: `${product.minimum_order_quantity} ${product.unit}` },
+                      { label: "Available Stock",value: `${product.quantity_available} ${product.unit}` },
+                      { label: "Currency",       value: product.currency },
+                      { label: "Organic",        value: product.is_organic ? "Yes" : "No" },
+                      { label: "Export Ready",   value: product.is_export_ready ? "Yes" : "No" },
+                      { label: "Price Negotiable",value: product.is_negotiable ? "Yes" : "No" },
+                      { label: "Delivery Time",  value: `${product.delivery_time_days ?? "3-7"} days` },
+                      { label: "Country",        value: product.country },
+                      { label: "Listed",         value: product.published_at ? formatDate(product.published_at) : "—" },
+                      ...(product.moisture_percentage   ? [{ label: "Moisture %",      value: `${product.moisture_percentage}%` }]   : []),
+                      ...(product.harvest_date          ? [{ label: "Harvest Date",    value: formatDate(product.harvest_date) }]    : []),
+                      ...(product.packaging             ? [{ label: "Packaging",       value: product.packaging }]                   : []),
+                      ...(product.storage_condition     ? [{ label: "Storage",         value: product.storage_condition }]           : []),
+                      ...(product.shelf_life_days       ? [{ label: "Shelf Life",      value: `${product.shelf_life_days} days` }]   : []),
+                      ...(product.breed                 ? [{ label: "Breed",           value: product.breed }]                       : []),
+                      ...(product.weight_kg             ? [{ label: "Weight",          value: `${product.weight_kg} kg` }]           : []),
+                      ...(product.age_months            ? [{ label: "Age",             value: `${product.age_months} months` }]      : []),
+                      ...(product.gender                ? [{ label: "Gender",          value: product.gender }]                      : []),
+                      ...(product.vaccination_status    ? [{ label: "Vaccination",     value: product.vaccination_status }]          : []),
+                    ].filter(s => s.value && s.value !== "undefined").map(({ label, value }) => (
+                      <div key={label} className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                        <span className="text-gray-500 text-sm">{label}</span>
+                        <span className="text-white text-sm font-semibold capitalize">{value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Quality Analysis */}
+                {(product.purity_percentage || product.protein_percentage || product.oil_content_percentage ||
+                  product.foreign_matter_percentage || product.broken_grain_percentage) && (
+                  <div>
+                    <h3 className="text-white font-bold text-lg mb-2">Quality Analysis</h3>
+                    <p className="text-gray-500 text-sm mb-5">Lab-verified quality parameters for this product.</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {[
+                        { label: "Purity",         value: product.purity_percentage,        color: "text-green-400",  bg: "bg-green-950/30 border-green-800/40",  suffix: "%" },
+                        { label: "Protein",        value: product.protein_percentage,        color: "text-sky-400",    bg: "bg-sky-950/30 border-sky-800/40",      suffix: "%" },
+                        { label: "Oil Content",    value: product.oil_content_percentage,    color: "text-amber-400",  bg: "bg-amber-950/30 border-amber-800/40",  suffix: "%" },
+                        { label: "Moisture",       value: product.moisture_percentage,       color: "text-blue-400",   bg: "bg-blue-950/30 border-blue-800/40",    suffix: "%" },
+                        { label: "Foreign Matter", value: product.foreign_matter_percentage, color: "text-red-400",    bg: "bg-red-950/30 border-red-800/40",      suffix: "%" },
+                        { label: "Broken Grain",   value: product.broken_grain_percentage,   color: "text-orange-400", bg: "bg-orange-950/30 border-orange-800/40",suffix: "%" },
+                      ].filter(q => q.value !== null && q.value !== undefined).map(({ label, value, color, bg, suffix }) => (
+                        <div key={label} className={`border rounded-2xl p-4 text-center ${bg}`}>
+                          <p className={`text-3xl font-black ${color} mb-1`}>{value}{suffix}</p>
+                          <p className="text-gray-400 text-xs font-medium">{label}</p>
+                          <div className="mt-3 h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${color.replace("text-", "bg-")}`}
+                              style={{ width: `${Math.min(100, Number(value))}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Certifications */}
+                {product.certifications && product.certifications.length > 0 && (
+                  <div>
+                    <h3 className="text-white font-bold text-lg mb-5">Certifications</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {product.certifications.map((cert: string) => (
+                        <div key={cert} className="flex items-center gap-3 p-4 bg-green-950/20 border border-green-800/30 rounded-2xl">
+                          <div className="w-8 h-8 rounded-lg bg-green-600/20 border border-green-700/40 flex items-center justify-center flex-shrink-0">
+                            <Award className="w-4 h-4 text-green-400" />
+                          </div>
+                          <span className="text-green-300 text-sm font-medium">{cert}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Lab Reports & Documents */}
+                {(product.lab_report_url || product.inspection_certificate_url) && (
+                  <div>
+                    <h3 className="text-white font-bold text-lg mb-5">Lab Reports & Documents</h3>
+                    <div className="space-y-3">
+                      {product.lab_report_url && (
+                        <a href={product.lab_report_url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/[0.07] hover:border-green-700/40 rounded-2xl transition-colors group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-green-950/50 border border-green-800/40 flex items-center justify-center">
+                              <FileText className="w-5 h-5 text-green-400" />
+                            </div>
+                            <div>
+                              <p className="text-white font-medium text-sm">Lab Analysis Report</p>
+                              <p className="text-gray-600 text-xs">Quality test results — Click to view</p>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-green-400 transition-colors" />
+                        </a>
+                      )}
+                      {product.inspection_certificate_url && (
+                        <a href={product.inspection_certificate_url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center justify-between p-4 bg-white/[0.03] border border-white/[0.07] hover:border-green-700/40 rounded-2xl transition-colors group">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-sky-950/50 border border-sky-800/40 flex items-center justify-center">
+                              <Shield className="w-5 h-5 text-sky-400" />
+                            </div>
+                            <div>
+                              <p className="text-white font-medium text-sm">Inspection Certificate</p>
+                              <p className="text-gray-600 text-xs">Third-party inspection report — Click to view</p>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-sky-400 transition-colors" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -974,4 +1061,3 @@ function RFQModal({ product, onClose }: { product: any; onClose: () => void }) {
     </div>
   );
 }
-
