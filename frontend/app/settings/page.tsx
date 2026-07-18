@@ -180,6 +180,8 @@ export default function SettingsPage() {
         if (res.data.success) {
           toast.success(`Upgraded to ${subPlan.charAt(0).toUpperCase() + subPlan.slice(1)} plan!`);
           updateUser({ ...(user as any), subscription_plan: subPlan });
+          useAuthStore.getState().refreshUser();
+
           const { refreshUser } = useAuthStore.getState();
           refreshUser();
           sessionStorage.removeItem("sub_plan");
@@ -250,7 +252,7 @@ export default function SettingsPage() {
           }).then(res => {
             if (res.data.success) {
               toast.success(`Upgraded to ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan!`);
-              updateUser({ ...(user as any), subscription_plan: planId });
+              useAuthStore.getState().refreshUser();
               const { refreshUser } = useAuthStore.getState();
               refreshUser();
             }
