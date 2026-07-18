@@ -109,6 +109,13 @@ export interface Product {
   gender?:                string;
   vaccination_status?:    string;
   moisture_percentage?:   number;
+  purity_percentage?:          number;
+  protein_percentage?:         number;
+  oil_content_percentage?:     number;
+  foreign_matter_percentage?:  number;
+  broken_grain_percentage?:    number;
+  lab_report_url?:             string;
+  inspection_certificate_url?: string;
   harvest_date?:          string;
   packaging?:             string;
   storage_condition?:     string;
