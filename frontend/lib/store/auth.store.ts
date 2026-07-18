@@ -70,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
         // Refresh user data after hydration — slight delay to ensure token is available
         setTimeout(() => {
           state?.refreshUser();
-        }, 500);
+        }, 100);
       },
     }
   )

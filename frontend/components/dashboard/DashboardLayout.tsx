@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth.store";
@@ -25,7 +25,10 @@ interface Props {
 
 export default function DashboardLayout({ children, navItems, title }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout } = useAuthStore();
+  const { user, logout, refreshUser } = useAuthStore();
+  useEffect(() => {
+    refreshUser();
+  }, []);
   const pathname = usePathname();
 
   return (
