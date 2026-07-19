@@ -510,7 +510,7 @@ export default function ProductDetailClient({ id }: Props) {
               </div>
             )}
 
-            {/* Specs tab - UPDATED with Quality Analysis, Certifications, Lab Reports */}
+            {/* Specs tab */}
             {activeTab === "specs" && (
               <div className="space-y-8">
                 {/* Basic specs */}
@@ -739,11 +739,7 @@ export default function ProductDetailClient({ id }: Props) {
                   }} />
                 )}
 
-                <div className="text-center py-12 border border-white/[0.06] rounded-2xl">
-                  <Star className="w-10 h-10 text-gray-700 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">No reviews yet</p>
-                  <p className="text-gray-700 text-sm mt-1">Be the first to review this product after purchase</p>
-                </div>
+                <ReviewsList productId={product.id} />
               </div>
             )}
 
@@ -856,6 +852,80 @@ function ReviewForm({ productId, onSubmitted }: { productId: string; onSubmitted
           : <><Star className="w-4 h-4" /> Submit Review</>
         }
       </button>
+    </div>
+  );
+}
+
+function ReviewsList({ productId }: { productId: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["product-reviews", productId],
+    queryFn: async () => {
+      const res = await apiClient.get(`/reviews/product/${productId}?page_size=10`);
+      return res.data;
+    },
+  });
+
+  const reviews = data?.data || [];
+
+  if (isLoading) return (
+    <div className="space-y-3">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="h-24 bg-white/[0.03] rounded-2xl animate-pulse" />
+      ))}
+    </div>
+  );
+
+  if (reviews.length === 0) return (
+    <div className="text-center py-12 border border-white/[0.06] rounded-2xl">
+      <Star className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+      <p className="text-gray-500 font-medium">No reviews yet</p>
+      <p className="text-gray-700 text-sm mt-1">Be the first to review this product after purchase</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {reviews.map((review: any) => (
+        <div key={review.id} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-green-900/40 flex items-center justify-center text-green-400 font-black text-xs flex-shrink-0">
+                {review.reviewer?.first_name?.[0]}{review.reviewer?.last_name?.[0]}
+              </div>
+              <div>
+                <p className="text-white font-medium text-sm">
+                  {review.reviewer?.first_name} {review.reviewer?.last_name}
+                </p>
+                <p className="text-gray-600 text-xs">{formatDate(review.created_at)}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              {[1,2,3,4,5].map(i => (
+                <Star key={i} className={`w-3.5 h-3.5 ${i <= review.overall_rating ? "text-amber-400 fill-amber-400" : "text-gray-700"}`} />
+              ))}
+            </div>
+          </div>
+
+          {review.title && (
+            <p className="text-white font-bold text-sm mb-1">{review.title}</p>
+          )}
+          <p className="text-gray-400 text-sm leading-relaxed">{review.comment}</p>
+
+          {review.is_verified_purchase && (
+            <div className="flex items-center gap-1.5 mt-3">
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+              <span className="text-green-400 text-xs font-medium">Verified Purchase</span>
+            </div>
+          )}
+
+          {review.seller_reply && (
+            <div className="mt-4 bg-white/[0.03] border border-white/[0.06] rounded-xl p-4">
+              <p className="text-gray-500 text-xs font-bold mb-1">Seller Reply</p>
+              <p className="text-gray-400 text-sm">{review.seller_reply}</p>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
