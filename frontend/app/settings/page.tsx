@@ -314,7 +314,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
 
           {/* Subscription Plans — sellers only */}
-          {user?.role !== "BUYER" && (
+          {user?.role !== "BUYER" && user?.role !== "ADMIN" && (
             <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h2 className="text-white font-bold flex items-center gap-2">
