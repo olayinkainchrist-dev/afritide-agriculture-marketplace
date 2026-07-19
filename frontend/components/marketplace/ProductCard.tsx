@@ -79,6 +79,15 @@ export default function ProductCard({ product, viewMode = "grid" }: Props) {
             {product.minimum_order_quantity > 1 && (
               <span className="text-xs text-gray-600">MOQ: {product.minimum_order_quantity} {product.unit}</span>
             )}
+            {/* Seller storefront link */}
+            {product.seller_id && (
+              <Link
+                href={`/sellers/${product.seller_id}`}
+                onClick={e => e.stopPropagation()}
+                className="text-xs text-green-500 hover:text-green-400 transition-colors font-medium">
+                View Seller
+              </Link>
+            )}
           </div>
         </div>
       </Link>
@@ -162,6 +171,16 @@ export default function ProductCard({ product, viewMode = "grid" }: Props) {
             <MapPin className="w-3 h-3 flex-shrink-0" />
             <span className="truncate">{product.city ? `${product.city}, ` : ""}{product.country}</span>
           </div>
+        )}
+
+        {/* Seller storefront link */}
+        {product.seller_id && (
+          <Link
+            href={`/sellers/${product.seller_id}`}
+            onClick={e => e.stopPropagation()}
+            className="text-[10px] text-green-500 hover:text-green-400 transition-colors font-medium mb-2 block">
+            View Seller Store →
+          </Link>
         )}
 
         {/* Price */}
