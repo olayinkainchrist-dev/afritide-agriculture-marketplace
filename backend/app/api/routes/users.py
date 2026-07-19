@@ -107,7 +107,7 @@ async def list_farmers(
         UserRole.WAREHOUSE_OPERATOR,
     ]
 
-    query = db.query(User).filter(User.status == UserStatus.ACTIVE)
+    query = db.query(User).filter(User.status.in_([UserStatus.ACTIVE, UserStatus.VERIFIED]))
 
     if role and role != "all":
         try:
