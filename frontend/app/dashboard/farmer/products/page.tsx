@@ -145,12 +145,12 @@ export default function FarmerProductsPage() {
             <>
               {/* Table header */}
               <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-white/[0.06] text-xs text-gray-600 font-medium uppercase tracking-wide">
-                <div className="col-span-5">Product</div>
+                <div className="col-span-4">Product</div>
                 <div className="col-span-2">Price</div>
                 <div className="col-span-2">Stock</div>
                 <div className="col-span-1">Views</div>
                 <div className="col-span-1">Status</div>
-                <div className="col-span-1">Actions</div>
+                <div className="col-span-2">Actions</div>
               </div>
 
               <div className="divide-y divide-white/[0.04]">
@@ -158,7 +158,7 @@ export default function FarmerProductsPage() {
                   <div key={product.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors items-center">
 
                     {/* Product info */}
-                    <div className="col-span-5 flex items-center gap-3">
+                    <div className="col-span-4 flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-green-950/50 border border-white/[0.06] flex-shrink-0">
                         {product.main_image
                           ? <img src={product.main_image} alt="" className="w-full h-full object-cover" />
@@ -202,7 +202,7 @@ export default function FarmerProductsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="col-span-1 flex items-center gap-2">
+                    <div className="col-span-2 flex items-center gap-2">
                       <Link href={`/products/${product.id}`}
                         className="p-2 text-gray-500 hover:text-white hover:bg-white/[0.05] rounded-lg transition-all" title="View">
                         <Eye className="w-4 h-4" />
