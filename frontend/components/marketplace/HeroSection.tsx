@@ -62,7 +62,7 @@ export default function HeroSection() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
             </span>
             <span className="text-green-300 text-sm font-medium tracking-wide">
-              Live marketplace — 207 new products added today
+              Live marketplace — 179 new products added today
             </span>
           </div>
 

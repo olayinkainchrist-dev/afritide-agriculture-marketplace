@@ -76,7 +76,7 @@ async def register(
     db.commit()
     db.refresh(user)
 
-    background_tasks.add_task(send_otp_email, user.email, user.first_name, otp)
+    send_otp_email(user.email, user.first_name, otp)
     logger.info(f"New user registered: {user.email} ({user.role})")
 
     return success_response(
@@ -140,7 +140,7 @@ async def resend_otp(
     user.otp_expires_at = datetime.utcnow() + timedelta(minutes=15)
     db.commit()
 
-    background_tasks.add_task(send_otp_email, user.email, user.first_name, otp)
+    send_otp_email(user.email, user.first_name, otp)
 
     return success_response(message="New OTP sent to your email")
 
