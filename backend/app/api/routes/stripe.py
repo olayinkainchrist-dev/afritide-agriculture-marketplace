@@ -84,7 +84,16 @@ async def create_stripe_session(
     if currency not in [c.lower() for c in SUPPORTED_CURRENCIES]:
         raise HTTPException(status_code=400, detail=f"Currency {payload.currency} not supported by Stripe")
 
-    subtotal = sum(item.item_total for item in payload.cart_items)
+    from app.services.exchange_rate import convert as convert_currency
+    base_subtotal = sum(item.item_total for item in payload.cart_items)
+    
+    # Convert from product base currency to payment currency
+    base_currency = payload.cart_items[0].currency if payload.cart_items else "NGN"
+    if base_currency != payload.currency:
+        subtotal, exchange_rate_used = await convert_currency(base_subtotal, base_currency, payload.currency)
+    else:
+        subtotal = base_subtotal
+        exchange_rate_used = 1.0
 
     try:
         session = stripe.checkout.Session.create(
@@ -112,6 +121,9 @@ async def create_stripe_session(
                 "logistics_provider":payload.logistics_provider or "",
                 "platform":          "afritide",
                 "payment_currency":  payload.currency,
+                "exchange_rate":     str(exchange_rate_used),
+                "base_currency":     base_currency,
+                "base_amount":       str(base_subtotal),
             },
             success_url=payload.success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url= payload.cancel_url,
@@ -119,6 +131,8 @@ async def create_stripe_session(
         return success_response(data={
             "session_id":  session.id,
             "checkout_url":session.url,
+            "exchange_rate": exchange_rate_used,
+            "converted_amount": subtotal,
         })
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
