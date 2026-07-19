@@ -40,17 +40,38 @@ async def get_analytics(
     active_products  = db.query(Product).filter(Product.status == ProductStatus.ACTIVE).count()
     pending_products = db.query(Product).filter(Product.status == ProductStatus.PENDING_REVIEW).count()
     total_orders     = db.query(Order).count()
-    total_revenue    = db.query(func.sum(Order.total_amount)).filter(
+    
+    # Revenue per currency
+    revenue_by_currency = db.query(
+        Order.currency,
+        func.sum(Order.total_amount)
+    ).filter(
         Order.status == OrderStatus.COMPLETED
-    ).scalar() or 0
+    ).group_by(Order.currency).all()
+
+    revenue_breakdown = {
+        currency: round(amount, 2)
+        for currency, amount in revenue_by_currency
+        if amount
+    }
+
+    # Total farmers, buyers
+    total_farmers = db.query(User).filter(
+        User.role.in_(["FARMER", "COOPERATIVE", "EXPORTER", "PROCESSING_COMPANY"])
+    ).count()
+    total_buyers = db.query(User).filter(User.role == "BUYER").count()
 
     return success_response(data={
-        "total_users":      total_users,
-        "new_users_30d":    new_users_30d,
-        "active_products":  active_products,
-        "pending_products": pending_products,
-        "total_orders":     total_orders,
-        "total_revenue":    round(total_revenue, 2),
+        "total_users":        total_users,
+        "total_farmers":      total_farmers,
+        "total_buyers":       total_buyers,
+        "new_users_30d":      new_users_30d,
+        "active_products":    active_products,
+        "pending_products":   pending_products,
+        "total_orders":       total_orders,
+        "revenue_breakdown":  revenue_breakdown,
+        "total_revenue":      round(sum(revenue_breakdown.values()), 2),
+        "currency":           "MIXED",
     })
 
 

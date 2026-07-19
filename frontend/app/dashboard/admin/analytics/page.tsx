@@ -21,7 +21,7 @@ export default function AdminAnalyticsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-analytics-full"],
     queryFn: async () => {
-      const res = await apiClient.get("/analytics/admin/dashboard");
+      const res = await apiClient.get("/admin/analytics");
       return res.data.data;
     },
     enabled: isAuthenticated && user?.role === "ADMIN",
@@ -30,15 +30,15 @@ export default function AdminAnalyticsPage() {
   if (!isAuthenticated || !user) return null;
 
   const stats = [
-    { label: "Total Users",      value: formatNumber(data?.total_users ?? 0),      icon: Users,        color: "text-green-400",  bg: "bg-green-950/50 border-green-900/50" },
-    { label: "Total Farmers",    value: formatNumber(data?.total_farmers ?? 0),     icon: Users,        color: "text-emerald-400", bg: "bg-emerald-950/50 border-emerald-900/50" },
-    { label: "Total Buyers",     value: formatNumber(data?.total_buyers ?? 0),      icon: Users,        color: "text-sky-400",     bg: "bg-sky-950/50 border-sky-900/50" },
-    { label: "New Users (30d)",  value: formatNumber(data?.new_users_30d ?? 0),     icon: TrendingUp,   color: "text-amber-400",   bg: "bg-amber-950/50 border-amber-900/50" },
-    { label: "Total Products",   value: formatNumber(data?.total_products ?? 0),    icon: Package,      color: "text-violet-400",  bg: "bg-violet-950/50 border-violet-900/50" },
-    { label: "Active Products",  value: formatNumber(data?.active_products ?? 0),   icon: Package,      color: "text-green-400",   bg: "bg-green-950/50 border-green-900/50" },
-    { label: "Pending Products", value: formatNumber(data?.pending_products ?? 0),  icon: Package,      color: "text-rose-400",    bg: "bg-rose-950/50 border-rose-900/50" },
-    { label: "Total Orders",     value: formatNumber(data?.total_orders ?? 0),      icon: ShoppingCart, color: "text-amber-400",   bg: "bg-amber-950/50 border-amber-900/50" },
-    { label: "Total Revenue",    value: `$${formatNumber(data?.total_revenue ?? 0)}`, icon: DollarSign, color: "text-green-400",   bg: "bg-green-950/50 border-green-900/50" },
+    { label: "Total Users",      value: formatNumber(data?.total_users ?? 0),     icon: Users,        color: "text-green-400",   bg: "bg-green-950/50 border-green-900/50" },
+    { label: "Total Farmers",    value: formatNumber(data?.total_farmers ?? 0),    icon: Users,        color: "text-emerald-400", bg: "bg-emerald-950/50 border-emerald-900/50" },
+    { label: "Total Buyers",     value: formatNumber(data?.total_buyers ?? 0),     icon: Users,        color: "text-sky-400",     bg: "bg-sky-950/50 border-sky-900/50" },
+    { label: "New Users (30d)",  value: formatNumber(data?.new_users_30d ?? 0),    icon: TrendingUp,   color: "text-amber-400",   bg: "bg-amber-950/50 border-amber-900/50" },
+    { label: "Total Products",   value: formatNumber(data?.total_products ?? 0),   icon: Package,      color: "text-violet-400",  bg: "bg-violet-950/50 border-violet-900/50" },
+    { label: "Active Products",  value: formatNumber(data?.active_products ?? 0),  icon: Package,      color: "text-green-400",   bg: "bg-green-950/50 border-green-900/50" },
+    { label: "Pending Products", value: formatNumber(data?.pending_products ?? 0), icon: Package,      color: "text-rose-400",    bg: "bg-rose-950/50 border-rose-900/50" },
+    { label: "Total Orders",     value: formatNumber(data?.total_orders ?? 0),     icon: ShoppingCart, color: "text-amber-400",   bg: "bg-amber-950/50 border-amber-900/50" },
+    { label: "Total Revenue",    value: Object.keys(data?.revenue_breakdown ?? {}).length > 0 ? "See below" : "₦0", icon: DollarSign, color: "text-green-400", bg: "bg-green-950/50 border-green-900/50" },
   ];
 
   return (
@@ -62,6 +62,28 @@ export default function AdminAnalyticsPage() {
                 <div className="text-gray-500 text-xs font-medium uppercase tracking-wide">{stat.label}</div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Revenue breakdown by currency */}
+        {data?.revenue_breakdown && Object.keys(data.revenue_breakdown).length > 0 && (
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
+            <h3 className="text-white font-bold mb-5 flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-green-500" /> Revenue by Currency
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Object.entries(data.revenue_breakdown).map(([currency, amount]: [string, any]) => {
+                const symbols: Record<string, string> = { NGN: "₦", USD: "$", GBP: "£", EUR: "€", GHS: "₵" };
+                const symbol = symbols[currency] || currency;
+                return (
+                  <div key={currency} className="bg-white/[0.04] border border-white/[0.06] rounded-2xl p-4 text-center">
+                    <p className="text-gray-500 text-xs uppercase tracking-wide mb-2">{currency}</p>
+                    <p className="text-green-400 font-black text-2xl">{symbol}{formatNumber(amount)}</p>
+                    <p className="text-gray-600 text-[10px] mt-1">Total completed orders</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -96,4 +118,3 @@ export default function AdminAnalyticsPage() {
     </DashboardLayout>
   );
 }
-
