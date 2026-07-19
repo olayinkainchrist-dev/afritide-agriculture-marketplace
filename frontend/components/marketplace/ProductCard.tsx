@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { Heart, MapPin, Star, Package, BadgeCheck, Leaf } from "lucide-react";
 import { formatPrice, getCategoryLabel } from "@/lib/utils";
+import { useCurrencyStore } from "@/lib/store/currency.store";
 import { Product } from "@/types";
 import { useState } from "react";
 import { productsApi } from "@/lib/api/products.api";
@@ -15,6 +16,7 @@ interface Props {
 export default function ProductCard({ product, viewMode = "grid" }: Props) {
   const [wishlisted, setWishlisted] = useState(product.is_wishlisted || false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const { format } = useCurrencyStore();
 
   const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -57,7 +59,7 @@ export default function ProductCard({ product, viewMode = "grid" }: Props) {
               )}
             </div>
             <div className="text-right flex-shrink-0">
-              <div className="text-xl font-black text-green-400">{formatPrice(product.price, product.currency)}</div>
+              <div className="text-xl font-black text-green-400">{format(product.price, product.currency)}</div>
               <div className="text-xs text-gray-600">per {product.unit}</div>
             </div>
           </div>
@@ -186,7 +188,7 @@ export default function ProductCard({ product, viewMode = "grid" }: Props) {
         {/* Price */}
         <div className="pt-3 border-t border-white/[0.06] mt-auto">
           <div className="flex items-end gap-1 flex-wrap">
-            <span className="text-base font-black text-green-400 break-all">{formatPrice(product.price, product.currency)}</span>
+            <span className="text-base font-black text-green-400 break-all">{format(product.price, product.currency)}</span>
             <span className="text-[11px] text-gray-600">/{product.unit}</span>
           </div>
           {product.is_negotiable && (
