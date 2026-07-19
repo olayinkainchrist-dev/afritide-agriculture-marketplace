@@ -650,9 +650,11 @@ export default function ProductDetailClient({ id }: Props) {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-white font-bold text-xl">
-                        {seller.business_name || `${seller.first_name} ${seller.last_name}`}
-                      </h3>
+                      <Link href={`/sellers/${seller.id}`} className="hover:text-green-400 transition-colors">
+                        <h3 className="text-white font-bold text-xl">
+                          {seller.business_name || `${seller.first_name} ${seller.last_name}`}
+                        </h3>
+                      </Link>
                       {seller.badge !== "NONE" && (
                         <BadgeCheck className="w-5 h-5 text-green-400" />
                       )}
