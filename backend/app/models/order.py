@@ -55,6 +55,9 @@ class Order(Base):
     payment_method    = Column(String(50),  nullable=True)
     payment_reference = Column(String(255), nullable=True)
     paid_at           = Column(DateTime,    nullable=True)
+    payment_currency  = Column(String(10),  nullable=True)
+    payment_amount    = Column(Float,       nullable=True)
+    exchange_rate     = Column(Float,       nullable=True)
 
     # Shipping
     shipping_address   = Column(JSON,        nullable=True)

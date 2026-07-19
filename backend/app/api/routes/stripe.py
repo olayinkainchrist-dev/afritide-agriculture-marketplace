@@ -61,6 +61,8 @@ class VerifyStripePayload(BaseModel):
     shipment_type:      Optional[str] = None
     logistics_provider: Optional[str] = None
     buyer_notes:        Optional[str] = None
+    payment_currency:   Optional[str] = None
+    exchange_rate:      Optional[float] = None
 
 
 @router.post("/stripe/create-session", summary="Create Stripe checkout session")
@@ -109,6 +111,7 @@ async def create_stripe_session(
                 "shipment_type":     payload.shipment_type or "",
                 "logistics_provider":payload.logistics_provider or "",
                 "platform":          "afritide",
+                "payment_currency":  payload.currency,
             },
             success_url=payload.success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url= payload.cancel_url,
@@ -143,6 +146,8 @@ async def verify_stripe_payment(
         raise HTTPException(status_code=400, detail="Payment not completed")
 
     amount_paid = session.amount_total / 100
+    payment_currency = payload.payment_currency or session.currency.upper()
+    exchange_rate = payload.exchange_rate or 1.0
 
     # Group items by seller
     seller_groups: Dict[str, list] = {}
@@ -178,6 +183,9 @@ async def verify_stripe_payment(
             buyer_notes=       payload.buyer_notes,
             payment_method=    "stripe",
             payment_reference= payload.session_id,
+            payment_currency=  payment_currency,
+            payment_amount=    amount_paid,
+            exchange_rate=     exchange_rate,
             paid_at=           datetime.utcnow(),
         )
 
@@ -230,7 +238,7 @@ async def verify_stripe_payment(
             first_name=  current_user.first_name,
             order_number=created_orders[0][0].order_number,
             amount=      amount_paid,
-            currency=    payload.cart_items[0].currency,
+            currency=    payment_currency,
         )
     except Exception:
         pass
@@ -258,6 +266,7 @@ async def verify_stripe_payment(
             "order_id":     str(first_order.id),
             "order_number": first_order.order_number,
             "amount_paid":  amount_paid,
+            "payment_currency": payment_currency,
             "orders_count": len(created_orders),
         },
         message="Stripe payment verified and order created successfully",
