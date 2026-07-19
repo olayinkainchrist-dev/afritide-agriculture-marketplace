@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { Menu, X, Search, ChevronDown, Leaf, TrendingUp, ShoppingCart, Calendar, Crown } from "lucide-react";
+import { useCurrencyStore, SUPPORTED_CURRENCIES } from "@/lib/store/currency.store";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { getInitials } from "@/lib/utils";
 import NotificationBell from "@/components/shared/NotificationBell";
@@ -31,6 +32,11 @@ export default function Navbar() {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { itemCount } = useCartStore();
+  const { currency, setCurrency, fetchRates } = useCurrencyStore();
+
+  useEffect(() => {
+    fetchRates();
+  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -100,7 +106,7 @@ export default function Navbar() {
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
               <Leaf className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-black text-white">Afritide Group</span>F
+            <span className="text-lg font-black text-white">Afritide Group</span>
           </Link>
 
           <div className="hidden md:flex flex-1 max-w-lg mx-4" ref={searchRef}>
@@ -180,6 +186,15 @@ export default function Navbar() {
               className="text-gray-400 hover:text-white text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
               Farmers
             </Link>
+            {/* Currency selector */}
+            <select
+              value={currency}
+              onChange={e => setCurrency(e.target.value)}
+              className="bg-white/[0.04] border border-white/[0.08] text-gray-400 hover:text-white text-xs font-bold px-3 py-2 rounded-lg focus:outline-none appearance-none cursor-pointer transition-colors">
+              {SUPPORTED_CURRENCIES.map(c => (
+                <option key={c} value={c} className="bg-[#0a1a0f]">{c}</option>
+              ))}
+            </select>
             <Link href="/enterprise"
               className="flex items-center gap-1.5 text-violet-400 hover:text-violet-300 text-sm font-medium px-3 py-2 rounded-lg hover:bg-white/[0.05] transition-all">
               <Crown className="w-3.5 h-3.5" /> Enterprise
