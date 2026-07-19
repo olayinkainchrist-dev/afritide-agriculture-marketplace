@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Package, ShoppingCart,
   MessageSquare, FileText, BarChart3,
   Plus, Eye, Edit, Trash2, Search,
-  Filter, ChevronDown,
+  Filter, ChevronDown, Zap, X, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice, getCategoryLabel, formatDate } from "@/lib/utils";
@@ -38,8 +38,9 @@ const STATUS_FILTERS = [
 export default function FarmerProductsPage() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [search, setSearch] = useState("");
+  const [statusFilter,   setStatusFilter]   = useState("all");
+  const [search,         setSearch]         = useState("");
+  const [promoteProduct, setPromoteProduct] = useState<any>(null);
 
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
@@ -48,7 +49,7 @@ export default function FarmerProductsPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["my-products-full", statusFilter],
     queryFn: () => productsApi.getMyProducts({
-      status: statusFilter === "all" ? undefined : statusFilter as ProductStatus,
+      status:    statusFilter === "all" ? undefined : statusFilter as ProductStatus,
       page_size: 50,
     }),
     enabled: isAuthenticated,
@@ -165,7 +166,14 @@ export default function FarmerProductsPage() {
                         }
                       </div>
                       <div className="min-w-0">
-                        <p className="text-white font-semibold text-sm truncate">{product.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-semibold text-sm truncate">{product.title}</p>
+                          {(product as any).is_sponsored && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-700/40 flex-shrink-0">
+                              Sponsored
+                            </span>
+                          )}
+                        </div>
                         <p className="text-gray-600 text-xs">{getCategoryLabel(product.category)}</p>
                         <p className="text-gray-700 text-xs">{formatDate(product.created_at)}</p>
                       </div>
@@ -204,6 +212,11 @@ export default function FarmerProductsPage() {
                         <Edit className="w-4 h-4" />
                       </Link>
                       <button
+                        onClick={() => setPromoteProduct(product)}
+                        className="p-2 text-gray-500 hover:text-amber-400 hover:bg-amber-950/30 rounded-lg transition-all" title="Promote">
+                        <Zap className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDelete(product.id, product.title)}
                         className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-950/30 rounded-lg transition-all" title="Archive">
                         <Trash2 className="w-4 h-4" />
@@ -216,6 +229,14 @@ export default function FarmerProductsPage() {
           )}
         </div>
       </div>
+
+      {promoteProduct && (
+        <PromoteModal
+          product={promoteProduct}
+          user={user}
+          onClose={() => setPromoteProduct(null)}
+        />
+      )}
     </DashboardLayout>
   );
 }
@@ -235,5 +256,153 @@ function StatusBadge({ status }: { status: string }) {
     <span className={`text-[10px] font-bold px-2 py-1 rounded-full border whitespace-nowrap ${c.class}`}>
       {c.label}
     </span>
+  );
+}
+
+function PromoteModal({ product, user, onClose }: { product: any; user: any; onClose: () => void }) {
+  const [selectedPackage, setSelectedPackage] = useState("7days");
+  const [currency,        setCurrency]        = useState<"NGN" | "USD">("NGN");
+  const [submitting,      setSubmitting]      = useState(false);
+
+  const PACKAGES = [
+    { id: "7days",  label: "7 Day Boost",  price_ngn: 2000, price_usd: 5,  desc: "Great for testing" },
+    { id: "14days", label: "14 Day Boost", price_ngn: 3500, price_usd: 8,  desc: "Most popular" },
+    { id: "30days", label: "30 Day Boost", price_ngn: 6000, price_usd: 15, desc: "Best value" },
+  ];
+
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src   = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => { document.body.removeChild(script); };
+  }, []);
+
+  const handlePromote = () => {
+    const pkg    = PACKAGES.find(p => p.id === selectedPackage)!;
+    const amount = currency === "NGN" ? pkg.price_ngn : pkg.price_usd;
+
+    if (currency === "NGN") {
+      const reference = `PROMO-${Date.now()}`;
+      const handler = (window as any).PaystackPop.setup({
+        key:      process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        email:    user?.email,
+        amount:   amount * 100,
+        currency: "NGN",
+        reference,
+        callback: (response: any) => {
+          setSubmitting(true);
+          apiClient.post("/promotions/promote", {
+            product_id: product.id,
+            package:    selectedPackage,
+            currency:   "NGN",
+            reference:  response.reference,
+          }).then(() => {
+            toast.success(`${product.title} is now promoted for ${pkg.label}!`);
+            onClose();
+          }).catch((err: any) => {
+            toast.error(err.response?.data?.detail || "Failed to activate promotion");
+          }).finally(() => setSubmitting(false));
+        },
+        onClose: () => {},
+      });
+      handler.openIframe();
+    } else {
+      setSubmitting(true);
+      apiClient.post("/payments/stripe/create-session", {
+        cart_items: [{
+          id:         "promo",
+          product_id: "promo",
+          title:      `Promote: ${product.title} (${pkg.label})`,
+          price:      amount,
+          currency:   "USD",
+          unit:       "promotion",
+          quantity:   1,
+          item_total: amount,
+          seller_id:  "afritide",
+        }],
+        shipping_address: { address: "", city: "", country: "" },
+        shipping_method:  "promotion",
+        currency:         "USD",
+        success_url:      `${window.location.origin}/dashboard/farmer/products?promo_product=${product.id}&promo_package=${selectedPackage}&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url:       `${window.location.origin}/dashboard/farmer/products`,
+      }).then(res => {
+        if (res.data?.success) {
+          window.location.href = res.data.data.checkout_url;
+        }
+      }).catch((err: any) => {
+        toast.error(err.response?.data?.detail || "Failed to create session");
+      }).finally(() => setSubmitting(false));
+    }
+  };
+
+  const pkg    = PACKAGES.find(p => p.id === selectedPackage)!;
+  const amount = currency === "NGN" ? pkg.price_ngn : pkg.price_usd;
+  const symbol = currency === "NGN" ? "₦" : "$";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-[#0a1a0f] border border-white/[0.08] rounded-3xl p-6 w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-white font-bold text-lg flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-400" /> Promote Product
+            </h3>
+            <p className="text-gray-500 text-xs mt-0.5 truncate max-w-xs">{product.title}</p>
+          </div>
+          <button onClick={onClose}>
+            <X className="w-5 h-5 text-gray-600 hover:text-white transition-colors" />
+          </button>
+        </div>
+
+        <div className="bg-amber-950/30 border border-amber-800/30 rounded-xl p-3 mb-5 flex items-start gap-2">
+          <Zap className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+          <p className="text-amber-300 text-xs leading-relaxed">
+            Promoted products appear at the top of marketplace search results and category pages, giving you up to 5× more visibility.
+          </p>
+        </div>
+
+        <div className="flex bg-white/[0.04] border border-white/[0.08] rounded-xl p-1 mb-4 w-fit">
+          {(["NGN", "USD"] as const).map(c => (
+            <button key={c} onClick={() => setCurrency(c)}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                currency === c ? "bg-green-600 text-white" : "text-gray-500 hover:text-white"
+              }`}>{c}</button>
+          ))}
+        </div>
+
+        <div className="space-y-3 mb-6">
+          {PACKAGES.map(p => (
+            <label key={p.id}
+              className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                selectedPackage === p.id
+                  ? "border-amber-500/60 bg-amber-950/30"
+                  : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]"
+              }`}>
+              <input type="radio" name="package" value={p.id}
+                checked={selectedPackage === p.id}
+                onChange={() => setSelectedPackage(p.id)}
+                className="accent-amber-500 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-white font-bold text-sm">{p.label}</p>
+                <p className="text-gray-500 text-xs">{p.desc}</p>
+              </div>
+              <span className="text-amber-400 font-black text-sm">
+                {currency === "NGN" ? `₦${p.price_ngn.toLocaleString()}` : `$${p.price_usd}`}
+              </span>
+            </label>
+          ))}
+        </div>
+
+        <button onClick={handlePromote} disabled={submitting}
+          className="w-full bg-amber-600 hover:bg-amber-500 disabled:bg-amber-900 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
+          {submitting
+            ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+            : <><Zap className="w-4 h-4" /> Boost for {symbol}{amount.toLocaleString()}</>
+          }
+        </button>
+      </div>
+    </div>
   );
 }
