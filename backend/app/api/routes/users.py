@@ -28,6 +28,16 @@ async def get_user_profile(user_id: uuid.UUID, db: Session = Depends(get_db)):
     return success_response(data=UserPublicSchema.model_validate(user).model_dump(mode="json"))
 
 
+@router.get("/me", summary="Get my profile")
+async def get_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return success_response(
+        data=UserProfileSchema.model_validate(current_user).model_dump(mode="json")
+    )
+
+
 @router.put("/me", summary="Update my profile")
 async def update_profile(
     payload:      UserUpdateSchema,
