@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
+import { useCurrencyStore } from "@/lib/store/currency.store";
 import toast from "react-hot-toast";
 
 const LOGISTICS_OPTIONS = {
@@ -73,6 +74,7 @@ const STRIPE_CURRENCIES = ["USD", "GBP", "EUR", "GHS", "KES", "ZAR"];
 function CheckoutPage() {
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const { items, setItems, clearCart }          = useCartStore();
+  const { format, currency: selectedCurrency }  = useCurrencyStore();
   const router                                  = useRouter();
   const searchParams                            = useSearchParams();
   const [loading,          setLoading]          = useState(true);
@@ -94,7 +96,6 @@ function CheckoutPage() {
     loadCart();
   }, [hasHydrated, isAuthenticated]);
 
-  // Handle Stripe redirect return
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
     if (sessionId && items.length > 0) {
@@ -134,10 +135,10 @@ function CheckoutPage() {
     }
   };
 
-  const subtotal = items.reduce((sum, item) => sum + item.item_total, 0);
-  const total    = subtotal;
-  const currency = items[0]?.currency || "NGN";
-  const useStripe = STRIPE_CURRENCIES.includes(currency.toUpperCase());
+  const subtotal     = items.reduce((sum, item) => sum + item.item_total, 0);
+  const total        = subtotal;
+  const currency     = items[0]?.currency || "NGN";
+  const useStripe    = STRIPE_CURRENCIES.includes(selectedCurrency.toUpperCase());
 
   const totalWeightKg = items.reduce((sum: number, item: any) => {
     const w = item.unit === "TONNE" ? item.quantity * 1000
@@ -178,13 +179,12 @@ function CheckoutPage() {
     try {
       const res = await apiClient.post("/payments/stripe/create-session", {
         ...getShippingPayload(),
-        currency:    currency,
+        currency:    selectedCurrency,
         success_url: `${window.location.origin}/checkout`,
         cancel_url:  `${window.location.origin}/checkout`,
       });
 
       if (res.data?.success) {
-        // Store cart data in sessionStorage for after redirect
         sessionStorage.setItem("checkout_payload", JSON.stringify(getShippingPayload()));
         window.location.href = res.data.data.checkout_url;
       }
@@ -462,7 +462,7 @@ function CheckoutPage() {
                         <p className="text-gray-600 text-[10px]">{item.quantity} {item.unit}</p>
                       </div>
                       <p className="text-green-400 text-xs font-bold flex-shrink-0">
-                        {formatPrice(item.item_total, item.currency)}
+                        {format(item.item_total, item.currency)}
                       </p>
                     </div>
                   ))}
@@ -471,7 +471,7 @@ function CheckoutPage() {
                 <div className="border-t border-white/[0.07] pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Subtotal</span>
-                    <span className="text-white">{formatPrice(subtotal, currency)}</span>
+                    <span className="text-white">{format(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Logistics</span>
@@ -483,7 +483,7 @@ function CheckoutPage() {
                   </div>
                   <div className="border-t border-white/[0.07] pt-3 flex justify-between">
                     <span className="text-white font-bold">Total</span>
-                    <span className="text-green-400 font-black text-xl">{formatPrice(total, currency)}</span>
+                    <span className="text-green-400 font-black text-xl">{format(total, currency)}</span>
                   </div>
                 </div>
 
@@ -517,7 +517,7 @@ function CheckoutPage() {
                     ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
                     : <>
                         <Shield className="w-4 h-4" />
-                        {useStripe ? `Pay ${formatPrice(total, currency)} via Stripe` : `Pay ${formatPrice(total, currency)}`}
+                        {useStripe ? `Pay ${format(total, currency)} via Stripe` : `Pay ${format(total, currency)}`}
                       </>
                   }
                 </button>
