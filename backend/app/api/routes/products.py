@@ -5,7 +5,7 @@ Full CRUD with advanced filtering, search, and image upload
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, desc, asc
+from sqlalchemy import or_, desc, asc, and_
 from typing import Optional, List
 from datetime import datetime
 import logging
@@ -77,14 +77,14 @@ async def list_products(
             Product.country.ilike(term),
         ))
 
-    sort_col = {
-        "created_at": Product.created_at,
-        "price":      Product.price,
-        "rating":     Product.rating_average,
-        "views":      Product.view_count,
-    }.get(sort_by, Product.created_at)
+    # Default sorting with sponsored products first
+    now = datetime.utcnow()
+    query = query.order_by(
+        desc(and_(Product.is_sponsored, Product.sponsored_until > now)),
+        desc(Product.is_featured),
+        desc(Product.created_at),
+    )
 
-    query = query.order_by(desc(sort_col) if sort_order == "desc" else asc(sort_col))
     total    = query.count()
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
 
@@ -99,10 +99,15 @@ async def get_featured_products(
     limit: int = Query(default=12, le=50),
     db:    Session = Depends(get_db),
 ):
+    # Sponsored products appear first, then featured, then by views
+    now = datetime.utcnow()
     products = db.query(Product).filter(
         Product.status == ProductStatus.ACTIVE,
         Product.is_featured == True,
-    ).order_by(desc(Product.view_count)).limit(limit).all()
+    ).order_by(
+        desc(and_(Product.is_sponsored, Product.sponsored_until > now)),
+        desc(Product.view_count)
+    ).limit(limit).all()
 
     return success_response(
         data=[ProductResponseSchema.model_validate(p).model_dump(mode="json") for p in products],
@@ -119,7 +124,15 @@ async def get_products_by_category(
     query = db.query(Product).filter(
         Product.status == ProductStatus.ACTIVE,
         Product.category == category,
-    ).order_by (Product.is_sponsored),(desc(Product.is_featured), desc(Product.created_at))
+    )
+    
+    # Sponsored products appear first, then featured, then newest
+    now = datetime.utcnow()
+    query = query.order_by(
+        desc(and_(Product.is_sponsored, Product.sponsored_until > now)),
+        desc(Product.is_featured),
+        desc(Product.created_at)
+    )
 
     total    = query.count()
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
@@ -182,10 +195,14 @@ async def get_my_products(
     query = db.query(Product).filter(Product.seller_id == current_user.id)
     if status:
         query = query.filter(Product.status == status)
+    
+    # For seller's own products, show sponsored first, then featured, then newest
+    now = datetime.utcnow()
     query = query.order_by(
-    desc(Product.is_sponsored),
-    desc(Product.is_featured),
-    desc(Product.created_at))
+        desc(and_(Product.is_sponsored, Product.sponsored_until > now)),
+        desc(Product.is_featured),
+        desc(Product.created_at)
+    )
 
     total    = query.count()
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
