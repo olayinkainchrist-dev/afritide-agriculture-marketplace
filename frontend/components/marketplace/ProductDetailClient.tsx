@@ -15,6 +15,7 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { formatPrice, getCategoryLabel, formatDate, formatNumber } from "@/lib/utils";
+import { useCurrencyStore } from "@/lib/store/currency.store";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/api/client";
 
@@ -31,6 +32,7 @@ export default function ProductDetailClient({ id }: Props) {
   const { user, isAuthenticated } = useAuthStore();
   const { setItems } = useCartStore();
   const queryClient = useQueryClient();
+  const { format } = useCurrencyStore();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["product", id],
@@ -304,7 +306,7 @@ export default function ProductDetailClient({ id }: Props) {
             <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-5">
               <div className="flex items-end gap-3 mb-3">
                 <span className="text-4xl font-black text-green-400">
-                  {formatPrice(product.price, product.currency)}
+                  {format(product.price, product.currency)}
                 </span>
                 <span className="text-gray-500 text-base mb-1">per {product.unit}</span>
                 {product.is_negotiable && (
@@ -316,7 +318,7 @@ export default function ProductDetailClient({ id }: Props) {
 
               {product.min_price && product.max_price && (
                 <p className="text-gray-600 text-sm mb-3">
-                  Price range: {formatPrice(product.min_price, product.currency)} — {formatPrice(product.max_price, product.currency)}
+                  Price range: {format(product.min_price, product.currency)} — {format(product.max_price, product.currency)}
                 </p>
               )}
 
@@ -338,7 +340,7 @@ export default function ProductDetailClient({ id }: Props) {
                             {tier.min_qty}{tier.max_qty ? `–${tier.max_qty}` : "+"} {product.unit}
                           </span>
                           <span className={`font-black ${isActive ? "text-green-400" : "text-white"}`}>
-                            {formatPrice(tier.price, product.currency)}/{product.unit}
+                            {format(tier.price, product.currency)}/{product.unit}
                             {isActive && <span className="text-green-500 ml-1">← your tier</span>}
                           </span>
                         </div>
@@ -408,7 +410,7 @@ export default function ProductDetailClient({ id }: Props) {
                 </button>
               </div>
               <span className="text-gray-500 text-sm">
-                Total: <span className="text-green-400 font-bold">{formatPrice(effectivePrice * quantity, product.currency)}</span>
+                Total: <span className="text-green-400 font-bold">{format(effectivePrice * quantity, product.currency)}</span>
               </span>
             </div>
 
@@ -933,6 +935,7 @@ function ReviewsList({ productId }: { productId: string }) {
 }
 
 function RFQModal({ product, onClose }: { product: any; onClose: () => void }) {
+  const { format } = useCurrencyStore();
   const [form, setForm] = useState({
     quantity: product.minimum_order_quantity || 1,
     unit: product.unit,
@@ -1112,7 +1115,7 @@ function RFQModal({ product, onClose }: { product: any; onClose: () => void }) {
             <div className="bg-green-950/20 border border-green-800/20 rounded-xl p-3 flex items-center justify-between">
               <span className="text-gray-500 text-xs">Listed price</span>
               <span className="text-green-400 font-black text-sm">
-                {formatPrice(product.price, product.currency)} / {product.unit}
+                {format(product.price, product.currency)} / {product.unit}
               </span>
             </div>
 
