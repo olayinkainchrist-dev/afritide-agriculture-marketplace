@@ -119,7 +119,7 @@ async def get_products_by_category(
     query = db.query(Product).filter(
         Product.status == ProductStatus.ACTIVE,
         Product.category == category,
-    ).order_by(desc(Product.is_featured), desc(Product.created_at))
+    ).order_by (Product.is_sponsored),(desc(Product.is_featured), desc(Product.created_at))
 
     total    = query.count()
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
@@ -182,7 +182,10 @@ async def get_my_products(
     query = db.query(Product).filter(Product.seller_id == current_user.id)
     if status:
         query = query.filter(Product.status == status)
-    query = query.order_by(desc(Product.created_at))
+    query = query.order_by(
+    desc(Product.is_sponsored),
+    desc(Product.is_featured),
+    desc(Product.created_at))
 
     total    = query.count()
     products = query.offset(pagination.offset).limit(pagination.page_size).all()
