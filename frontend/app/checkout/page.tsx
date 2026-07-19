@@ -177,11 +177,20 @@ function CheckoutPage() {
     }
     setProcessing(true);
     try {
+      const { convert } = useCurrencyStore.getState();
+      const convertedTotal = convert(total, currency);
+
       const res = await apiClient.post("/payments/stripe/create-session", {
         ...getShippingPayload(),
         currency:    selectedCurrency,
         success_url: `${window.location.origin}/checkout`,
         cancel_url:  `${window.location.origin}/checkout`,
+        cart_items: items.map((item: any) => ({
+          ...item,
+          price:      convert(item.price, item.currency),
+          item_total: convert(item.item_total, item.currency),
+          currency:   selectedCurrency,
+        })),
       });
 
       if (res.data?.success) {
@@ -204,6 +213,7 @@ function CheckoutPage() {
       const res = await apiClient.post("/payments/stripe/verify", {
         session_id: sessionId,
         ...checkoutData,
+        payment_currency: selectedCurrency,
       });
 
       if (res.data?.success) {
