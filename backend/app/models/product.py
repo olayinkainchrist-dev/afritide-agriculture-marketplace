@@ -195,6 +195,7 @@ class Product(Base):
     is_featured    = Column(Boolean, default=False, nullable=False)
     featured_until = Column(DateTime, nullable=True)
     is_sponsored   = Column(Boolean, default=False, nullable=False)
+    sponsored_until= Column(DateTime, nullable=True)
 
     # Admin
     rejection_reason = Column(Text, nullable=True)

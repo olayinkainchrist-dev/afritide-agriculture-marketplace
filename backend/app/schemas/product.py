@@ -111,6 +111,7 @@ class ProductUpdateSchema(BaseModel):
     inspection_certificate_url: Optional[str]          = None
     # Dairy
     storage_condition:        Optional[str]            = None
+    storage_temperature:      Optional[str]            = None
     expiry_date:              Optional[datetime]       = None
     shelf_life_days:          Optional[int]            = None
     # Delivery
@@ -183,6 +184,8 @@ class ProductResponseSchema(BaseModel):
     rating_count:             int
     wishlist_count:           int
     is_featured:              bool
+    is_sponsored:             bool                 = False
+    sponsored_until:          Optional[datetime]   = None
     tags:                     Optional[List[str]]  = None
     delivery_time_days:       Optional[int]        = None
     delivery_options:         Optional[List[str]]  = None
