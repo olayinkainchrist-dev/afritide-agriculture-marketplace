@@ -12,12 +12,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
+import { useCurrencyStore } from "@/lib/store/currency.store";
 import toast from "react-hot-toast";
 
 export default function CartPage() {
   const { isAuthenticated, hasHydrated } = useAuthStore();
   const { items, setItems }              = useCartStore();
   const router                           = useRouter();
+  const { format }                       = useCurrencyStore();
   const [loading,  setLoading]  = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 
@@ -159,8 +161,8 @@ export default function CartPage() {
                       </div>
 
                       <div className="text-right">
-                        <p className="text-green-400 font-black">{formatPrice(item.item_total, item.currency)}</p>
-                        <p className="text-gray-600 text-xs">{formatPrice(item.price, item.currency)} / {item.unit}</p>
+                        <p className="text-green-400 font-black">{format(item.item_total, item.currency)}</p>
+                        <p className="text-gray-600 text-xs">{format(item.price, item.currency)} / {item.unit}</p>
                       </div>
                     </div>
                   </div>
@@ -180,7 +182,7 @@ export default function CartPage() {
                 <div className="space-y-3 mb-5">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Subtotal ({items.length} items)</span>
-                    <span className="text-white font-medium">{formatPrice(subtotal, currency)}</span>
+                    <span className="text-white font-medium">{format(subtotal, currency)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Service fee</span>
@@ -193,7 +195,7 @@ export default function CartPage() {
                   <div className="border-t border-white/[0.07] pt-3 flex justify-between">
                     <span className="text-white font-bold">Total</span>
                     <span className="text-green-400 font-black text-lg">
-                      {formatPrice(subtotal, currency)}
+                      {format(subtotal, currency)}
                     </span>
                   </div>
                 </div>
