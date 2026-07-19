@@ -129,6 +129,11 @@ export default function ProductCard({ product, viewMode = "grid" }: Props) {
               Featured
             </span>
           )}
+          {(product as any).is_sponsored && (
+            <span className="bg-purple-500/90 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+              ⚡ Sponsored
+            </span>
+          )}
         </div>
       </div>
 
