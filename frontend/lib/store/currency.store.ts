@@ -55,14 +55,14 @@ export const useCurrencyStore = create<CurrencyState>()(
         if (fromCurrency !== "NGN") {
           const fromRate = rates[fromCurrency];
           if (!fromRate) return amount;
-          ngnAmount = amount / fromRate;
+          ngnAmount = amount * fromRate;
         }
 
         // Convert NGN to target currency
         if (currency === "NGN") return ngnAmount;
         const toRate = rates[currency];
         if (!toRate) return amount;
-        return ngnAmount * toRate;
+        return ngnAmount / toRate;
       },
 
       format: (amount: number, fromCurrency: string) => {
