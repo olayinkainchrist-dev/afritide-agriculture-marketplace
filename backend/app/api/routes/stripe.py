@@ -159,6 +159,21 @@ async def verify_stripe_payment(
     if session.payment_status != "paid":
         raise HTTPException(status_code=400, detail="Payment not completed")
 
+    # Prevent duplicate orders from same session
+    existing_order = db.query(Order).filter(
+        Order.payment_reference == payload.session_id
+    ).first()
+    if existing_order:
+        return success_response(
+            data={
+                "order_id":     str(existing_order.id),
+                "order_number": existing_order.order_number,
+                "amount_paid":  session.amount_total / 100,
+                "orders_count": 1,
+            },
+            message="Order already created for this payment",
+        )
+
     amount_paid = session.amount_total / 100
     payment_currency = payload.payment_currency or session.currency.upper()
     exchange_rate = payload.exchange_rate or 1.0
