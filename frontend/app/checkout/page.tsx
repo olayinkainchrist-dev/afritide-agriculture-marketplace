@@ -18,35 +18,35 @@ import toast from "react-hot-toast";
 
 const LOGISTICS_OPTIONS = {
   COURIER: [
+    { id: "afritide",       label: "Afritide Logistics",    desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
     { id: "dhl_express",    label: "DHL Express",           desc: "3-5 business days · International & domestic",  price: "Calculated at delivery" },
     { id: "fedex",          label: "FedEx",                 desc: "3-7 business days · International",             price: "Calculated at delivery" },
     { id: "ups",            label: "UPS",                   desc: "3-7 business days · International",             price: "Calculated at delivery" },
-    { id: "afritide",       label: "Afritide Logistics",    desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
   ],
   ROAD_FREIGHT: [
+    { id: "afritide",       label: "Afritide Logistics",    desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
     { id: "gig_logistics",  label: "GIG Logistics",         desc: "3-7 business days · Nigeria & West Africa",     price: "Negotiated with seller" },
     { id: "abc_transport",  label: "ABC Transport",         desc: "3-7 business days · Nigeria",                   price: "Negotiated with seller" },
-    { id: "afritide",       label: "Afritide Logistics",    desc: "5-10 business days · Pan-Africa",               price: "Negotiated" },
     { id: "local_haulier",  label: "Local Haulier",         desc: "Arrange directly with seller",                  price: "Negotiated with seller" },
   ],
   HEAVY_TRUCK: [
+    { id: "afritide",       label: "Afritide Logistics",    desc: "Coordinated freight solution",                  price: "Quote on request" },
     { id: "kobo360",        label: "Kobo360",               desc: "Pan-Africa trucking network",                   price: "Quote on request" },
     { id: "lori_systems",   label: "Lori Systems",          desc: "Pan-Africa freight platform",                   price: "Quote on request" },
-    { id: "afritide",       label: "Afritide Logistics",    desc: "Coordinated freight solution",                  price: "Quote on request" },
     { id: "local_trucking", label: "Local Trucking",        desc: "Arrange directly with seller",                  price: "Negotiated with seller" },
   ],
   OCEAN_FREIGHT: [
+    { id: "afritide",       label: "Afritide Logistics",    desc: "We coordinate your shipment",                   price: "Quote on request" },
     { id: "maersk",         label: "Maersk",                desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
     { id: "msc",            label: "MSC",                   desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
     { id: "cma_cgm",        label: "CMA CGM",               desc: "Global ocean freight · 15-45 days",             price: "Quote on request" },
     { id: "dhl_forwarding", label: "DHL Global Forwarding", desc: "Full container & LCL options",                  price: "Quote on request" },
-    { id: "afritide",       label: "Afritide Logistics",    desc: "We coordinate your shipment",                   price: "Quote on request" },
   ],
   AIR_FREIGHT: [
+    { id: "afritide",        label: "Afritide Logistics",   desc: "We arrange your air shipment",                  price: "Quote on request" },
     { id: "dhl_forwarding",  label: "DHL Global Forwarding",desc: "Express air cargo · 2-5 days",                 price: "Quote on request" },
     { id: "emirates_cargo",  label: "Emirates SkyCargo",    desc: "Premium air freight · 2-4 days",               price: "Quote on request" },
     { id: "qatar_cargo",     label: "Qatar Cargo",          desc: "Air freight · 2-5 days",                       price: "Quote on request" },
-    { id: "afritide",        label: "Afritide Logistics",   desc: "We arrange your air shipment",                  price: "Quote on request" },
   ],
   PICKUP: [
     { id: "pickup",          label: "Farm / Warehouse Pickup", desc: "Collect directly from seller's location",   price: "Free" },
@@ -82,7 +82,7 @@ function CheckoutPage() {
   const [orderDone,       setOrderDone]         = useState(false);
   const [orderId,         setOrderId]           = useState<string | null>(null);
   const [shipmentType,    setShipmentType]      = useState("COURIER");
-  const [logisticsPartner,setLogisticsPartner]  = useState("dhl_express");
+  const [logisticsPartner,setLogisticsPartner]  = useState("afritide");
   const [shippingQuote,   setShippingQuote]     = useState<any>(null);
   const [loadingShipping, setLoadingShipping]   = useState(false);
   const [form, setForm] = useState({
