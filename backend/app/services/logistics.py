@@ -65,8 +65,19 @@ INTERNATIONAL_ESTIMATES = {
             {"min": 20000, "max": 99999, "method": "Sea (FCL)", "min_cost": 4500000, "max_cost": 8000000, "days": "35-50"},
         ]
     },
+    "MIDDLE_EAST": {
+        "description": "UAE, Saudi Arabia, Qatar, Kuwait",
+        "bands": [
+            {"min": 0,     "max": 25,    "method": "Courier",   "min_cost": 45000,   "max_cost": 80000,   "days": "3-7"},
+            {"min": 25,    "max": 70,    "method": "Courier",   "min_cost": 100000,  "max_cost": 160000,  "days": "5-10"},
+            {"min": 70,    "max": 500,   "method": "Air Cargo", "min_cost": 320000,  "max_cost": 500000,  "days": "3-7"},
+            {"min": 500,   "max": 2000,  "method": "Sea",       "min_cost": 650000,  "max_cost": 1100000, "days": "15-25"},
+            {"min": 2000,  "max": 20000, "method": "Sea (LCL)", "min_cost": 1300000, "max_cost": 2400000, "days": "20-35"},
+            {"min": 20000, "max": 99999, "method": "Sea (FCL)", "min_cost": 2600000, "max_cost": 4800000, "days": "25-40"},
+        ]
+    },
     "ASIA": {
-        "description": "China, India, UAE, Saudi Arabia",
+        "description": "China, India, Pakistan, Bangladesh",
         "bands": [
             {"min": 0,     "max": 25,    "method": "Courier",   "min_cost": 55000,   "max_cost": 95000,   "days": "5-10"},
             {"min": 25,    "max": 70,    "method": "Courier",   "min_cost": 120000,  "max_cost": 190000,  "days": "7-14"},
@@ -74,6 +85,17 @@ INTERNATIONAL_ESTIMATES = {
             {"min": 500,   "max": 2000,  "method": "Sea",       "min_cost": 750000,  "max_cost": 1300000, "days": "20-35"},
             {"min": 2000,  "max": 20000, "method": "Sea (LCL)", "min_cost": 1500000, "max_cost": 2800000, "days": "25-40"},
             {"min": 20000, "max": 99999, "method": "Sea (FCL)", "min_cost": 3000000, "max_cost": 5500000, "days": "30-45"},
+        ]
+    },
+    "FAR_EAST": {
+        "description": "Japan, South Korea, Australia, New Zealand",
+        "bands": [
+            {"min": 0,     "max": 25,    "method": "Courier",   "min_cost": 80000,   "max_cost": 140000,  "days": "7-14"},
+            {"min": 25,    "max": 70,    "method": "Courier",   "min_cost": 180000,  "max_cost": 280000,  "days": "10-18"},
+            {"min": 70,    "max": 500,   "method": "Air Cargo", "min_cost": 580000,  "max_cost": 950000,  "days": "7-14"},
+            {"min": 500,   "max": 2000,  "method": "Sea",       "min_cost": 1200000, "max_cost": 2100000, "days": "30-45"},
+            {"min": 2000,  "max": 20000, "method": "Sea (LCL)", "min_cost": 2400000, "max_cost": 4200000, "days": "35-50"},
+            {"min": 20000, "max": 99999, "method": "Sea (FCL)", "min_cost": 4800000, "max_cost": 8500000, "days": "40-55"},
         ]
     },
 }
@@ -96,9 +118,17 @@ COUNTRY_TO_REGION = {
     # North America (expanded US variations)
     "USA": "NORTH_AMERICA", "United States": "NORTH_AMERICA", "United States of America": "NORTH_AMERICA",
     "America": "NORTH_AMERICA", "US": "NORTH_AMERICA", "Canada": "NORTH_AMERICA",
-    # Asia
-    "China": "ASIA", "India": "ASIA", "UAE": "ASIA", "Saudi Arabia": "ASIA",
-    "Japan": "ASIA", "South Korea": "ASIA", "Pakistan": "ASIA",
+    # Middle East
+    "UAE": "MIDDLE_EAST", "Saudi Arabia": "MIDDLE_EAST", "Qatar": "MIDDLE_EAST",
+    "Kuwait": "MIDDLE_EAST", "Oman": "MIDDLE_EAST", "Bahrain": "MIDDLE_EAST",
+    "Jordan": "MIDDLE_EAST", "Lebanon": "MIDDLE_EAST", "Egypt": "MIDDLE_EAST",
+    # Asia (South Asia)
+    "China": "ASIA", "India": "ASIA", "Pakistan": "ASIA", "Bangladesh": "ASIA",
+    # Far East / Oceania
+    "Japan": "FAR_EAST", "South Korea": "FAR_EAST", "Korea": "FAR_EAST",
+    "Australia": "FAR_EAST", "New Zealand": "FAR_EAST", "Singapore": "FAR_EAST",
+    "Malaysia": "FAR_EAST", "Indonesia": "FAR_EAST", "Thailand": "FAR_EAST",
+    "Vietnam": "FAR_EAST", "Philippines": "FAR_EAST",
 }
 
 
