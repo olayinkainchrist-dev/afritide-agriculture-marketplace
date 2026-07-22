@@ -125,12 +125,14 @@ class Product(Base):
     certifications  = Column(JSON, nullable=True)  # ["NAFDAC", "USDA Organic", "EU", "SGS", "Halal"]
 
     # Quality — specifications
-    moisture_percentage      = Column(Float, nullable=True)
-    purity_percentage        = Column(Float, nullable=True)
-    foreign_matter_percentage= Column(Float, nullable=True)
-    protein_percentage       = Column(Float, nullable=True)
-    oil_content_percentage   = Column(Float, nullable=True)
-    broken_grain_percentage  = Column(Float, nullable=True)
+    weight_per_unit             = Column(Float, nullable=True)  # kg per selling unit
+    pickup_location             = Column(String(255), nullable=True)
+    moisture_percentage         = Column(Float, nullable=True)
+    purity_percentage           = Column(Float, nullable=True)
+    foreign_matter_percentage   = Column(Float, nullable=True)
+    protein_percentage          = Column(Float, nullable=True)
+    oil_content_percentage      = Column(Float, nullable=True)
+    broken_grain_percentage     = Column(Float, nullable=True)
 
     # Quality — documents
     lab_report_url               = Column(String(500), nullable=True)

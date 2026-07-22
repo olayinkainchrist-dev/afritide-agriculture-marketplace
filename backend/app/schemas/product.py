@@ -41,6 +41,8 @@ class ProductCreateSchema(BaseModel):
     gender:                   Optional[str]        = None
     vaccination_status:       Optional[str]        = None
     # Crop / Quality specs
+    weight_per_unit:          Optional[float]      = None
+    pickup_location:          Optional[str]        = None
     moisture_percentage:      Optional[float]      = None
     purity_percentage:        Optional[float]      = None
     foreign_matter_percentage:Optional[float]      = None
@@ -199,6 +201,8 @@ class ProductResponseSchema(BaseModel):
     gender:                   Optional[str]        = None
     vaccination_status:       Optional[str]        = None
     # Crop / Quality specs
+    weight_per_unit:          Optional[float]      = None
+    pickup_location:          Optional[str]        = None
     moisture_percentage:      Optional[float]      = None
     purity_percentage:        Optional[float]      = None
     foreign_matter_percentage:Optional[float]      = None
