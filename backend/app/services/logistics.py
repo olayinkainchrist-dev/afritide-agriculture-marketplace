@@ -111,15 +111,21 @@ def calculate_total_weight(items: list) -> float:
         if wpunit > 0:
             total += qty * wpunit
         else:
-            # Fallback: estimate from unit
-            if unit == "TONNE":
-                total += qty * 1000
-            elif unit == "GRAM":
-                total += qty / 1000
-            elif unit == "KG":
-                total += qty
-            else:
-                total += qty  # assume kg for bag/piece/etc
+            # Fallback weights by unit
+            unit_weights = {
+                "TONNE":  1000,
+                "KG":     1,
+                "GRAM":   0.001,
+                "BAG":    50,    # avg 50kg bag
+                "CRATE":  20,
+                "DOZEN":  5,
+                "BUNCH":  2,
+                "HEAD":   350,   # avg livestock
+                "PIECE":  5,
+                "LITRE":  1,
+                "UNIT":   1,
+            }
+            total += qty * unit_weights.get(unit, 1)
     return round(total, 2)
 
 

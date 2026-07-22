@@ -79,6 +79,8 @@ export default function NewProductPage() {
   const [labReportUrl,     setLabReportUrl]     = useState("");
   const [inspCertUrl,      setInspCertUrl]      = useState("");
   const [uploadingDoc,     setUploadingDoc]     = useState<"lab" | "insp" | null>(null);
+  const [weightPerUnit,    setWeightPerUnit]    = useState("");
+  const [pickupLocation,   setPickupLocation]   = useState("");
   const [qualitySpecs,     setQualitySpecs]     = useState({
     moisture_percentage:       "",
     purity_percentage:         "",
@@ -179,6 +181,8 @@ export default function NewProductPage() {
         certifications:   certifications.length > 0 ? certifications : undefined,
         lab_report_url:             labReportUrl || undefined,
         inspection_certificate_url: inspCertUrl  || undefined,
+        weight_per_unit:  weightPerUnit  ? Number(weightPerUnit)  : undefined,
+        pickup_location:  pickupLocation || undefined,
         moisture_percentage:        qualitySpecs.moisture_percentage       ? Number(qualitySpecs.moisture_percentage)       : undefined,
         purity_percentage:          qualitySpecs.purity_percentage         ? Number(qualitySpecs.purity_percentage)         : undefined,
         foreign_matter_percentage:  qualitySpecs.foreign_matter_percentage ? Number(qualitySpecs.foreign_matter_percentage) : undefined,
@@ -357,6 +361,21 @@ export default function NewProductPage() {
                     className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
                 </div>
 
+                {/* Weight per unit — for logistics */}
+                <div className="bg-sky-950/20 border border-sky-800/30 rounded-2xl p-4">
+                  <label className="block text-sm font-medium text-sky-300 mb-1 flex items-center gap-2">
+                    <Truck className="w-4 h-4" /> Weight per {watch("unit") || "Unit"} (kg)
+                  </label>
+                  <p className="text-gray-500 text-xs mb-3">
+                    Used to calculate accurate shipping costs. e.g. if you sell by BAG and each bag weighs 50kg, enter 50.
+                  </p>
+                  <input
+                    type="number" step="0.01" placeholder="e.g. 50"
+                    value={weightPerUnit}
+                    onChange={e => setWeightPerUnit(e.target.value)}
+                    className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-sky-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                </div>
+
                 {/* Bulk Pricing Tiers */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
@@ -371,6 +390,7 @@ export default function NewProductPage() {
                       + Add Tier
                     </button>
                   </div>
+
                   {priceTiers.length === 0 ? (
                     <div className="border border-dashed border-white/[0.08] rounded-xl p-4 text-center">
                       <p className="text-gray-600 text-xs">No bulk tiers set — single price applies to all quantities</p>
@@ -459,6 +479,19 @@ export default function NewProductPage() {
                   <label className="block text-sm font-medium text-gray-400 mb-2">City</label>
                   <input {...register("city")} placeholder="e.g. Kano"
                     className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                </div>
+
+                {/* Pickup location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Pickup / Farm Location <span className="text-gray-600">(optional)</span>
+                  </label>
+                  <input
+                    placeholder="e.g. Km 5, Kano-Zaria Road, Kano"
+                    value={pickupLocation}
+                    onChange={e => setPickupLocation(e.target.value)}
+                    className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                  <p className="text-gray-600 text-xs mt-1">Used for logistics routing and buyer pickup option</p>
                 </div>
 
                 <div>
@@ -629,6 +662,7 @@ export default function NewProductPage() {
                         )}
                       </div>
                     ))}
+
                     {images.length < 5 && (
                       <div
                         onClick={(e) => {
