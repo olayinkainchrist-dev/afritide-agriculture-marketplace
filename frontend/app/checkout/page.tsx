@@ -169,7 +169,7 @@ function CheckoutPage() {
   };
 
   const subtotal     = items.reduce((sum, item) => sum + item.item_total, 0);
-  const shippingCost = shipmentType === "PICKUP" ? 0 : (shippingQuote?.rate_ngn || 0);
+  const shippingCost = shipmentType === "PICKUP" ? 0 : (shippingQuote?.rate_ngn || shippingQuote?.min_cost || 0);
   const total        = subtotal + shippingCost;
   const currency     = items[0]?.currency || "NGN";
   const useStripe    = STRIPE_CURRENCIES.includes(selectedCurrency.toUpperCase());
