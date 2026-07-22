@@ -77,12 +77,14 @@ function CheckoutPage() {
   const { format, currency: selectedCurrency }  = useCurrencyStore();
   const router                                  = useRouter();
   const searchParams                            = useSearchParams();
-  const [loading,          setLoading]          = useState(true);
-  const [processing,       setProcessing]       = useState(false);
-  const [orderDone,        setOrderDone]        = useState(false);
-  const [orderId,          setOrderId]          = useState<string | null>(null);
-  const [shipmentType,     setShipmentType]     = useState("COURIER");
-  const [logisticsPartner, setLogisticsPartner] = useState("dhl_express");
+  const [loading,         setLoading]           = useState(true);
+  const [processing,      setProcessing]        = useState(false);
+  const [orderDone,       setOrderDone]         = useState(false);
+  const [orderId,         setOrderId]           = useState<string | null>(null);
+  const [shipmentType,    setShipmentType]      = useState("COURIER");
+  const [logisticsPartner,setLogisticsPartner]  = useState("dhl_express");
+  const [shippingQuote,   setShippingQuote]     = useState<any>(null);
+  const [loadingShipping, setLoadingShipping]   = useState(false);
   const [form, setForm] = useState({
     shipping_address: "",
     shipping_city:    "",
@@ -111,6 +113,11 @@ function CheckoutPage() {
     return () => { document.body.removeChild(script); };
   }, []);
 
+  // Fetch shipping quote when city or country changes
+  useEffect(() => {
+    fetchShippingQuote();
+  }, [form.shipping_city, form.shipping_country, shipmentType, items.length]);
+
   const loadCart = async () => {
     try {
       const res       = await cartApi.get();
@@ -135,8 +142,35 @@ function CheckoutPage() {
     }
   };
 
+  const fetchShippingQuote = async () => {
+    if (!form.shipping_city || !form.shipping_country || items.length === 0) return;
+    if (shipmentType === "PICKUP") { setShippingQuote(null); return; }
+
+    setLoadingShipping(true);
+    try {
+      const res = await apiClient.post("/logistics/quote", {
+        items: items.map((item: any) => ({
+          product_id:      item.product_id,
+          quantity:        item.quantity,
+          unit:            item.unit,
+          category:        item.category || "CASH_CROPS",
+          weight_per_unit: item.weight_per_unit || null,
+        })),
+        origin_state: (items[0] as any)?.seller_state || "Lagos",
+        dest_state:   form.shipping_city,
+        dest_country: form.shipping_country,
+      });
+      if (res.data?.success) setShippingQuote(res.data.data);
+    } catch {
+      setShippingQuote(null);
+    } finally {
+      setLoadingShipping(false);
+    }
+  };
+
   const subtotal     = items.reduce((sum, item) => sum + item.item_total, 0);
-  const total        = subtotal;
+  const shippingCost = shipmentType === "PICKUP" ? 0 : (shippingQuote?.rate_ngn || 0);
+  const total        = subtotal + shippingCost;
   const currency     = items[0]?.currency || "NGN";
   const useStripe    = STRIPE_CURRENCIES.includes(selectedCurrency.toUpperCase());
 
@@ -167,6 +201,7 @@ function CheckoutPage() {
     shipping_method:    selectedPartner?.label || shipmentType,
     shipment_type:      shipmentType,
     logistics_provider: logisticsPartner,
+    shipping_cost:      shippingCost,
     buyer_notes:        form.buyer_notes || undefined,
   });
 
@@ -178,7 +213,6 @@ function CheckoutPage() {
     setProcessing(true);
     try {
       const { convert } = useCurrencyStore.getState();
-      const convertedTotal = convert(total, currency);
 
       const res = await apiClient.post("/payments/stripe/create-session", {
         ...getShippingPayload(),
@@ -188,7 +222,7 @@ function CheckoutPage() {
         cart_items: items.map((item: any) => ({
           ...item,
           price:      convert(item.price, item.currency),
-          item_total: convert(item.item_total, item.currency),
+          item_total: convert(item.item_total + (shippingCost / items.length), item.currency),
           currency:   selectedCurrency,
         })),
       });
@@ -211,7 +245,7 @@ function CheckoutPage() {
       const checkoutData = savedPayload ? JSON.parse(savedPayload) : getShippingPayload();
 
       const res = await apiClient.post("/payments/stripe/verify", {
-        session_id: sessionId,
+        session_id:       sessionId,
         ...checkoutData,
         payment_currency: selectedCurrency,
       });
@@ -370,7 +404,7 @@ function CheckoutPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs text-gray-500 mb-1.5 block">City *</label>
+                      <label className="text-xs text-gray-500 mb-1.5 block">City / State *</label>
                       <input value={form.shipping_city}
                         onChange={e => setForm({ ...form, shipping_city: e.target.value })}
                         placeholder="e.g. Lagos"
@@ -489,11 +523,51 @@ function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Shipping cost</span>
-                    <span className="text-amber-400 text-xs">Negotiated</span>
+                    {loadingShipping ? (
+                      <span className="text-gray-500 text-xs flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Calculating...
+                      </span>
+                    ) : shipmentType === "PICKUP" ? (
+                      <span className="text-green-400 text-xs font-bold">Free</span>
+                    ) : shippingQuote ? (
+                      <div className="text-right">
+                        <span className="text-green-400 text-xs font-bold">
+                          {format(shippingQuote.rate_ngn || shippingQuote.min_cost, "NGN")}
+                        </span>
+                        {shippingQuote.is_estimate && (
+                          <p className="text-gray-600 text-[10px]">
+                            {shippingQuote.min_cost && shippingQuote.max_cost
+                              ? `Est. ${format(shippingQuote.min_cost, "NGN")} – ${format(shippingQuote.max_cost, "NGN")}`
+                              : "Estimate"
+                            }
+                          </p>
+                        )}
+                        {shippingQuote.transit_days && (
+                          <p className="text-gray-600 text-[10px]">{shippingQuote.transit_days}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-amber-400 text-xs">Enter city & country</span>
+                    )}
                   </div>
+
+                  {/* Shipping info banner for international */}
+                  {shippingQuote?.is_estimate && (
+                    <div className="bg-amber-950/20 border border-amber-800/30 rounded-xl p-3">
+                      <p className="text-amber-300 text-[10px] leading-relaxed">
+                        🌍 {shippingQuote.message}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="border-t border-white/[0.07] pt-3 flex justify-between">
                     <span className="text-white font-bold">Total</span>
-                    <span className="text-green-400 font-black text-xl">{format(total, currency)}</span>
+                    <div className="text-right">
+                      <span className="text-green-400 font-black text-xl">{format(total, currency)}</span>
+                      {shippingQuote?.is_estimate && (
+                        <p className="text-gray-600 text-[10px]">Inc. shipping estimate</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
