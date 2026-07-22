@@ -79,18 +79,24 @@ INTERNATIONAL_ESTIMATES = {
 }
 
 COUNTRY_TO_REGION = {
+    # West Africa
     "Ghana": "WEST_AFRICA", "Benin": "WEST_AFRICA", "Togo": "WEST_AFRICA",
     "Ivory Coast": "WEST_AFRICA", "Senegal": "WEST_AFRICA", "Mali": "WEST_AFRICA",
     "Burkina Faso": "WEST_AFRICA", "Sierra Leone": "WEST_AFRICA", "Guinea": "WEST_AFRICA",
     "Cameroon": "WEST_AFRICA", "Niger": "WEST_AFRICA",
+    # East Africa
     "Kenya": "EAST_AFRICA", "Ethiopia": "EAST_AFRICA", "Tanzania": "EAST_AFRICA",
     "Uganda": "EAST_AFRICA", "Rwanda": "EAST_AFRICA", "Burundi": "EAST_AFRICA",
     "Somalia": "EAST_AFRICA", "Djibouti": "EAST_AFRICA", "Eritrea": "EAST_AFRICA",
-    "UK": "EUROPE", "United Kingdom": "EUROPE", "Germany": "EUROPE",
-    "France": "EUROPE", "Netherlands": "EUROPE", "Belgium": "EUROPE",
+    # Europe (expanded UK variations)
+    "UK": "EUROPE", "United Kingdom": "EUROPE", "Britain": "EUROPE", "England": "EUROPE",
+    "Germany": "EUROPE", "France": "EUROPE", "Netherlands": "EUROPE", "Belgium": "EUROPE",
     "Spain": "EUROPE", "Italy": "EUROPE", "Portugal": "EUROPE",
     "Sweden": "EUROPE", "Norway": "EUROPE", "Denmark": "EUROPE",
-    "USA": "NORTH_AMERICA", "United States": "NORTH_AMERICA", "Canada": "NORTH_AMERICA",
+    # North America (expanded US variations)
+    "USA": "NORTH_AMERICA", "United States": "NORTH_AMERICA", "United States of America": "NORTH_AMERICA",
+    "America": "NORTH_AMERICA", "US": "NORTH_AMERICA", "Canada": "NORTH_AMERICA",
+    # Asia
     "China": "ASIA", "India": "ASIA", "UAE": "ASIA", "Saudi Arabia": "ASIA",
     "Japan": "ASIA", "South Korea": "ASIA", "Pakistan": "ASIA",
 }
