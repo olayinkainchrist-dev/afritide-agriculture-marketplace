@@ -50,7 +50,6 @@ const TIME_FILTERS = [
 
 const ProfessionalTooltip = ({ active, payload, label, commodityName, currency }: any) => {
   if (!active || !payload || !payload.length) return null;
-
   return (
     <div className="bg-[#0a1a0f] border border-white/[0.12] rounded-xl p-3 shadow-2xl min-w-[160px]">
       <p className="text-gray-500 text-[10px] font-medium mb-1.5">{label}</p>
@@ -83,6 +82,9 @@ export default function FullCommodityBoard() {
   const [compareIds,      setCompareIds]      = useState<string[]>([]);
   const [subscribedIds,   setSubscribedIds]   = useState<string[]>([]);
   const [alertLoading,    setAlertLoading]    = useState<string | null>(null);
+  const [alertModal,      setAlertModal]      = useState<any | null>(null);
+  const [alertForm,       setAlertForm]       = useState({ alert_type: "any_change", target_price: "" });
+  const [alertSubmitting, setAlertSubmitting] = useState(false);
 
   const { isAuthenticated } = useAuthStore();
 
@@ -159,7 +161,6 @@ export default function FullCommodityBoard() {
 
   const buildCompareData = () => {
     if (!compareHistories || (compareHistories as any[]).length === 0) return [];
-
     const dateSet = new Set<string>();
     (compareHistories as any[]).forEach((ch: any) => {
       ch.history.forEach((h: any) => {
@@ -167,9 +168,7 @@ export default function FullCommodityBoard() {
         dateSet.add(d);
       });
     });
-
     const dates = Array.from(dateSet).sort();
-
     return dates.map(date => {
       const point: any = { date };
       (compareHistories as any[]).forEach((ch: any) => {
@@ -177,8 +176,8 @@ export default function FullCommodityBoard() {
           new Date(h.recorded_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) === date
         );
         if (match) {
-          point[ch.commodity_name]              = match.price;
-          point[`${ch.commodity_name}_pct`]     = match.pct_change;
+          point[ch.commodity_name]          = match.price;
+          point[`${ch.commodity_name}_pct`] = match.pct_change;
         }
       });
       return point;
@@ -187,9 +186,9 @@ export default function FullCommodityBoard() {
 
   const handleAlert = async (c: any) => {
     if (!isAuthenticated) { toast.error("Please login to set price alerts"); return; }
-    setAlertLoading(c.id);
-    try {
-      if (subscribedIds.includes(c.id)) {
+    if (subscribedIds.includes(c.id)) {
+      setAlertLoading(c.id);
+      try {
         const res   = await apiClient.get("/price-alerts");
         const alert = res.data?.data?.find((a: any) =>
           a.commodity_name.toLowerCase() === c.commodity_name.toLowerCase()
@@ -199,34 +198,47 @@ export default function FullCommodityBoard() {
           setSubscribedIds(prev => prev.filter(x => x !== c.id));
           toast.success("Price alert removed");
         }
-      } else {
-        await apiClient.post("/price-alerts", {
-          commodity_name: c.commodity_name,
-          alert_type:     "any_change",
-          currency:       c.currency,
-        });
-        setSubscribedIds(prev => [...prev, c.id]);
-        toast.success(`Price alert set for ${c.commodity_name} 🔔`);
+      } catch (err: any) {
+        toast.error(err.response?.data?.detail || "Failed to remove alert");
+      } finally {
+        setAlertLoading(null);
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Failed to update alert");
-    } finally {
-      setAlertLoading(null);
+    } else {
+      setAlertModal(c);
+      setAlertForm({ alert_type: "any_change", target_price: "" });
     }
   };
 
-  // Build chart data — deduplicate by date, keep last price per date
+  const handleAlertSubmit = async () => {
+    if (!alertModal) return;
+    if (alertForm.alert_type !== "any_change" && !alertForm.target_price) {
+      toast.error("Enter a target price"); return;
+    }
+    setAlertSubmitting(true);
+    try {
+      await apiClient.post("/price-alerts", {
+        commodity_name: alertModal.commodity_name,
+        alert_type:     alertForm.alert_type,
+        target_price:   alertForm.target_price ? Number(alertForm.target_price) : undefined,
+        currency:       alertModal.currency,
+      });
+      setSubscribedIds(prev => [...prev, alertModal.id]);
+      toast.success(`Price alert set for ${alertModal.commodity_name} 🔔`);
+      setAlertModal(null);
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to set alert");
+    } finally {
+      setAlertSubmitting(false);
+    }
+  };
+
   const buildChartData = (history: any[]) => {
     const dateMap = new Map<string, any>();
     history.forEach(h => {
       const date = new Date(h.recorded_at).toLocaleDateString("en-US", {
         month: "short", day: "numeric",
       });
-      dateMap.set(date, {
-        date,
-        price:      h.price,
-        pct_change: h.pct_change,
-      });
+      dateMap.set(date, { date, price: h.price, pct_change: h.pct_change });
     });
     return Array.from(dateMap.values());
   };
@@ -292,10 +304,10 @@ export default function FullCommodityBoard() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Total",   value: allCommodities.length, color: "text-white" },
-          { label: "Rising",  value: allCommodities.filter((c: any) => c.trend === "UP"     || c.trend === "UP").length,     color: "text-green-400" },
-          { label: "Falling", value: allCommodities.filter((c: any) => c.trend === "DOWN"   || c.trend === "DOWN").length,   color: "text-red-400" },
-          { label: "STABLE",  value: allCommodities.filter((c: any) => c.trend === "STABLE" || c.trend === "STABLE").length, color: "text-gray-400" },
+          { label: "Total",   value: allCommodities.length,                                               color: "text-white" },
+          { label: "Rising",  value: allCommodities.filter((c: any) => c.trend === "UP").length,          color: "text-green-400" },
+          { label: "Falling", value: allCommodities.filter((c: any) => c.trend === "DOWN").length,        color: "text-red-400" },
+          { label: "Stable",  value: allCommodities.filter((c: any) => c.trend === "STABLE").length,      color: "text-gray-400" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 text-center">
             <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -359,39 +371,24 @@ export default function FullCommodityBoard() {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={buildCompareData()} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
-                    tickLine={false}
-                    axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-                    interval={0}
-                  />
-                  <YAxis
-                    tick={{ fill: "#6b7280", fontSize: 10 }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={70}
+                  <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false}
+                    axisLine={{ stroke: "rgba(255,255,255,0.06)" }} interval={0} />
+                  <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} width={70}
                     tickFormatter={(v: number) => {
                       if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
                       if (v >= 1_000)     return `${(v / 1_000).toFixed(0)}K`;
                       return `${v}`;
-                    }}
-                  />
+                    }} />
                   <Tooltip content={(props: any) => <ProfessionalTooltip {...props} currency="NGN" />} />
                   <Legend wrapperStyle={{ fontSize: "11px", color: "#9ca3af", paddingTop: "8px" }} />
                   {compareIds.map((id, idx) => {
                     const ch = (compareHistories as any[])?.find((x: any) => x.id === id);
                     if (!ch || !ch.has_history) return null;
                     return (
-                      <Line
-                        key={id}
-                        type="linear"
-                        dataKey={ch.commodity_name}
-                        stroke={CHART_COLORS[idx]}
-                        strokeWidth={2.5}
+                      <Line key={id} type="linear" dataKey={ch.commodity_name}
+                        stroke={CHART_COLORS[idx]} strokeWidth={2.5}
                         dot={{ fill: CHART_COLORS[idx], r: 4, strokeWidth: 0 }}
-                        activeDot={{ r: 6, fill: CHART_COLORS[idx], stroke: "#0a1a0f", strokeWidth: 2 }}
-                      />
+                        activeDot={{ r: 6, fill: CHART_COLORS[idx], stroke: "#0a1a0f", strokeWidth: 2 }} />
                     );
                   })}
                 </LineChart>
@@ -441,15 +438,14 @@ export default function FullCommodityBoard() {
                       compareMode && compareIds.includes(c.id)
                         ? "bg-violet-950/20 hover:bg-violet-950/30"
                         : "hover:bg-white/[0.03]"
-                    }`}
-                  >
+                    }`}>
                     {compareMode && (
                       <div className="col-span-1">
                         <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
                           compareIds.includes(c.id) ? "bg-violet-500 border-violet-500" : "border-white/[0.2]"
                         }`}>
                           {compareIds.includes(c.id) && (
-                            <svg className="w-3 h-3 text-white" fill="NONE" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           )}
@@ -489,11 +485,11 @@ export default function FullCommodityBoard() {
 
                     <div className="col-span-2">
                       <div className={`flex items-center gap-1 text-sm font-bold ${
-                        (c.trend === "UP"   || c.trend === "UP")   ? "text-green-400" :
-                        (c.trend === "DOWN" || c.trend === "DOWN") ? "text-red-400"   : "text-gray-500"
+                        c.trend === "UP"     ? "text-green-400" :
+                        c.trend === "DOWN"   ? "text-red-400"   : "text-gray-500"
                       }`}>
-                        {(c.trend === "UP"   || c.trend === "UP")   ? <ArrowUpRight className="w-4 h-4" />   :
-                         (c.trend === "DOWN" || c.trend === "DOWN") ? <ArrowDownRight className="w-4 h-4" /> :
+                        {c.trend === "UP"   ? <ArrowUpRight className="w-4 h-4" />   :
+                         c.trend === "DOWN" ? <ArrowDownRight className="w-4 h-4" /> :
                          <Minus className="w-4 h-4" />}
                         {c.change_percentage
                           ? `${c.change_percentage > 0 ? "+" : ""}${c.change_percentage.toFixed(1)}%`
@@ -585,52 +581,24 @@ export default function FullCommodityBoard() {
                         ) : (
                           <div className="h-56 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                              <LineChart
-                                data={buildChartData(history)}
-                                margin={{ top: 5, right: 10, bottom: 5, left: 10 }}
-                              >
+                              <LineChart data={buildChartData(history)} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                                <XAxis
-                                  dataKey="date"
-                                  tick={{ fill: "#6b7280", fontSize: 10 }}
-                                  tickLine={false}
-                                  axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-                                  interval={0}
-                                />
-                                <YAxis
-                                  tick={{ fill: "#6b7280", fontSize: 10 }}
-                                  tickLine={false}
-                                  axisLine={false}
-                                  width={70}
+                                <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false}
+                                  axisLine={{ stroke: "rgba(255,255,255,0.06)" }} interval={0} />
+                                <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} tickLine={false} axisLine={false} width={70}
                                   tickFormatter={(v: number) => {
                                     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
                                     if (v >= 1_000)     return `${(v / 1_000).toFixed(0)}K`;
                                     return `${v}`;
-                                  }}
-                                />
-                                <Tooltip
-                                  content={(props: any) => (
-                                    <ProfessionalTooltip
-                                      {...props}
-                                      commodityName={c.commodity_name}
-                                      currency={c.currency}
-                                    />
-                                  )}
-                                />
-                                <ReferenceLine
-                                  y={c.price}
-                                  stroke="rgba(34,197,94,0.3)"
-                                  strokeDasharray="4 4"
-                                  label={{ value: "Current", fill: "#22c55e", fontSize: 9, position: "right" }}
-                                />
-                                <Line
-                                  type="linear"
-                                  dataKey="price"
-                                  stroke="#22c55e"
-                                  strokeWidth={2.5}
+                                  }} />
+                                <Tooltip content={(props: any) => (
+                                  <ProfessionalTooltip {...props} commodityName={c.commodity_name} currency={c.currency} />
+                                )} />
+                                <ReferenceLine y={c.price} stroke="rgba(34,197,94,0.3)" strokeDasharray="4 4"
+                                  label={{ value: "Current", fill: "#22c55e", fontSize: 9, position: "right" }} />
+                                <Line type="linear" dataKey="price" stroke="#22c55e" strokeWidth={2.5}
                                   dot={{ fill: "#22c55e", r: 4, strokeWidth: 0 }}
-                                  activeDot={{ r: 6, fill: "#22c55e", stroke: "#0a1a0f", strokeWidth: 2 }}
-                                />
+                                  activeDot={{ r: 6, fill: "#22c55e", stroke: "#0a1a0f", strokeWidth: 2 }} />
                               </LineChart>
                             </ResponsiveContainer>
                           </div>
@@ -717,6 +685,84 @@ export default function FullCommodityBoard() {
           </>
         )}
       </div>
+
+      {/* Price Alert Modal */}
+      {alertModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setAlertModal(null)} />
+          <div className="relative bg-[#0a1a0f] border border-white/[0.08] rounded-3xl p-6 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2">
+                <Bell className="w-5 h-5 text-green-400" /> Set Price Alert
+              </h3>
+              <button onClick={() => setAlertModal(null)}>
+                <X className="w-5 h-5 text-gray-600 hover:text-white transition-colors" />
+              </button>
+            </div>
+
+            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3 mb-5">
+              <p className="text-white font-bold">{alertModal.commodity_name}</p>
+              <p className="text-green-400 text-sm font-medium mt-0.5">
+                Current: {formatPrice(alertModal.price, alertModal.currency)} / {alertModal.unit}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-gray-500 mb-1.5 block">Alert When</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "any_change", label: "Any Change", color: "text-sky-400",   bg: "bg-sky-950/30 border-sky-700/40" },
+                    { value: "above",      label: "Goes Above", color: "text-green-400", bg: "bg-green-950/30 border-green-700/40" },
+                    { value: "below",      label: "Goes Below", color: "text-red-400",   bg: "bg-red-950/30 border-red-700/40" },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setAlertForm({...alertForm, alert_type: opt.value})}
+                      className={`py-2.5 rounded-xl border text-xs font-bold transition-all ${
+                        alertForm.alert_type === opt.value
+                          ? `${opt.bg} ${opt.color}`
+                          : "border-white/[0.07] text-gray-500 hover:text-white"
+                      }`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {alertForm.alert_type !== "any_change" && (
+                <div>
+                  <label className="text-xs text-gray-500 mb-1.5 block">
+                    Target Price ({alertModal.currency}) *
+                  </label>
+                  <input type="number" step="0.01"
+                    value={alertForm.target_price}
+                    onChange={e => setAlertForm({...alertForm, target_price: e.target.value})}
+                    placeholder={`e.g. ${alertModal.price}`}
+                    className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
+                </div>
+              )}
+
+              <div className="bg-green-950/20 border border-green-800/30 rounded-xl p-3">
+                <p className="text-green-300 text-xs leading-relaxed">
+                  🔔 You'll receive an email when <strong>{alertModal.commodity_name}</strong> {
+                    alertForm.alert_type === "any_change" ? "price changes" :
+                    alertForm.alert_type === "above" ? `goes above ${alertModal.currency} ${alertForm.target_price || "..."}` :
+                    `goes below ${alertModal.currency} ${alertForm.target_price || "..."}`
+                  }.
+                </p>
+              </div>
+
+              <button onClick={handleAlertSubmit} disabled={alertSubmitting}
+                className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
+                {alertSubmitting
+                  ? <><RefreshCw className="w-4 h-4 animate-spin" /> Setting Alert...</>
+                  : <><Bell className="w-4 h-4" /> Confirm Alert</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

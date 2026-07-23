@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { label: "Overview",     href: "/dashboard/buyer",               icon: LayoutDashboard },
   { label: "My Orders",    href: "/dashboard/buyer/orders",        icon: ShoppingCart },
   { label: "Wishlist",     href: "/dashboard/buyer/wishlist",      icon: Heart },
-  { label: "Price Alerts", href: "/dashboard/buyer/price-alerts",  icon: Bell },
+  { label: "Price Alerts", href: "/dashboard/buyer/alerts",        icon: Bell },
   { label: "RFQs",         href: "/dashboard/buyer/rfqs",          icon: FileText },
 ];
 
