@@ -60,6 +60,9 @@ def serialize_cart(cart: Cart, db: Session) -> dict:
             "max_order":   product.quantity_available,
             "country":     product.country,
             "is_organic":  product.is_organic,
+            "category":       product.category,
+            "weight_per_unit":product.weight_per_unit,
+            "seller_state":   product.state,
         })
 
     return {
