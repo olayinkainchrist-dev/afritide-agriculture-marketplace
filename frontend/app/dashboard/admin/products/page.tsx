@@ -151,11 +151,11 @@ export default function AdminProductsPage() {
           ) : (
             <div className="divide-y divide-white/[0.04]">
               <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 border-b border-white/[0.06] text-xs text-gray-600 font-medium uppercase tracking-wide">
-                <div className="col-span-5">Product</div>
+                <div className="col-span-4">Product</div>
                 <div className="col-span-2">Price</div>
                 <div className="col-span-2">Submitted</div>
                 <div className="col-span-1">Status</div>
-                <div className="col-span-2">Actions</div>
+                <div className="col-span-3">Actions</div>
               </div>
 
               {products.map((product: any) => {
@@ -164,7 +164,7 @@ export default function AdminProductsPage() {
                   <div key={product.id}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors items-center">
 
-                      <div className="col-span-5 flex items-center gap-3">
+                      <div className="col-span-4 flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/[0.04] border border-white/[0.08] flex-shrink-0">
                           {product.main_image
                             ? <img src={product.main_image} alt="" className="w-full h-full object-cover" />
@@ -198,9 +198,9 @@ export default function AdminProductsPage() {
                         </span>
                       </div>
 
-                      <div className="col-span-2 flex items-center gap-2">
+                      <div className="col-span-3 flex items-center gap-2 flex-wrap justify-end">
                         <button onClick={() => setExpandedId(isExpanded ? null : product.id)}
-                          className="p-1.5 text-gray-600 hover:text-white hover:bg-white/[0.05] rounded-lg transition-all">
+                          className="p-1.5 text-gray-600 hover:text-white hover:bg-white/[0.05] rounded-lg transition-all flex-shrink-0">
                           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
 
@@ -208,7 +208,7 @@ export default function AdminProductsPage() {
                           <>
                             <button onClick={() => handleApprove(product.id)}
                               disabled={approving === product.id}
-                              className="flex items-center gap-1 bg-green-600/20 hover:bg-green-600/40 border border-green-700/40 text-green-400 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors disabled:opacity-50">
+                              className="flex items-center gap-1 bg-green-600/20 hover:bg-green-600/40 border border-green-700/40 text-green-400 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors disabled:opacity-50 flex-shrink-0 whitespace-nowrap">
                               {approving === product.id
                                 ? <Loader2 className="w-3 h-3 animate-spin" />
                                 : <CheckCircle2 className="w-3 h-3" />
@@ -217,7 +217,7 @@ export default function AdminProductsPage() {
                             </button>
                             <button
                               onClick={() => { setRejectModal({ id: product.id, title: product.title }); setRejectReason(""); }}
-                              className="flex items-center gap-1 bg-red-600/10 hover:bg-red-600/20 border border-red-700/30 text-red-400 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors">
+                              className="flex items-center gap-1 bg-red-600/10 hover:bg-red-600/20 border border-red-700/30 text-red-400 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-colors flex-shrink-0 whitespace-nowrap">
                               <XCircle className="w-3 h-3" /> Reject
                             </button>
                           </>
@@ -335,4 +335,3 @@ export default function AdminProductsPage() {
     </DashboardLayout>
   );
 }
-
