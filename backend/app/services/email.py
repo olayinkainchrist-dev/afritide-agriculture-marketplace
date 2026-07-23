@@ -147,14 +147,14 @@ def send_price_alert_email(
     to_email:          str,
     first_name:        str,
     commodity_name:    str,
-    old_price:         float,
+    previous_price:    float,
     new_price:         float,
     currency:          str,
     change_percentage: float,
-):
-    direction = "increased" if new_price > old_price else "decreased"
-    color     = "#2E7D32" if new_price > old_price else "#c62828"
-    arrow     = "📈" if new_price > old_price else "📉"
+) -> bool:
+    direction = "increased" if new_price > previous_price else "decreased"
+    color     = "#2E7D32" if new_price > previous_price else "#c62828"
+    arrow     = "📈" if new_price > previous_price else "📉"
     pct       = abs(change_percentage)
 
     content = f"""
@@ -167,7 +167,7 @@ def send_price_alert_email(
                 <tr>
                     <td style="padding: 8px 0; color: #555; font-size: 14px;">Previous Price:</td>
                     <td style="padding: 8px 0; color: #555; font-size: 14px; font-weight: bold; text-align: right;">
-                        {currency} {old_price:,.2f}
+                        {currency} {previous_price:,.2f}
                     </td>
                 </tr>
                 <tr>
@@ -194,7 +194,7 @@ def send_price_alert_email(
             To stop receiving alerts, visit your dashboard and manage your price alerts.
         </p>
     """
-    _send_email(
+    return _send_email(
         to_email,
         f"Price Alert: {commodity_name} {direction} {pct:.1f}%",
         _email_wrapper(content)
@@ -331,11 +331,11 @@ def send_order_status_email(
     tracking_number: str = None,
 ):
     status_messages = {
-        "confirmed":  ("✅ Order Confirmed",   "Your order has been confirmed by the seller and is being prepared."),
-        "shipped":    ("🚚 Order Shipped",      "Your order is on its way!"),
-        "delivered":  ("📦 Order Delivered",   "Your order has been delivered. We hope you love it!"),
-        "completed":  ("🎉 Order Completed",   "Your order is complete. Thank you for shopping on Afritide!"),
-        "cancelled":  ("❌ Order Cancelled",   "Unfortunately your order has been cancelled."),
+        "confirmed":  ("✅ Order Confirmed",  "Your order has been confirmed by the seller and is being prepared."),
+        "shipped":    ("🚚 Order Shipped",     "Your order is on its way!"),
+        "delivered":  ("📦 Order Delivered",  "Your order has been delivered. We hope you love it!"),
+        "completed":  ("🎉 Order Completed",  "Your order is complete. Thank you for shopping on Afritide!"),
+        "cancelled":  ("❌ Order Cancelled",  "Unfortunately your order has been cancelled."),
     }
 
     title, message = status_messages.get(new_status.lower(), ("Order Update", f"Your order status has changed to {new_status}."))
@@ -419,14 +419,14 @@ def send_product_status_email(
 
 
 def send_new_rfq_email(
-    rfq_number:   str,
-    product_name: str,
-    quantity:     float,
-    unit:         str,
-    currency:     str,
-    target_price: float = None,
-    delivery_country: str = None,
-    specifications:   str = None,
+    rfq_number:       str,
+    product_name:     str,
+    quantity:         float,
+    unit:             str,
+    currency:         str,
+    target_price:     float = None,
+    delivery_country: str   = None,
+    specifications:   str   = None,
 ):
     content = f"""
         <h2 style="color: #1A1A1A;">📋 New Sourcing Request</h2>
