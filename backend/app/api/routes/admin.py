@@ -484,18 +484,19 @@ async def download_commodities_report(
     db:          Session = Depends(get_db),
 ):
     from app.models.commodity import CommodityPrice
-    prices = db.query(CommodityPrice).order_by(desc(CommodityPrice.recorded_at)).all()
+    prices = db.query(CommodityPrice).order_by(desc(CommodityPrice.created_at)).all()
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "ID", "Commodity", "Price", "Currency", "Unit",
-        "Market", "Country", "Trend", "Recorded At",
+        "ID", "Commodity", "Category", "Price Type", "Price", "Currency", "Unit",
+        "Market", "Region", "Country", "Trend", "Change %", "Created At",
     ])
     for p in prices:
         writer.writerow([
-            str(p.id), p.commodity_name, p.price, p.currency,
-            p.unit, p.market or "", p.country or "",
-            p.trend or "", p.recorded_at,
+            str(p.id), p.commodity_name, p.category or "", p.price_type,
+            p.price, p.currency, p.unit, p.market or "",
+            p.region or "", p.country or "", p.trend or "",
+            p.change_percentage or "", p.created_at,
         ])
     output.seek(0)
     return StreamingResponse(
