@@ -111,15 +111,15 @@ COUNTRY_TO_REGION = {
     "Uganda": "EAST_AFRICA", "Rwanda": "EAST_AFRICA", "Burundi": "EAST_AFRICA",
     "Somalia": "EAST_AFRICA", "Djibouti": "EAST_AFRICA", "Eritrea": "EAST_AFRICA",
     # Europe (expanded UK variations)
-    "UK": "EUROPE", "United Kingdom": "EUROPE", "Britain": "EUROPE", "England": "EUROPE",
+    "Uk": "EUROPE", "United Kingdom": "EUROPE", "Britain": "EUROPE", "England": "EUROPE",
     "Germany": "EUROPE", "France": "EUROPE", "Netherlands": "EUROPE", "Belgium": "EUROPE",
     "Spain": "EUROPE", "Italy": "EUROPE", "Portugal": "EUROPE",
     "Sweden": "EUROPE", "Norway": "EUROPE", "Denmark": "EUROPE",
     # North America (expanded US variations)
-    "USA": "NORTH_AMERICA", "United States": "NORTH_AMERICA", "United States of America": "NORTH_AMERICA",
-    "America": "NORTH_AMERICA", "US": "NORTH_AMERICA", "Canada": "NORTH_AMERICA",
+    "Usa": "NORTH_AMERICA", "United States": "NORTH_AMERICA", "United States Of America": "NORTH_AMERICA",
+    "America": "NORTH_AMERICA", "Us": "NORTH_AMERICA", "Canada": "NORTH_AMERICA",
     # Middle East
-    "UAE": "MIDDLE_EAST", "Saudi Arabia": "MIDDLE_EAST", "Qatar": "MIDDLE_EAST",
+    "Uae": "MIDDLE_EAST", "Saudi Arabia": "MIDDLE_EAST", "Qatar": "MIDDLE_EAST",
     "Kuwait": "MIDDLE_EAST", "Oman": "MIDDLE_EAST", "Bahrain": "MIDDLE_EAST",
     "Jordan": "MIDDLE_EAST", "Lebanon": "MIDDLE_EAST", "Egypt": "MIDDLE_EAST",
     # Asia (South Asia)
@@ -226,7 +226,9 @@ def get_international_estimate(
     weight_kg:    float,
 ) -> Dict[str, Any]:
     """Get international shipping estimate."""
-    region = COUNTRY_TO_REGION.get(dest_country)
+    # Clean and normalize country name for case-insensitive lookup
+    dest_normalized = dest_country.strip().title()
+    region = COUNTRY_TO_REGION.get(dest_normalized) or COUNTRY_TO_REGION.get(dest_country.strip())
 
     if not region:
         # Unknown country — generic estimate
@@ -276,7 +278,8 @@ async def calculate_shipping(
     category:     str,
 ) -> Dict[str, Any]:
     """Main shipping calculator — domestic or international."""
-    is_domestic = dest_country.lower() in ["nigeria", "ng"]
+    dest_country_clean = dest_country.strip()
+    is_domestic = dest_country_clean.lower() in ["nigeria", "ng"]
 
     if is_domestic:
         return await calculate_domestic_shipping(
@@ -288,6 +291,6 @@ async def calculate_shipping(
         )
     else:
         return get_international_estimate(
-            dest_country=dest_country,
+            dest_country=dest_country_clean,
             weight_kg=weight_kg,
         )
