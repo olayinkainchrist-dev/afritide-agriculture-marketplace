@@ -320,8 +320,7 @@ async def update_commodity(
     db.refresh(commodity)
 
     if price_changed and abs(change_percentage) >= 1:
-        background_tasks.add_task(
-            _trigger_price_alerts,
+        _trigger_price_alerts(
             db,
             commodity.commodity_name,
             previous_price,
