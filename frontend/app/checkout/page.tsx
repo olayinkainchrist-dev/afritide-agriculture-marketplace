@@ -175,10 +175,16 @@ function CheckoutPage() {
   const useStripe    = STRIPE_CURRENCIES.includes(selectedCurrency.toUpperCase());
 
   const totalWeightKg = items.reduce((sum: number, item: any) => {
-    const w = item.unit === "TONNE" ? item.quantity * 1000
-            : item.unit === "GRAM"  ? item.quantity / 1000
-            : item.quantity;
-    return sum + w;
+    const qty = item.quantity;
+    const wpunit = item.weight_per_unit;
+    if (wpunit && wpunit > 0) return sum + qty * wpunit;
+    const unit = item.unit?.toUpperCase();
+    const fallback: Record<string, number> = {
+      TONNE: 1000, KG: 1, GRAM: 0.001, BAG: 50,
+      CRATE: 20, DOZEN: 5, BUNCH: 2, HEAD: 350,
+      PIECE: 5, LITRE: 1, UNIT: 1,
+    };
+    return sum + qty * (fallback[unit] || 1);
   }, 0);
 
   const selectedType    = SHIPMENT_TYPES.find(t => t.id === shipmentType);
