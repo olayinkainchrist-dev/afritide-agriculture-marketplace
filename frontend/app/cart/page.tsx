@@ -47,7 +47,15 @@ export default function CartPage() {
     setUpdating(item_id);
     try {
       const res = await cartApi.updateItem(item_id, quantity);
-      setItems(res.data?.items || []);
+      const serverItems = res.data?.items || [];
+      // Keep the current on-screen order — just patch in updated fields
+      // from the server response, instead of adopting the server's order.
+      setItems(
+        items.map((item) => {
+          const updated = serverItems.find((s: any) => s.id === item.id);
+          return updated || item;
+        })
+      );
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to update");
     } finally {
@@ -59,7 +67,17 @@ export default function CartPage() {
     setUpdating(item_id);
     try {
       const res = await cartApi.removeItem(item_id);
-      setItems(res.data?.items || []);
+      const serverItems = res.data?.items || [];
+      // Preserve current order, drop the removed item, patch in any
+      // server-side field changes for the rest.
+      setItems(
+        items
+          .filter((item) => item.id !== item_id)
+          .map((item) => {
+            const updated = serverItems.find((s: any) => s.id === item.id);
+            return updated || item;
+          })
+      );
       toast.success("Item removed");
     } catch {
       toast.error("Failed to remove item");
