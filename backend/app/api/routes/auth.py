@@ -24,6 +24,7 @@ from app.schemas.user import (
     ChangePasswordSchema, RefreshTokenSchema, UserProfileSchema
 )
 from app.services.email import send_otp_email, send_welcome_email, send_password_reset_email
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -287,3 +288,67 @@ async def get_me(current_user: User = Depends(get_current_user)):
 @router.post("/logout", summary="Logout (client-side token invalidation)")
 async def logout(current_user: User = Depends(get_current_user)):
     return success_response(message="Logged out successfully")
+
+
+class GoogleAuthPayload(BaseModel):
+    email:      str
+    first_name: str
+    last_name:  str
+    google_id:  str
+    avatar_url: str = ""
+
+
+@router.post("/google", summary="Google OAuth login/register")
+async def google_auth(
+    payload: GoogleAuthPayload,
+    db:      Session = Depends(get_db),
+):
+    from app.models.user import UserRole, UserStatus
+    from app.core.security import create_access_token, create_refresh_token
+
+    # Check if user exists
+    user = db.query(User).filter(User.email == payload.email).first()
+
+    if not user:
+        # Create new user
+        user = User(
+            email=          payload.email,
+            first_name=     payload.first_name,
+            last_name=      payload.last_name,
+            password_hash=  "",  # No password for Google users
+            role=           UserRole.BUYER,
+            status=         UserStatus.ACTIVE,
+            email_verified= True,
+            google_id=      payload.google_id,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        # Send welcome email in background
+        try:
+            send_welcome_email(user.email, user.first_name, user.role)
+        except Exception:
+            pass  # Don't fail auth if email fails
+    else:
+        # Update google_id if not set
+        if not getattr(user, "google_id", None):
+            user.google_id = payload.google_id
+            db.commit()
+
+    access_token  = create_access_token({"sub": str(user.id), "role": user.role})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+
+    return success_response(data={
+        "access_token":  access_token,
+        "refresh_token": refresh_token,
+        "token_type":    "bearer",
+        "user": {
+            "id":         str(user.id),
+            "email":      user.email,
+            "first_name": user.first_name,
+            "last_name":  user.last_name,
+            "role":       user.role,
+            "status":     user.status,
+        }
+    })

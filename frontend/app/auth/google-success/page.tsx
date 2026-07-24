@@ -6,17 +6,22 @@ import { Loader2 } from "lucide-react";
 import apiClient from "@/lib/api/client";
 
 function GoogleSuccessHandler() {
-  const searchParams           = useSearchParams();
-  const router                 = useRouter();
-  const { setTokens, refreshUser } = useAuthStore();
+  const searchParams             = useSearchParams();
+  const router                   = useRouter();
+  const { setAuth, refreshUser } = useAuthStore();
 
   useEffect(() => {
     const token   = searchParams.get("token");
     const refresh = searchParams.get("refresh");
     if (token) {
-      setTokens(token, refresh || "");
       apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      refreshUser().then(() => router.replace("/dashboard/buyer"));
+      refreshUser().then(() => {
+        const { user } = useAuthStore.getState();
+        if (user) {
+          setAuth(user, token, refresh || "");
+        }
+        router.replace("/dashboard/buyer");
+      });
     } else {
       router.replace("/login?error=auth_failed");
     }
