@@ -33,7 +33,17 @@ function CallbackHandler() {
         if (res.data?.success && res.data?.data?.access_token) {
           const { access_token, refresh_token, user: afritideUser } = res.data.data;
           setAuth(afritideUser, access_token, refresh_token || "");
-          router.replace("/dashboard/buyer");
+
+          // Role-based redirect
+          const role = afritideUser.role;
+          if (role === "ADMIN") {
+            router.replace("/dashboard/admin");
+          } else if (role === "BUYER") {
+            router.replace("/dashboard/buyer");
+          } else {
+            // FARMER, COOPERATIVE, EXPORTER, PROCESSING_COMPANY, LOGISTICS_PROVIDER, etc.
+            router.replace("/dashboard/farmer");
+          }
         } else {
           router.replace("/login?error=auth_failed");
         }
