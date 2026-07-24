@@ -1,97 +1,68 @@
 "use client";
 import { useEffect, Suspense, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 import apiClient from "@/lib/api/client";
 import { useAuthStore } from "@/lib/store/auth.store";
 
 function CallbackHandler() {
-  const router      = useRouter();
-  const { setAuth } = useAuthStore();
-  const [status, setStatus] = useState("Initializing...");
+  const { setAuth }         = useAuthStore();
+  const [status, setStatus] = useState("Signing you in...");
 
   useEffect(() => {
     const handleCallback = async () => {
-      setStatus("Checking URL...");
-      
-      // Log the full URL
-      console.log("CALLBACK URL:", window.location.href);
-      console.log("HASH:", window.location.hash);
-      console.log("SEARCH:", window.location.search);
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
 
-      setStatus("Getting session...");
-      const { data: { session }, error } = await supabase.auth.getSession();
-      console.log("SESSION:", session);
-      console.log("ERROR:", error);
-
-      if (session) {
-        setStatus("Session found, calling backend...");
-        console.log("USER:", session.user);
-        try {
-          const res = await apiClient.post("/auth/google", {
-            email:      session.user.email,
-            first_name: session.user.user_metadata?.given_name  || session.user.email?.split("@")[0],
-            last_name:  session.user.user_metadata?.family_name || "",
-            google_id:  session.user.id,
-            avatar_url: session.user.user_metadata?.avatar_url  || "",
-          });
-          console.log("BACKEND RES:", JSON.stringify(res.data));
-          console.log("SUCCESS FLAG:", res.data?.success);
-          console.log("ACCESS TOKEN:", res.data?.data?.access_token);
-          if (res.data?.success) {
-            setStatus("Success! Redirecting...");
-            const { access_token, refresh_token, user: afritideUser } = res.data.data;
-            setAuth(afritideUser, access_token, refresh_token || "");
-            const role = afritideUser.role;
-            if (role === "ADMIN") router.replace("/dashboard/admin");
-            else if (role === "BUYER") router.replace("/dashboard/buyer");
-            else router.replace("/dashboard/farmer");
-          } else {
-            setStatus("Backend failed");
-            console.log("BACKEND FAILED:", res.data);
+        if (!session || error) {
+          setStatus("Session not found, retrying...");
+          await new Promise(r => setTimeout(r, 1500));
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (!retrySession) {
+            window.location.href = "/login?error=auth_failed";
+            return;
           }
-        } catch (err) {
-          console.error("BACKEND ERROR:", err);
-          setStatus("Backend error");
         }
-      } else {
-        setStatus("No session — waiting for auth state...");
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log("AUTH EVENT:", event, session);
-          setStatus(`Auth event: ${event}`);
-          if (event === "SIGNED_IN" && session) {
-            subscription.unsubscribe();
-            setStatus("Signed in via event, calling backend...");
-            try {
-              const res = await apiClient.post("/auth/google", {
-                email:      session.user.email,
-                first_name: session.user.user_metadata?.given_name  || session.user.email?.split("@")[0],
-                last_name:  session.user.user_metadata?.family_name || "",
-                google_id:  session.user.id,
-                avatar_url: session.user.user_metadata?.avatar_url  || "",
-              });
-              console.log("BACKEND RES:", res.data);
-              if (res.data?.success) {
-                const { access_token, refresh_token, user: afritideUser } = res.data.data;
-                setAuth(afritideUser, access_token, refresh_token || "");
-                const role = afritideUser.role;
-                if (role === "ADMIN") router.replace("/dashboard/admin");
-                else if (role === "BUYER") router.replace("/dashboard/buyer");
-                else router.replace("/dashboard/farmer");
-              }
-            } catch (err) {
-              console.error("BACKEND ERROR:", err);
-              setStatus("Backend error after event");
-            }
-          }
+
+        const activeSession = session || (await supabase.auth.getSession()).data.session;
+        if (!activeSession) {
+          window.location.href = "/login?error=auth_failed";
+          return;
+        }
+
+        const user = activeSession.user;
+        setStatus("Authenticating with Afritide...");
+
+        const res = await apiClient.post("/auth/google", {
+          email:      user.email,
+          first_name: user.user_metadata?.given_name  || user.email?.split("@")[0],
+          last_name:  user.user_metadata?.family_name || "",
+          google_id:  user.id,
+          avatar_url: user.user_metadata?.avatar_url  || "",
         });
 
-        setTimeout(() => {
-          subscription.unsubscribe();
-          setStatus("Timeout — redirecting to login");
-          router.replace("/login?error=timeout");
-        }, 10000);
+        if (res.data?.success) {
+          const { access_token, refresh_token, user: afritideUser } = res.data.data;
+
+          // Set auth in store
+          setAuth(afritideUser, access_token, refresh_token || "");
+
+          // Also manually set localStorage so it persists before redirect
+          localStorage.setItem("access_token",  access_token);
+          localStorage.setItem("refresh_token", refresh_token || "");
+
+          setStatus("Redirecting...");
+
+          const role = afritideUser.role;
+          if (role === "ADMIN")        window.location.href = "/dashboard/admin";
+          else if (role === "BUYER")   window.location.href = "/dashboard/buyer";
+          else                         window.location.href = "/dashboard/farmer";
+        } else {
+          window.location.href = "/login?error=auth_failed";
+        }
+      } catch (err) {
+        console.error("Callback error:", err);
+        window.location.href = "/login?error=auth_failed";
       }
     };
 
