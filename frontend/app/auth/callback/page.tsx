@@ -13,49 +13,55 @@ function CallbackHandler() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Retry session check with delay to allow Supabase to process OAuth
-        let session = null;
-        let attempts = 0;
-        while (!session && attempts < 5) {
-          const { data, error } = await supabase.auth.getSession();
-          if (data?.session) {
-            session = data.session;
-            break;
+        // Listen for auth state change — fires when Supabase processes the OAuth code
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (event === "SIGNED_IN" && session) {
+              subscription.unsubscribe();
+
+              const user = session.user;
+
+              try {
+                const res = await apiClient.post("/auth/google", {
+                  email:      user.email,
+                  first_name: user.user_metadata?.given_name  || user.email?.split("@")[0],
+                  last_name:  user.user_metadata?.family_name || "",
+                  google_id:  user.id,
+                  avatar_url: user.user_metadata?.avatar_url  || "",
+                });
+
+                if (res.data?.success && res.data?.data?.access_token) {
+                  const { access_token, refresh_token, user: afritideUser } = res.data.data;
+                  setAuth(afritideUser, access_token, refresh_token || "");
+
+                  const role = afritideUser.role;
+                  if (role === "ADMIN") {
+                    router.replace("/dashboard/admin");
+                  } else if (role === "BUYER") {
+                    router.replace("/dashboard/buyer");
+                  } else {
+                    router.replace("/dashboard/farmer");
+                  }
+                } else {
+                  router.replace("/login?error=auth_failed");
+                }
+              } catch (err) {
+                console.error("Backend auth error:", err);
+                router.replace("/login?error=auth_failed");
+              }
+            } else if (event === "SIGNED_OUT") {
+              subscription.unsubscribe();
+              router.replace("/login?error=auth_failed");
+            }
           }
-          attempts++;
-          await new Promise(r => setTimeout(r, 800));
-        }
+        );
 
-        if (!session) {
-          router.replace("/login?error=auth_failed");
-          return;
-        }
+        // Timeout fallback after 10 seconds
+        setTimeout(() => {
+          subscription.unsubscribe();
+          router.replace("/login?error=timeout");
+        }, 10000);
 
-        const user = session.user;
-
-        const res = await apiClient.post("/auth/google", {
-          email:      user.email,
-          first_name: user.user_metadata?.given_name  || user.email?.split("@")[0],
-          last_name:  user.user_metadata?.family_name || "",
-          google_id:  user.id,
-          avatar_url: user.user_metadata?.avatar_url  || "",
-        });
-
-        if (res.data?.success && res.data?.data?.access_token) {
-          const { access_token, refresh_token, user: afritideUser } = res.data.data;
-          setAuth(afritideUser, access_token, refresh_token || "");
-
-          const role = afritideUser.role;
-          if (role === "ADMIN") {
-            router.replace("/dashboard/admin");
-          } else if (role === "BUYER") {
-            router.replace("/dashboard/buyer");
-          } else {
-            router.replace("/dashboard/farmer");
-          }
-        } else {
-          router.replace("/login?error=auth_failed");
-        }
       } catch (err) {
         console.error("Callback error:", err);
         router.replace("/login?error=auth_failed");
