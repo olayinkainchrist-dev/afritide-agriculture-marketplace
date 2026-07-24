@@ -36,7 +36,9 @@ function CallbackHandler() {
             google_id:  session.user.id,
             avatar_url: session.user.user_metadata?.avatar_url  || "",
           });
-          console.log("BACKEND RES:", res.data);
+          console.log("BACKEND RES:", JSON.stringify(res.data));
+          console.log("SUCCESS FLAG:", res.data?.success);
+          console.log("ACCESS TOKEN:", res.data?.data?.access_token);
           if (res.data?.success) {
             setStatus("Success! Redirecting...");
             const { access_token, refresh_token, user: afritideUser } = res.data.data;
