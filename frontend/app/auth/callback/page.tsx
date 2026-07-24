@@ -7,15 +7,26 @@ import apiClient from "@/lib/api/client";
 import { useAuthStore } from "@/lib/store/auth.store";
 
 function CallbackHandler() {
-  const router          = useRouter();
-  const { setAuth }     = useAuthStore();
+  const router      = useRouter();
+  const { setAuth } = useAuthStore();
 
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Retry session check with delay to allow Supabase to process OAuth
+        let session = null;
+        let attempts = 0;
+        while (!session && attempts < 5) {
+          const { data, error } = await supabase.auth.getSession();
+          if (data?.session) {
+            session = data.session;
+            break;
+          }
+          attempts++;
+          await new Promise(r => setTimeout(r, 800));
+        }
 
-        if (error || !session) {
+        if (!session) {
           router.replace("/login?error=auth_failed");
           return;
         }
@@ -34,14 +45,12 @@ function CallbackHandler() {
           const { access_token, refresh_token, user: afritideUser } = res.data.data;
           setAuth(afritideUser, access_token, refresh_token || "");
 
-          // Role-based redirect
           const role = afritideUser.role;
           if (role === "ADMIN") {
             router.replace("/dashboard/admin");
           } else if (role === "BUYER") {
             router.replace("/dashboard/buyer");
           } else {
-            // FARMER, COOPERATIVE, EXPORTER, PROCESSING_COMPANY, LOGISTICS_PROVIDER, etc.
             router.replace("/dashboard/farmer");
           }
         } else {
