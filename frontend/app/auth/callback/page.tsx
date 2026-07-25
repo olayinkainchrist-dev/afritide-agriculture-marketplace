@@ -47,9 +47,16 @@ function CallbackHandler() {
           // Set auth in store
           setAuth(afritideUser, access_token, refresh_token || "");
 
-          // Also manually set localStorage so it persists before redirect
-          localStorage.setItem("access_token",  access_token);
-          localStorage.setItem("refresh_token", refresh_token || "");
+          // Write directly to Zustand persist storage key so it's ready on redirect
+          localStorage.setItem("afritide-auth", JSON.stringify({
+            state: {
+              user:            afritideUser,
+              access_token:    access_token,
+              refresh_token:   refresh_token || "",
+              isAuthenticated: true,
+            },
+            version: 0,
+          }));
 
           setStatus("Redirecting...");
 
