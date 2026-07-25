@@ -120,7 +120,7 @@ export default function FeaturedFarmers() {
                   <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
                     <div className="flex items-center gap-1">
                       <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      <span className="text-white font-bold text-xs">{farmer.rating_average.toFixed(1)}</span>
+                      <span className="text-white font-bold text-xs">{(farmer?.rating_average ?? 0).toFixed(1)}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <TrendingUp className="w-3 h-3 text-green-600" />
@@ -148,3 +148,4 @@ export default function FeaturedFarmers() {
     </section>
   );
 }
+

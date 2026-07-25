@@ -78,7 +78,7 @@ export default function FeaturedProducts() {
 
                 <div className="flex items-center gap-1.5 mb-3">
                   <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                  <span className="text-xs text-gray-500">{product.rating_average.toFixed(1)}</span>
+                  <span className="text-xs text-gray-500">{(product?.rating_average ?? 0).toFixed(1)}</span>
                   <span className="text-xs text-gray-700">({product.rating_count})</span>
                 </div>
 
@@ -103,3 +103,4 @@ export default function FeaturedProducts() {
     </section>
   );
 }
+

@@ -236,7 +236,7 @@ function FarmerCard({ farmer }: { farmer: any }) {
         <div className="flex items-center gap-4 mt-auto pt-3 border-t border-white/[0.06]">
           <div className="flex items-center gap-1">
             <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-            <span className="text-white font-bold text-xs">{farmer.rating_average.toFixed(1)}</span>
+            <span className="text-white font-bold text-xs">{(farmer?.rating_average ?? 0).toFixed(1)}</span>
             <span className="text-gray-600 text-[10px]">({farmer.rating_count})</span>
           </div>
           <div className="flex items-center gap-1">
@@ -253,3 +253,4 @@ function FarmerCard({ farmer }: { farmer: any }) {
     </Link>
   );
 }
+

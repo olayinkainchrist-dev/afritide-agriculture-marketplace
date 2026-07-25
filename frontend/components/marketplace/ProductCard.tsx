@@ -71,7 +71,7 @@ export default function ProductCard({ product, viewMode = "grid" }: Props) {
             )}
             <span className="flex items-center gap-1 text-xs text-gray-600">
               <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-              {product.rating_average.toFixed(1)} ({product.rating_count})
+              {(product?.rating_average ?? 0).toFixed(1)} ({product.rating_count})
             </span>
             {product.is_organic && (
               <span className="flex items-center gap-1 text-xs text-green-500 font-medium">
