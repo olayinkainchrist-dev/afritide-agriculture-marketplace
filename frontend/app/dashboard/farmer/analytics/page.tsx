@@ -9,12 +9,12 @@ import { LayoutDashboard, Package, ShoppingCart, MessageSquare, FileText, BarCha
 import { formatPrice, formatNumber } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { label: "Overview",    href: "/dashboard/farmer",          icon: LayoutDashboard },
-  { label: "My Products", href: "/dashboard/farmer/products", icon: Package },
-  { label: "Orders",      href: "/dashboard/farmer/orders",   icon: ShoppingCart },
-  { label: "Messages",    href: "/dashboard/farmer/messages", icon: MessageSquare },
-  { label: "RFQs",        href: "/dashboard/farmer/rfqs",     icon: FileText },
-  { label: "Analytics",   href: "/dashboard/farmer/analytics",icon: BarChart3 },
+  { label: "Overview",    href: "/dashboard/farmer",           icon: LayoutDashboard },
+  { label: "My Products", href: "/dashboard/farmer/products",  icon: Package },
+  { label: "Orders",      href: "/dashboard/farmer/orders",    icon: ShoppingCart },
+  { label: "Messages",    href: "/dashboard/farmer/messages",  icon: MessageSquare },
+  { label: "RFQs",        href: "/dashboard/farmer/rfqs",      icon: FileText },
+  { label: "Analytics",   href: "/dashboard/farmer/analytics", icon: BarChart3 },
 ];
 
 export default function FarmerAnalyticsPage() {
@@ -36,15 +36,19 @@ export default function FarmerAnalyticsPage() {
 
   if (!isAuthenticated || !user) return null;
 
+  const ratingAverage = typeof data?.rating_average === "number"
+    ? data.rating_average
+    : parseFloat(data?.rating_average) || 0;
+
   const stats = [
-    { label: "Total Products",  value: data?.total_products ?? 0,         icon: Package,    color: "text-green-400",  bg: "bg-green-950/50 border-green-900/50" },
-    { label: "Active Products", value: data?.active_products ?? 0,        icon: TrendingUp, color: "text-sky-400",    bg: "bg-sky-950/50 border-sky-900/50" },
-    { label: "Total Views",     value: formatNumber(data?.total_views ?? 0), icon: Eye,      color: "text-amber-400",  bg: "bg-amber-950/50 border-amber-900/50" },
-    { label: "Total Orders",    value: data?.total_orders ?? 0,           icon: ShoppingCart, color: "text-violet-400", bg: "bg-violet-950/50 border-violet-900/50" },
-    { label: "Completed",       value: data?.completed_orders ?? 0,       icon: ShoppingCart, color: "text-emerald-400", bg: "bg-emerald-950/50 border-emerald-900/50" },
-    { label: "Total Revenue", value: formatPrice(data?.total_revenue ?? 0, data?.currency || "NGN"), icon: TrendingUp, color: "text-rose-400", bg: "bg-rose-950/50 border-rose-900/50" },
-    { label: "Rating",          value: `${(data?.rating_average ?? 0).toFixed(1)}★`, icon: Star, color: "text-amber-400", bg: "bg-amber-950/50 border-amber-900/50" },
-    { label: "Total Views",     value: formatNumber(data?.total_views ?? 0), icon: Eye,      color: "text-sky-400",    bg: "bg-sky-950/50 border-sky-900/50" },
+    { label: "Total Products",  value: data?.total_products ?? 0,                                          icon: Package,      color: "text-green-400",   bg: "bg-green-950/50 border-green-900/50" },
+    { label: "Active Products", value: data?.active_products ?? 0,                                         icon: TrendingUp,   color: "text-sky-400",     bg: "bg-sky-950/50 border-sky-900/50" },
+    { label: "Total Views",     value: formatNumber(data?.total_views ?? 0),                               icon: Eye,          color: "text-amber-400",   bg: "bg-amber-950/50 border-amber-900/50" },
+    { label: "Total Orders",    value: data?.total_orders ?? 0,                                            icon: ShoppingCart, color: "text-violet-400",  bg: "bg-violet-950/50 border-violet-900/50" },
+    { label: "Completed",       value: data?.completed_orders ?? 0,                                        icon: ShoppingCart, color: "text-emerald-400", bg: "bg-emerald-950/50 border-emerald-900/50" },
+    { label: "Total Revenue",   value: formatPrice(data?.total_revenue ?? 0, data?.currency || "NGN"),     icon: TrendingUp,   color: "text-rose-400",    bg: "bg-rose-950/50 border-rose-900/50" },
+    { label: "Rating",          value: `${ratingAverage.toFixed(1)}★`,                                    icon: Star,         color: "text-amber-400",   bg: "bg-amber-950/50 border-amber-900/50" },
+    { label: "Total Views",     value: formatNumber(data?.total_views ?? 0),                               icon: Eye,          color: "text-sky-400",     bg: "bg-sky-950/50 border-sky-900/50" },
   ];
 
   return (
