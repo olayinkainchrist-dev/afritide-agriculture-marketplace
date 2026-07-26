@@ -292,7 +292,7 @@ export default function ProductDetailClient({ id }: Props) {
                   {[1,2,3,4,5].map(i => (
                     <Star key={i} className={`w-4 h-4 ${i <= Math.round(product.rating_average) ? "text-amber-400 fill-amber-400" : "text-gray-700"}`} />
                   ))}
-                  <span className="text-gray-400 text-sm font-medium ml-1">{product.rating_average.toFixed(1)}</span>
+                  <span className="text-gray-400 text-sm font-medium ml-1">{(product?.rating_average ?? 0).toFixed(1)}</span>
                   <span className="text-gray-600 text-sm">({product.rating_count} reviews)</span>
                 </div>
                 <span className="text-gray-700 text-sm">·</span>
@@ -666,7 +666,7 @@ export default function ProductDetailClient({ id }: Props) {
                     <div className="flex items-center gap-4 flex-wrap text-sm text-gray-500">
                       <div className="flex items-center gap-1.5">
                         <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                        <span className="text-white font-bold">{seller.rating_average.toFixed(1)}</span>
+                        <span className="text-white font-bold">{(seller?.rating_average ?? 0).toFixed(1)}</span>
                         <span>({seller.rating_count} reviews)</span>
                       </div>
                       {seller.country && (
@@ -711,7 +711,7 @@ export default function ProductDetailClient({ id }: Props) {
               <div className="space-y-6">
                 <div className="flex items-center gap-8">
                   <div className="text-center">
-                    <div className="text-6xl font-black text-white mb-1">{product.rating_average.toFixed(1)}</div>
+                    <div className="text-6xl font-black text-white mb-1">{(product?.rating_average ?? 0).toFixed(1)}</div>
                     <div className="flex justify-center mb-1">
                       {[1,2,3,4,5].map(i => (
                         <Star key={i} className={`w-5 h-5 ${i <= Math.round(product.rating_average) ? "text-amber-400 fill-amber-400" : "text-gray-700"}`} />

@@ -237,7 +237,7 @@ export default function SellerStorefrontPage({ params }: { params: Promise<{ id:
                     </div>
                     <div className="flex items-center gap-1 mt-2">
                       <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                      <span className="text-gray-400 text-xs">{product.rating_average.toFixed(1)}</span>
+                      <span className="text-gray-400 text-xs">{(product.rating_average ?? 0).toFixed(1)}</span>
                       <span className="text-gray-600 text-xs">({product.rating_count})</span>
                     </div>
                   </div>

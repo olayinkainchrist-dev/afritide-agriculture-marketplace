@@ -204,10 +204,10 @@ export default function ProfilePage() {
               <h3 className="text-white font-bold mb-4 text-sm">Stats</h3>
               <div className="space-y-3">
                 {[
-                  { icon: Star,         label: "Rating",       value: `${user.rating_average.toFixed(1)} (${user.rating_count})`, color: "text-amber-400" },
+                  { icon: Star,         label: "Rating",       value: `${(user?.rating_average ?? 0).toFixed(1)} (${user.rating_count})`, color: "text-amber-400" },
                   { icon: TrendingUp,   label: "Total Sales",  value: user.total_sales.toString(),                                color: "text-green-400" },
                   { icon: ShoppingCart, label: "Orders",       value: ((user as any).total_orders ?? 0).toString(),               color: "text-sky-400" },
-                  { icon: Package,      label: "Response Rate",value: `${user.response_rate.toFixed(0)}%`,                        color: "text-violet-400" },
+                  { icon: Package,      label: "Response Rate",value: `${(user?.response_rate ?? 0).toFixed(0)}%`,                        color: "text-violet-400" },
                 ].map(({ icon: Icon, label, value, color }) => (
                   <div key={label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
                     <div className="flex items-center gap-2">
@@ -439,3 +439,4 @@ export default function ProfilePage() {
     </main>
   );
 }
+

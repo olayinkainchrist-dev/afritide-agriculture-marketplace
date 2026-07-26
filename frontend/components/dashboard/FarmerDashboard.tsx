@@ -73,7 +73,7 @@ export default function FarmerDashboard({ user }: Props) {
     { label: "Active Listings", value: activeProducts,                 icon: Package,     color: "text-green-400", bg: "bg-green-950/50 border-green-900/50", trend: `${pendingProducts} pending` },
     { label: "Total Views",     value: formatNumber(totalViews),       icon: Eye,         color: "text-sky-400",   bg: "bg-sky-950/50 border-sky-900/50",     trend: "all time" },
     { label: "Total Orders",    value: totalOrders,                    icon: ShoppingCart,color: "text-amber-400", bg: "bg-amber-950/50 border-amber-900/50", trend: `${pendingOrders} to fulfill` },
-    { label: "Avg. Rating",     value: user.rating_average.toFixed(1), icon: Star,        color: "text-rose-400",  bg: "bg-rose-950/50 border-rose-900/50",   trend: `${user.rating_count} reviews` },
+    { label: "Avg. Rating",     value: (user?.rating_average ?? 0).toFixed(1), icon: Star,        color: "text-rose-400",  bg: "bg-rose-950/50 border-rose-900/50",   trend: `${(user?.rating_count ?? 0)} reviews` },
   ];
 
   const ORDER_STATUS_COLORS: Record<string, string> = {
@@ -285,8 +285,8 @@ export default function FarmerDashboard({ user }: Props) {
         <h2 className="text-white font-bold mb-6">Performance Overview</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Response Rate",   value: `${user.response_rate.toFixed(0)}%`,  desc: "of inquiries answered",     good: user.response_rate > 80 },
-            { label: "Rating Average",  value: `${user.rating_average.toFixed(1)}★`, desc: `from ${user.rating_count} reviews`, good: user.rating_average >= 4 },
+            { label: "Response Rate",   value: `${(user?.response_rate ?? 0).toFixed(0)}%`,  desc: "of inquiries answered",     good: (user?.response_rate ?? 0) > 80 },
+            { label: "Rating Average",  value: `${(user?.rating_average ?? 0).toFixed(1)}★`, desc: `from ${(user?.rating_count ?? 0)} reviews`, good: (user?.rating_average ?? 0) >= 4 },
             { label: "Total Sales",     value: user.total_sales,                      desc: "completed orders",          good: user.total_sales > 0 },
             { label: "Active Listings", value: activeProducts,                        desc: "live listings",             good: activeProducts > 0 },
           ].map(({ label, value, desc, good }) => (

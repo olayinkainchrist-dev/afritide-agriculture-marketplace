@@ -492,7 +492,7 @@ export default function FullCommodityBoard() {
                          c.trend === "DOWN" ? <ArrowDownRight className="w-4 h-4" /> :
                          <Minus className="w-4 h-4" />}
                         {c.change_percentage
-                          ? `${c.change_percentage > 0 ? "+" : ""}${c.change_percentage.toFixed(1)}%`
+                          ? `${c.change_percentage > 0 ? "+" : ""}${(c?.change_percentage ?? 0).toFixed(1)}%`
                           : "—"}
                       </div>
                       {c.previous_price && (
