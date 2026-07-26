@@ -252,6 +252,7 @@ export default function AdminProductsPage() {
                                 { label: "Organic",      value: product.is_organic ? "Yes" : "No" },
                                 { label: "Export Ready", value: product.is_export_ready ? "Yes" : "No" },
                                 { label: "Negotiable",   value: product.is_negotiable ? "Yes" : "No" },
+                                { label: "Seller ID",    value: product.seller_id ? product.seller_id.substring(0, 8) + "..." : "—" },
                               ].map(({ label, value }) => (
                                 <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-3">
                                   <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-0.5">{label}</p>
@@ -265,6 +266,13 @@ export default function AdminProductsPage() {
                                 <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-1">Description</p>
                                 <p className="text-gray-400 text-xs leading-relaxed line-clamp-4">{product.description}</p>
                               </div>
+                            )}
+
+                            {product.status === "ACTIVE" && (
+                              <a href={`/products/${product.id}`} target="_blank"
+                                className="flex items-center gap-2 text-green-400 hover:text-green-300 text-xs font-medium transition-colors">
+                                <Eye className="w-3 h-3" /> View on Marketplace →
+                              </a>
                             )}
 
                             {product.rejection_reason && (
