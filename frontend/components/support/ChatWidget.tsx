@@ -47,6 +47,9 @@ export default function ChatWidget() {
 
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "wss://afritide-agriculture-marketplace.onrender.com";
 
+  // Don't show chat widget for admins — they use the support center
+  if (user?.role === "ADMIN") return null;
+
   useEffect(() => {
     if (open && isAuthenticated) loadConversation();
   }, [open, isAuthenticated]);
