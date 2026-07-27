@@ -47,12 +47,9 @@ export default function ChatWidget() {
 
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "wss://afritide-agriculture-marketplace.onrender.com";
 
-  // Don't show chat widget for admins — they use the support center
-  if (user?.role === "ADMIN") return null;
-
   useEffect(() => {
-    if (open && isAuthenticated) loadConversation();
-  }, [open, isAuthenticated]);
+    if (open && isAuthenticated && user?.role !== "ADMIN") loadConversation();
+  }, [open, isAuthenticated, user]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -62,6 +59,9 @@ export default function ChatWidget() {
     if (conversation?.id) connectWebSocket(conversation.id);
     return () => wsRef.current?.close();
   }, [conversation?.id]);
+
+  // Hide widget for admin users — after all hooks
+  if (user?.role === "ADMIN") return null;
 
   const loadConversation = async () => {
     setLoading(true);
@@ -101,7 +101,6 @@ export default function ChatWidget() {
     ws.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.type === "new_message") {
-        // Only add if not already in messages (avoid duplicate from optimistic update)
         setMessages(prev => {
           const exists = prev.some(m => m.id === data.message.id);
           return exists ? prev : [...prev, data.message];
@@ -148,7 +147,6 @@ export default function ChatWidget() {
         conversation_id: conversation.id,
         message:         text,
       });
-      // Optimistically add message so user sees it immediately
       if (res.data?.data) {
         setMessages(prev => {
           const exists = prev.some(m => m.id === res.data.data.id);
