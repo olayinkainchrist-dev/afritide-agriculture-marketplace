@@ -7,9 +7,9 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { ADMIN_NAV } from "@/components/dashboard/AdminNav";
 import apiClient from "@/lib/api/client";
 import {
-  MessageCircle, Send, Loader2, CheckCheck,
-  Search, Filter, RefreshCw, CheckCircle2,
-  XCircle, RotateCcw, Trash2, Paperclip,
+  MessageCircle, Send, Loader2,
+  Search, RefreshCw, CheckCircle2,
+  RotateCcw, Trash2, Paperclip,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -38,14 +38,14 @@ export default function AdminSupportChatPage() {
   const { user, isAuthenticated, hasHydrated } = useAuthStore();
   const router      = useRouter();
   const queryClient = useQueryClient();
-  const [selected,     setSelected]     = useState<Conversation | null>(null);
-  const [messages,     setMessages]     = useState<Message[]>([]);
-  const [input,        setInput]        = useState("");
-  const [sending,      setSending]      = useState(false);
-  const [filter,       setFilter]       = useState("all");
-  const [search,       setSearch]       = useState("");
-  const [userTyping,   setUserTyping]   = useState(false);
-  const [uploading,    setUploading]    = useState(false);
+  const [selected,   setSelected]   = useState<Conversation | null>(null);
+  const [messages,   setMessages]   = useState<Message[]>([]);
+  const [input,      setInput]      = useState("");
+  const [sending,    setSending]    = useState(false);
+  const [filter,     setFilter]     = useState("all");
+  const [search,     setSearch]     = useState("");
+  const [userTyping, setUserTyping] = useState(false);
+  const [uploading,  setUploading]  = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef          = useRef<WebSocket | null>(null);
   const fileInputRef   = useRef<HTMLInputElement>(null);
@@ -64,7 +64,7 @@ export default function AdminSupportChatPage() {
       const res = await apiClient.get("/support-chat/admin/stats");
       return res.data.data;
     },
-    enabled:       isAuthenticated && user?.role === "ADMIN",
+    enabled:         isAuthenticated && user?.role === "ADMIN",
     refetchInterval: 10000,
   });
 
@@ -75,7 +75,7 @@ export default function AdminSupportChatPage() {
       const res = await apiClient.get(`/support-chat/admin/conversations${params}`);
       return res.data.data || [];
     },
-    enabled:       isAuthenticated && user?.role === "ADMIN",
+    enabled:         isAuthenticated && user?.role === "ADMIN",
     refetchInterval: 5000,
   });
 
@@ -118,7 +118,10 @@ export default function AdminSupportChatPage() {
     ws.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.type === "new_message") {
-        setMessages(prev => [...prev, data.message]);
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === data.message.id);
+          return exists ? prev : [...prev, data.message];
+        });
         queryClient.invalidateQueries({ queryKey: ["support-conversations"] });
       } else if (data.type === "typing" && data.sender_type === "USER") {
         setUserTyping(true);
@@ -135,10 +138,17 @@ export default function AdminSupportChatPage() {
     const text = input.trim();
     setInput("");
     try {
-      await apiClient.post(`/support-chat/admin/conversations/${selected.id}/reply`, {
+      const res = await apiClient.post(`/support-chat/admin/conversations/${selected.id}/reply`, {
         message: text,
       });
-      // Send typing indicator
+      // Optimistically add message
+      if (res.data?.data) {
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === res.data.data.id);
+          return exists ? prev : [...prev, res.data.data];
+        });
+      }
+      // Send typing indicator to user
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: "typing", sender_type: "ADMIN" }));
       }
@@ -191,19 +201,26 @@ export default function AdminSupportChatPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await apiClient.post("/support-chat/conversations/upload", formData, {
+      const uploadRes = await apiClient.post("/support-chat/conversations/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      if (res.data?.success) {
-        await apiClient.post(`/support-chat/admin/conversations/${selected.id}/reply`, {
-          attachment_url:  res.data.data.url,
-          attachment_type: res.data.data.type,
+      if (uploadRes.data?.success) {
+        const msgRes = await apiClient.post(`/support-chat/admin/conversations/${selected.id}/reply`, {
+          attachment_url:  uploadRes.data.data.url,
+          attachment_type: uploadRes.data.data.type,
         });
+        if (msgRes.data?.data) {
+          setMessages(prev => {
+            const exists = prev.some(m => m.id === msgRes.data.data.id);
+            return exists ? prev : [...prev, msgRes.data.data];
+          });
+        }
       }
     } catch {
       toast.error("Failed to upload");
     } finally {
       setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 

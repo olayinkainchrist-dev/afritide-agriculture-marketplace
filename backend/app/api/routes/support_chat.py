@@ -242,21 +242,16 @@ async def upload_attachment(
     allowed_types = ["image/png", "image/jpeg", "image/jpg", "application/pdf"]
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Only PNG, JPEG, and PDF files are allowed")
-    if file.size and file.size > 10 * 1024 * 1024:
+
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="File must be under 10MB")
 
     try:
-        import supabase as sb
-        import os
-        client = sb.create_client(
-            os.environ["SUPABASE_URL"],
-            os.environ["SUPABASE_SERVICE_KEY"],
-        )
-        ext      = file.filename.split(".")[-1]
-        filename = f"support/{uuid.uuid4()}.{ext}"
-        content  = await file.read()
-        client.storage.from_("afritide-uploads").upload(filename, content, {"content-type": file.content_type})
-        url = client.storage.from_("afritide-uploads").get_public_url(filename)
+        from app.services.storage import upload_file
+        ext             = file.filename.split(".")[-1] if file.filename else "jpg"
+        filename        = f"support/{uuid.uuid4()}.{ext}"
+        url             = await upload_file(filename, content, file.content_type)
         attachment_type = "pdf" if file.content_type == "application/pdf" else "image"
         return success_response(data={"url": url, "type": attachment_type})
     except Exception as e:
