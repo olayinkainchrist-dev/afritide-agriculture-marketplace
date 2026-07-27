@@ -77,12 +77,21 @@ async def list_products(
             Product.country.ilike(term),
         ))
 
-    # Default sorting with sponsored products first
+    # Sorting
     now = datetime.utcnow()
+    sort_col = {
+        "price":      Product.price,
+        "rating":     Product.rating_average,
+        "views":      Product.view_count,
+        "created_at": Product.created_at,
+    }.get(sort_by, Product.created_at)
+
+    sort_expr = asc(sort_col) if sort_order == "asc" else desc(sort_col)
+
     query = query.order_by(
         desc(and_(Product.is_sponsored, Product.sponsored_until > now)),
         desc(Product.is_featured),
-        desc(Product.created_at),
+        sort_expr,
     )
 
     total    = query.count()
