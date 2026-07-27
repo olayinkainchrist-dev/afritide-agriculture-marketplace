@@ -21,29 +21,29 @@ interface Message {
 }
 
 interface Conversation {
-  id:         string;
-  status:     string;
-  user:       any;
+  id:           string;
+  status:       string;
+  user:         any;
   last_message: any;
-  unread:     number;
+  unread:       number;
 }
 
 export default function ChatWidget() {
   const { user, isAuthenticated }   = useAuthStore();
-  const [open,          setOpen]    = useState(false);
-  const [loading,       setLoading] = useState(false);
-  const [sending,       setSending] = useState(false);
-  const [messages,      setMessages]      = useState<Message[]>([]);
-  const [conversation,  setConversation]  = useState<Conversation | null>(null);
-  const [input,         setInput]         = useState("");
-  const [typing,        setTyping]        = useState(false);
-  const [adminTyping,   setAdminTyping]   = useState(false);
-  const [unread,        setUnread]        = useState(0);
-  const [uploading,     setUploading]     = useState(false);
-  const messagesEndRef  = useRef<HTMLDivElement>(null);
-  const wsRef           = useRef<WebSocket | null>(null);
-  const typingTimeout   = useRef<NodeJS.Timeout | null>(null);
-  const fileInputRef    = useRef<HTMLInputElement>(null);
+  const [open,         setOpen]     = useState(false);
+  const [loading,      setLoading]  = useState(false);
+  const [sending,      setSending]  = useState(false);
+  const [messages,     setMessages]     = useState<Message[]>([]);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [input,        setInput]        = useState("");
+  const [typing,       setTyping]       = useState(false);
+  const [adminTyping,  setAdminTyping]  = useState(false);
+  const [unread,       setUnread]       = useState(0);
+  const [uploading,    setUploading]    = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const wsRef          = useRef<WebSocket | null>(null);
+  const typingTimeout  = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef   = useRef<HTMLInputElement>(null);
 
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "wss://afritide-agriculture-marketplace.onrender.com";
 
@@ -98,7 +98,11 @@ export default function ChatWidget() {
     ws.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.type === "new_message") {
-        setMessages(prev => [...prev, data.message]);
+        // Only add if not already in messages (avoid duplicate from optimistic update)
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === data.message.id);
+          return exists ? prev : [...prev, data.message];
+        });
         if (data.message.sender_type === "ADMIN" && !open) {
           setUnread(prev => prev + 1);
         }
@@ -137,10 +141,17 @@ export default function ChatWidget() {
     const text = input.trim();
     setInput("");
     try {
-      await apiClient.post("/support-chat/conversations/message", {
+      const res = await apiClient.post("/support-chat/conversations/message", {
         conversation_id: conversation.id,
         message:         text,
       });
+      // Optimistically add message so user sees it immediately
+      if (res.data?.data) {
+        setMessages(prev => {
+          const exists = prev.some(m => m.id === res.data.data.id);
+          return exists ? prev : [...prev, res.data.data];
+        });
+      }
     } catch {
       toast.error("Failed to send message");
       setInput(text);
@@ -156,20 +167,27 @@ export default function ChatWidget() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await apiClient.post("/support-chat/conversations/upload", formData, {
+      const uploadRes = await apiClient.post("/support-chat/conversations/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      if (res.data?.success) {
-        await apiClient.post("/support-chat/conversations/message", {
+      if (uploadRes.data?.success) {
+        const msgRes = await apiClient.post("/support-chat/conversations/message", {
           conversation_id: conversation?.id,
-          attachment_url:  res.data.data.url,
-          attachment_type: res.data.data.type,
+          attachment_url:  uploadRes.data.data.url,
+          attachment_type: uploadRes.data.data.type,
         });
+        if (msgRes.data?.data) {
+          setMessages(prev => {
+            const exists = prev.some(m => m.id === msgRes.data.data.id);
+            return exists ? prev : [...prev, msgRes.data.data];
+          });
+        }
       }
     } catch {
       toast.error("Failed to upload file");
     } finally {
       setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
