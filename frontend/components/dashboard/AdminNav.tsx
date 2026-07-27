@@ -1,6 +1,7 @@
 import {
   LayoutDashboard, Users, Package, ShoppingCart,
   TrendingUp, Shield, Megaphone, BarChart3,
+  MessageCircle,
 } from "lucide-react";
 
 export const ADMIN_NAV = [
@@ -12,4 +13,5 @@ export const ADMIN_NAV = [
   { label: "Certificates",  href: "/dashboard/admin/certificates", icon: Shield },
   { label: "Announcements", href: "/dashboard/admin/announce",     icon: Megaphone },
   { label: "Analytics",     href: "/dashboard/admin/analytics",    icon: BarChart3 },
+  { label: "Support Chat",  href: "/dashboard/admin/support-chat", icon: MessageCircle },
 ];

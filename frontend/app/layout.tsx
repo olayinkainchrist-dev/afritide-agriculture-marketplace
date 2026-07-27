@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import QueryProvider from "@/components/shared/QueryProvider";
 import Script from "next/script";
+import ChatWidget from "@/components/support/ChatWidget";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <QueryProvider>
           {children}
+          <ChatWidget />
           <Toaster
             position="top-right"
             toastOptions={{
