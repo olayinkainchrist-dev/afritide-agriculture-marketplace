@@ -18,7 +18,7 @@ from app.models import (
     user, product, order, payment,
     message, rfq, commodity, review, notification,
     logistics, warehouse, certificate, advertisement, analytics,
-    support, price_alert, cart as cart_model
+    support, price_alert, cart as cart_model, support_chat
 )
 
 # Import all routers
@@ -29,7 +29,7 @@ from app.api.routes import (
     warehouses, certificates, advertisements,
     analytics as analytics_router, admin, search, support,
     price_alerts, cart, paystack as paystack_router, stripe as stripe_router, subscriptions,
-    promotions, exchange_rates, logistics,
+    promotions, exchange_rates, support_chat,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -118,32 +118,33 @@ app.include_router(search.router,           prefix=f"{API_PREFIX}/search",      
 app.include_router(support.router,          prefix=f"{API_PREFIX}/support",        tags=["🆘 Support"])
 app.include_router(price_alerts.router,     prefix=f"{API_PREFIX}/price-alerts",   tags=["🔔 Price Alerts"])
 app.include_router(cart.router,             prefix=f"{API_PREFIX}/cart",           tags=["🛒 Cart"])
-app.include_router(paystack_router.router, prefix=f"{API_PREFIX}/payments", tags=["💳 Payments"])
-app.include_router(stripe_router.router, prefix=f"{API_PREFIX}/payments", tags=["💳 Payments"])
-app.include_router(subscriptions.router, prefix=f"{API_PREFIX}/subscriptions", tags=["💎 Subscriptions"])
-app.include_router(promotions.router, prefix=f"{API_PREFIX}/promotions", tags=["🚀 Promotions"])
-app.include_router(exchange_rates.router, prefix=f"{API_PREFIX}/exchange-rates", tags=["💱 Exchange Rates"])
-app.include_router(logistics.router, prefix=f"{API_PREFIX}/logistics", tags=["🚚 Logistics"])
+app.include_router(paystack_router.router,  prefix=f"{API_PREFIX}/payments",       tags=["💳 Payments"])
+app.include_router(stripe_router.router,    prefix=f"{API_PREFIX}/payments",       tags=["💳 Payments"])
+app.include_router(subscriptions.router,    prefix=f"{API_PREFIX}/subscriptions",  tags=["💎 Subscriptions"])
+app.include_router(promotions.router,       prefix=f"{API_PREFIX}/promotions",     tags=["🚀 Promotions"])
+app.include_router(exchange_rates.router,   prefix=f"{API_PREFIX}/exchange-rates", tags=["💱 Exchange Rates"])
+app.include_router(support_chat.router,     prefix=f"{API_PREFIX}/support-chat",   tags=["💬 Support Chat"])
+
 # ── HEALTH CHECK ────────────────────────────────────────────────────────────
 
 @app.get("/", tags=["Health"])
 async def root():
     return {
         "platform": "Afritide Agriculture Marketplace",
-        "tagline": "Connecting African Farmers to the World",
-        "version": "1.0.0",
-        "status": "🟢 Online",
-        "docs": "/api/docs",
-        "developer": "SuperILM Technologies",
+        "tagline":  "Connecting African Farmers to the World",
+        "version":  "1.0.0",
+        "status":   "🟢 Online",
+        "docs":     "/api/docs",
+        "developer":"SuperILM Technologies",
     }
 
 
 @app.get("/api/health", tags=["Health"])
 async def health_check():
     return {
-        "status": "healthy",
-        "platform": "Afritide",
-        "version": settings.APP_VERSION,
+        "status":      "healthy",
+        "platform":    "Afritide",
+        "version":     settings.APP_VERSION,
         "environment": settings.ENVIRONMENT,
     }
 
