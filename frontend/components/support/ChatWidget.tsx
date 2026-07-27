@@ -220,7 +220,7 @@ export default function ChatWidget() {
       {/* Floating button */}
       <button
         onClick={() => { setOpen(!open); setUnread(0); }}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-green-600 hover:bg-green-500 rounded-full flex items-center justify-center shadow-2xl shadow-green-900/50 transition-all hover:scale-105">
+        className="fixed bottom-24 right-6 z-50 w-14 h-14 bg-green-600 hover:bg-green-500 rounded-full flex items-center justify-center shadow-2xl shadow-green-900/50 transition-all hover:scale-105">
         {open ? (
           <X className="w-6 h-6 text-white" />
         ) : (
@@ -237,7 +237,7 @@ export default function ChatWidget() {
 
       {/* Chat window */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] h-[520px] bg-[#0a1a0f] border border-white/[0.1] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-40 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] h-[520px] bg-[#0a1a0f] border border-white/[0.1] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
 
           {/* Header */}
           <div className="bg-green-700 px-5 py-4 flex items-center gap-3">
