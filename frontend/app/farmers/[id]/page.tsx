@@ -50,7 +50,7 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     if (followingList) {
-      setFollowing(followingList.some((f: any) => f.id === id));
+      setFollowing(Array.isArray(followingList) && followingList.some((f: any) => f.id === id));
     }
   }, [followingList, id]);
 
