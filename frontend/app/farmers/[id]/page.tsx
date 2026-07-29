@@ -45,12 +45,17 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
       const res = await apiClient.get("/users/following");
       return res.data.data || [];
     },
-    enabled: isAuthenticated,
+    enabled:        isAuthenticated,
+    staleTime:      0,
+    refetchOnMount: true,
   });
 
   useEffect(() => {
-    if (followingList) {
-      setFollowing(Array.isArray(followingList) && followingList.some((f: any) => f.id === id));
+    if (Array.isArray(followingList)) {
+      const isFollowing = followingList.some(
+        (f: any) => String(f.id) === String(id)
+      );
+      setFollowing(isFollowing);
     }
   }, [followingList, id]);
 
@@ -62,7 +67,8 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
     setFollowLoading(true);
     try {
       const res = await apiClient.post(`/users/${farmer.id}/follow`);
-      setFollowing(res.data?.data?.following);
+      const isNowFollowing = res.data?.data?.following ?? !following;
+      setFollowing(isNowFollowing);
       toast.success(res.data?.message);
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Failed to follow");
@@ -125,7 +131,6 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
 
           {/* Left sidebar */}
           <div className="space-y-5">
-
             <div className="bg-white/[0.03] border border-white/[0.07] rounded-3xl overflow-hidden">
               <div className="h-24 bg-gradient-to-br from-green-950/80 to-emerald-950/60 relative">
                 <div className="absolute inset-0 opacity-20"
@@ -176,6 +181,8 @@ export default function FarmerProfilePage({ params }: { params: Promise<{ id: st
                     : following ? "✓ Following" : "+ Follow Supplier"
                   }
                 </button>
+
+                <ContactSellerButton sellerId={farmer.id} sellerName={displayName} />
               </div>
             </div>
 
