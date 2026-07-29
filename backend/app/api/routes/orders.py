@@ -186,6 +186,11 @@ async def update_order_status(
             order.shipped_at = datetime.utcnow()
         elif payload.status == OrderStatus.COMPLETED:
             order.completed_at = datetime.utcnow()
+            # Increment seller's total sales count
+            from app.models.user import User
+            seller = db.query(User).filter(User.id == order.seller_id).first()
+            if seller:
+                seller.total_sales = (seller.total_sales or 0) + 1
         elif payload.status == OrderStatus.CANCELLED:
             order.cancelled_at = datetime.utcnow()
 
