@@ -738,7 +738,7 @@ export default function ProductDetailClient({ id }: Props) {
 
                 {/* Review form — only for authenticated buyers */}
                 {isAuthenticated && user?.role === "BUYER" && (
-                  <ReviewForm productId={product.id} onSubmitted={() => {
+                  <ReviewForm productId={product.id} sellerId={product.seller_id} onSubmitted={() => {
                     queryClient.invalidateQueries({ queryKey: ["product", id] });
                   }} />
                 )}
@@ -763,7 +763,7 @@ export default function ProductDetailClient({ id }: Props) {
   );
 }
 
-function ReviewForm({ productId, onSubmitted }: { productId: string; onSubmitted: () => void }) {
+function ReviewForm({ productId, sellerId, onSubmitted }: { productId: string; sellerId: string; onSubmitted: () => void }) {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
@@ -777,10 +777,11 @@ function ReviewForm({ productId, onSubmitted }: { productId: string; onSubmitted
     setSubmitting(true);
     try {
       await apiClient.post("/reviews", {
-        product_id: productId,
+        product_id:     productId,
+        reviewee_id:    sellerId,
         overall_rating: rating,
-        title: title.trim() || undefined,
-        comment: comment.trim(),
+        title:          title.trim() || undefined,
+        comment:        comment.trim(),
       });
       toast.success("Review submitted!");
       setSubmitted(true);
