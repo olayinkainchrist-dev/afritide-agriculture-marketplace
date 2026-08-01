@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { productsApi } from "@/lib/api/products.api";
 import { cartApi } from "@/lib/api/cart.api";
@@ -18,6 +18,8 @@ import { formatPrice, getCategoryLabel, formatDate, formatNumber } from "@/lib/u
 import { useCurrencyStore } from "@/lib/store/currency.store";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/api/client";
+import { useTrackEvent } from "@/lib/hooks/useTrackEvent";
+import RecommendationSection from "@/components/marketplace/RecommendationSection";
 
 interface Props { id: string; }
 
@@ -33,6 +35,7 @@ export default function ProductDetailClient({ id }: Props) {
   const { setItems } = useCartStore();
   const queryClient = useQueryClient();
   const { format } = useCurrencyStore();
+  const { track } = useTrackEvent();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["product", id],
@@ -41,6 +44,16 @@ export default function ProductDetailClient({ id }: Props) {
   });
 
   const product = data?.data;
+
+  // Track product view
+  useEffect(() => {
+    if (product?.id) {
+      track("view", {
+        product_id: product.id,
+        category:   product.category,
+      });
+    }
+  }, [product?.id, track]);
 
   // ── Loading state ──────────────────────────────────────────
   if (isLoading) return (
@@ -750,6 +763,18 @@ export default function ProductDetailClient({ id }: Props) {
           </div>
         </div>
 
+      </div>
+
+      {/* ── Similar Products ─────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <RecommendationSection
+          type="similar"
+          productId={product.id}
+          title="Similar Products"
+          subtitle="You might also like these"
+          icon="sparkles"
+          limit={6}
+        />
       </div>
 
       {/* RFQ Modal */}

@@ -8,6 +8,7 @@ import CategoryGrid from "@/components/marketplace/CategoryGrid";
 import WhyAfritide from "@/components/marketplace/WhyAfritide";
 import CTASection from "@/components/marketplace/CTASection";
 import MarketNews from "@/components/marketplace/MarketNews";
+import RecommendationSection from "@/components/marketplace/RecommendationSection";
 
 export default function HomePage() {
   return (
@@ -16,6 +17,15 @@ export default function HomePage() {
       <HeroSection />
       <CategoryGrid />
       <FeaturedProducts />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <RecommendationSection
+          type="trending"
+          title="Trending This Week"
+          subtitle="Most viewed products in the last 7 days"
+          icon="trending"
+          limit={8}
+        />
+      </div>
       <FeaturedFarmers />
       <CommodityBoard />
       <MarketNews />
