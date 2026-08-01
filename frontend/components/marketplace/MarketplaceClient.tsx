@@ -10,6 +10,7 @@ import {
   Search, SlidersHorizontal, X, ChevronDown,
   Grid3X3, List, Package,
 } from "lucide-react";
+import { useTrackEvent } from "@/lib/hooks/useTrackEvent";
 
 const CATEGORIES = [
   { id: "all",          label: "All Products", emoji: "🌍" },
@@ -70,6 +71,8 @@ export default function MarketplaceClient() {
     country:  searchParams.get("country") || undefined,
   });
 
+  const { track } = useTrackEvent();
+
   useEffect(() => {
     const q        = searchParams.get("q") || "";
     const category = searchParams.get("category")?.toUpperCase() as ProductCategory || undefined;
@@ -77,7 +80,8 @@ export default function MarketplaceClient() {
     setSearchQuery(q);
     setFilters(prev => ({ ...prev, category, country }));
     setPage(1);
-  }, [searchParams]);
+    if (q) track("search", { search_query: q, category });
+  }, [searchParams, track]);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ["products", filters, page, searchQuery],
