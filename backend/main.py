@@ -29,7 +29,7 @@ from app.api.routes import (
     warehouses, certificates, advertisements,
     analytics as analytics_router, admin, search, support,
     price_alerts, cart, paystack as paystack_router, stripe as stripe_router, subscriptions,
-    promotions, exchange_rates, support_chat,
+    promotions, exchange_rates, support_chat, support_chat, recommendations,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -124,7 +124,7 @@ app.include_router(subscriptions.router,    prefix=f"{API_PREFIX}/subscriptions"
 app.include_router(promotions.router,       prefix=f"{API_PREFIX}/promotions",     tags=["🚀 Promotions"])
 app.include_router(exchange_rates.router,   prefix=f"{API_PREFIX}/exchange-rates", tags=["💱 Exchange Rates"])
 app.include_router(support_chat.router,     prefix=f"{API_PREFIX}/support-chat",   tags=["💬 Support Chat"])
-
+app.include_router(recommendations.router, prefix=f"{API_PREFIX}/recommendations", tags=["🎯 Recommendations"])
 # ── HEALTH CHECK ────────────────────────────────────────────────────────────
 
 @app.get("/", tags=["Health"])
