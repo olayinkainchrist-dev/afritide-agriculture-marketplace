@@ -12,6 +12,7 @@ import {
   Package, TrendingUp, ArrowRight, Clock,
 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
+import RecommendationSection from "@/components/marketplace/RecommendationSection";
 
 const NAV_ITEMS = [
   { label: "Overview",          href: "/dashboard/buyer",           icon: LayoutDashboard },
@@ -83,10 +84,10 @@ export default function BuyerDashboardPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: "Total Orders",     value: orders.length,    icon: ShoppingCart, color: "text-green-400",  href: "/dashboard/buyer/orders" },
-            { label: "Active RFQs",      value: rfqs.filter((r: any) => r.status === "open").length, icon: FileText, color: "text-blue-400", href: "/dashboard/buyer/rfqs" },
-            { label: "Cart Items",       value: cartItems.length, icon: Package,      color: "text-amber-400", href: "/cart" },
-            { label: "Pending Quotes",   value: rfqs.filter((r: any) => r.status === "quoted").length, icon: TrendingUp, color: "text-violet-400", href: "/dashboard/buyer/rfqs" },
+            { label: "Total Orders",   value: orders.length,    icon: ShoppingCart, color: "text-green-400",  href: "/dashboard/buyer/orders" },
+            { label: "Active RFQs",    value: rfqs.filter((r: any) => r.status === "open").length, icon: FileText, color: "text-blue-400", href: "/dashboard/buyer/rfqs" },
+            { label: "Cart Items",     value: cartItems.length, icon: Package,      color: "text-amber-400", href: "/cart" },
+            { label: "Pending Quotes", value: rfqs.filter((r: any) => r.status === "quoted").length, icon: TrendingUp, color: "text-violet-400", href: "/dashboard/buyer/rfqs" },
           ].map(({ label, value, icon: Icon, color, href }) => (
             <Link key={label} href={href}
               className="bg-white/[0.03] border border-white/[0.07] hover:border-green-700/40 rounded-2xl p-5 transition-all group">
@@ -208,10 +209,10 @@ export default function BuyerDashboardPage() {
           <h3 className="text-white font-bold text-sm mb-3">Quick Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Browse Marketplace", href: "/marketplace",          icon: Package,       color: "text-green-400" },
-              { label: "My Suppliers",       href: "/dashboard/buyer/suppliers", icon: Users,    color: "text-blue-400" },
-              { label: "Price Board",        href: "/commodities",           icon: TrendingUp,    color: "text-amber-400" },
-              { label: "My Alerts",          href: "/dashboard/buyer/alerts",icon: Bell,          color: "text-violet-400" },
+              { label: "Browse Marketplace", href: "/marketplace",               icon: Package,    color: "text-green-400" },
+              { label: "My Suppliers",       href: "/dashboard/buyer/suppliers", icon: Users,      color: "text-blue-400" },
+              { label: "Price Board",        href: "/commodities",               icon: TrendingUp, color: "text-amber-400" },
+              { label: "My Alerts",          href: "/dashboard/buyer/alerts",    icon: Bell,       color: "text-violet-400" },
             ].map(({ label, href, icon: Icon, color }) => (
               <Link key={label} href={href}
                 className="bg-white/[0.03] border border-white/[0.07] hover:border-green-700/40 rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all group">
@@ -222,8 +223,16 @@ export default function BuyerDashboardPage() {
           </div>
         </div>
 
+        {/* Recommended for You */}
+        <RecommendationSection
+          type="for-you"
+          title="Recommended for You"
+          subtitle="Based on your browsing and purchase history"
+          icon="sparkles"
+          limit={8}
+        />
+
       </div>
     </DashboardLayout>
   );
 }
-
