@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth.store";
 
 const stats = [
-  { icon: Users,     label: "Verified Farmers", value: "10,000+", color: "text-emerald-400" },
-  { icon: Globe,     label: "Countries",         value: "45+",     color: "text-sky-400" },
-  { icon: Package,   label: "Products",          value: "50,000+", color: "text-amber-400" },
-  { icon: TrendingUp,label: "Tonnes Traded",     value: "1M+",     color: "text-rose-400" },
+  { icon: Users,      label: "Verified Farmers", value: "10,000+", color: "text-emerald-400" },
+  { icon: Globe,      label: "Countries",         value: "45+",     color: "text-sky-400" },
+  { icon: Package,    label: "Products",          value: "50,000+", color: "text-amber-400" },
+  { icon: TrendingUp, label: "Tonnes Traded",     value: "1M+",     color: "text-rose-400" },
 ];
 
 const tags = [
@@ -40,7 +40,27 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-[94vh] flex flex-col justify-center overflow-hidden bg-[#060f08]">
 
-      <div className="absolute inset-0 pointer-events-none">
+      {/* ── Background Video ─────────────────────────────────── */}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        aria-hidden="true"
+        preload="metadata"
+        poster="/images/hero-poster.jpg"
+        className="absolute inset-0 w-full h-full object-cover z-0"
+        style={{ opacity: 0.18 }}
+      >
+        <source src="/videos/afritide-hero.mp4" type="video/mp4" />
+        <source src="/videos/afritide-hero.webm" type="video/webm" />
+      </video>
+
+      {/* ── Dark overlay ─────────────────────────────────────── */}
+      <div className="absolute inset-0 z-[1] bg-[#060f08]/80" />
+
+      {/* ── Existing decorative gradients ────────────────────── */}
+      <div className="absolute inset-0 z-[2] pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_-5%,_#14532d55_0%,_transparent_72%)]" />
         <div className="absolute inset-0 opacity-[0.055]"
           style={{
@@ -53,7 +73,8 @@ export default function HeroSection() {
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-700/40 to-transparent" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-28">
+      {/* ── Hero content ─────────────────────────────────────── */}
+      <div className="relative z-[3] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-28">
         <div className="max-w-4xl mx-auto text-center">
 
           <div className="inline-flex items-center gap-3 bg-green-950/70 border border-green-800/50 rounded-full px-5 py-2 mb-10 backdrop-blur-sm">
@@ -157,7 +178,8 @@ export default function HeroSection() {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.05] bg-white/[0.02] backdrop-blur-sm py-3">
+      {/* ── Bottom bar ───────────────────────────────────────── */}
+      <div className="absolute bottom-0 left-0 right-0 z-[3] border-t border-white/[0.05] bg-white/[0.02] backdrop-blur-sm py-3">
         <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-8 text-xs text-gray-600 font-medium tracking-wide">
           {[
             { color: "bg-green-500",  text: "KYC-Verified Sellers Only" },
