@@ -191,6 +191,14 @@ async def update_order_status(
             seller = db.query(User).filter(User.id == order.seller_id).first()
             if seller:
                 seller.total_sales = (seller.total_sales or 0) + 1
+
+            # Process referral commission
+            try:
+                from app.api.routes.referrals import process_order_commission
+                process_order_commission(order.id, db)
+            except Exception:
+                pass  # Never fail order update due to commission error
+
         elif payload.status == OrderStatus.CANCELLED:
             order.cancelled_at = datetime.utcnow()
 

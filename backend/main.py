@@ -18,7 +18,7 @@ from app.models import (
     user, product, order, payment,
     message, rfq, commodity, review, notification,
     logistics, warehouse, certificate, advertisement, analytics,
-    support, price_alert, cart as cart_model, support_chat
+    support, price_alert, cart as cart_model, support_chat, referral as referral_model
 )
 
 # Import all routers
@@ -29,7 +29,7 @@ from app.api.routes import (
     warehouses, certificates, advertisements,
     analytics as analytics_router, admin, search, support,
     price_alerts, cart, paystack as paystack_router, stripe as stripe_router, subscriptions,
-    promotions, exchange_rates, support_chat, support_chat, recommendations,
+    promotions, exchange_rates, support_chat, support_chat, recommendations, referrals,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -97,34 +97,36 @@ app.add_middleware(
 
 API_PREFIX = "/api/v1"
 
-app.include_router(auth.router,             prefix=f"{API_PREFIX}/auth",           tags=["🔐 Authentication"])
-app.include_router(users.router,            prefix=f"{API_PREFIX}/users",          tags=["👤 Users"])
-app.include_router(products.router,         prefix=f"{API_PREFIX}/products",       tags=["📦 Products"])
-app.include_router(categories.router,       prefix=f"{API_PREFIX}/categories",     tags=["🗂️ Categories"])
-app.include_router(orders.router,           prefix=f"{API_PREFIX}/orders",         tags=["🛒 Orders"])
-app.include_router(payments.router,         prefix=f"{API_PREFIX}/payments",       tags=["💳 Payments"])
-app.include_router(messages.router,         prefix=f"{API_PREFIX}/messages",       tags=["💬 Messages"])
-app.include_router(rfqs.router,             prefix=f"{API_PREFIX}/rfqs",           tags=["📋 RFQs"])
-app.include_router(commodities.router,      prefix=f"{API_PREFIX}/commodities",    tags=["📈 Commodities"])
-app.include_router(reviews.router,          prefix=f"{API_PREFIX}/reviews",        tags=["⭐ Reviews"])
-app.include_router(notifications.router,    prefix=f"{API_PREFIX}/notifications",  tags=["🔔 Notifications"])
-app.include_router(logistics_router.router, prefix=f"{API_PREFIX}/logistics",      tags=["🚚 Logistics"])
-app.include_router(warehouses.router,       prefix=f"{API_PREFIX}/warehouses",     tags=["🏭 Warehouses"])
-app.include_router(certificates.router,     prefix=f"{API_PREFIX}/certificates",   tags=["📜 Certificates"])
-app.include_router(advertisements.router,   prefix=f"{API_PREFIX}/advertisements", tags=["📢 Advertisements"])
-app.include_router(analytics_router.router, prefix=f"{API_PREFIX}/analytics",      tags=["📊 Analytics"])
-app.include_router(admin.router,            prefix=f"{API_PREFIX}/admin",          tags=["⚙️ Admin"])
-app.include_router(search.router,           prefix=f"{API_PREFIX}/search",         tags=["🔍 Search"])
-app.include_router(support.router,          prefix=f"{API_PREFIX}/support",        tags=["🆘 Support"])
-app.include_router(price_alerts.router,     prefix=f"{API_PREFIX}/price-alerts",   tags=["🔔 Price Alerts"])
-app.include_router(cart.router,             prefix=f"{API_PREFIX}/cart",           tags=["🛒 Cart"])
-app.include_router(paystack_router.router,  prefix=f"{API_PREFIX}/payments",       tags=["💳 Payments"])
-app.include_router(stripe_router.router,    prefix=f"{API_PREFIX}/payments",       tags=["💳 Payments"])
-app.include_router(subscriptions.router,    prefix=f"{API_PREFIX}/subscriptions",  tags=["💎 Subscriptions"])
-app.include_router(promotions.router,       prefix=f"{API_PREFIX}/promotions",     tags=["🚀 Promotions"])
-app.include_router(exchange_rates.router,   prefix=f"{API_PREFIX}/exchange-rates", tags=["💱 Exchange Rates"])
-app.include_router(support_chat.router,     prefix=f"{API_PREFIX}/support-chat",   tags=["💬 Support Chat"])
-app.include_router(recommendations.router, prefix=f"{API_PREFIX}/recommendations", tags=["🎯 Recommendations"])
+app.include_router(auth.router,             prefix=f"{API_PREFIX}/auth",            tags=["🔐 Authentication"])
+app.include_router(users.router,            prefix=f"{API_PREFIX}/users",           tags=["👤 Users"])
+app.include_router(products.router,         prefix=f"{API_PREFIX}/products",        tags=["📦 Products"])
+app.include_router(categories.router,       prefix=f"{API_PREFIX}/categories",      tags=["🗂️ Categories"])
+app.include_router(orders.router,           prefix=f"{API_PREFIX}/orders",          tags=["🛒 Orders"])
+app.include_router(payments.router,         prefix=f"{API_PREFIX}/payments",        tags=["💳 Payments"])
+app.include_router(messages.router,         prefix=f"{API_PREFIX}/messages",        tags=["💬 Messages"])
+app.include_router(rfqs.router,             prefix=f"{API_PREFIX}/rfqs",            tags=["📋 RFQs"])
+app.include_router(commodities.router,      prefix=f"{API_PREFIX}/commodities",     tags=["📈 Commodities"])
+app.include_router(reviews.router,          prefix=f"{API_PREFIX}/reviews",         tags=["⭐ Reviews"])
+app.include_router(notifications.router,    prefix=f"{API_PREFIX}/notifications",   tags=["🔔 Notifications"])
+app.include_router(logistics_router.router, prefix=f"{API_PREFIX}/logistics",       tags=["🚚 Logistics"])
+app.include_router(warehouses.router,       prefix=f"{API_PREFIX}/warehouses",      tags=["🏭 Warehouses"])
+app.include_router(certificates.router,     prefix=f"{API_PREFIX}/certificates",    tags=["📜 Certificates"])
+app.include_router(advertisements.router,   prefix=f"{API_PREFIX}/advertisements",  tags=["📢 Advertisements"])
+app.include_router(analytics_router.router, prefix=f"{API_PREFIX}/analytics",       tags=["📊 Analytics"])
+app.include_router(admin.router,            prefix=f"{API_PREFIX}/admin",           tags=["⚙️ Admin"])
+app.include_router(search.router,           prefix=f"{API_PREFIX}/search",          tags=["🔍 Search"])
+app.include_router(support.router,          prefix=f"{API_PREFIX}/support",         tags=["🆘 Support"])
+app.include_router(price_alerts.router,     prefix=f"{API_PREFIX}/price-alerts",    tags=["🔔 Price Alerts"])
+app.include_router(cart.router,             prefix=f"{API_PREFIX}/cart",            tags=["🛒 Cart"])
+app.include_router(paystack_router.router,  prefix=f"{API_PREFIX}/payments",        tags=["💳 Payments"])
+app.include_router(stripe_router.router,    prefix=f"{API_PREFIX}/payments",        tags=["💳 Payments"])
+app.include_router(subscriptions.router,    prefix=f"{API_PREFIX}/subscriptions",   tags=["💎 Subscriptions"])
+app.include_router(promotions.router,       prefix=f"{API_PREFIX}/promotions",      tags=["🚀 Promotions"])
+app.include_router(exchange_rates.router,   prefix=f"{API_PREFIX}/exchange-rates",  tags=["💱 Exchange Rates"])
+app.include_router(support_chat.router,     prefix=f"{API_PREFIX}/support-chat",    tags=["💬 Support Chat"])
+app.include_router(recommendations.router,  prefix=f"{API_PREFIX}/recommendations", tags=["🎯 Recommendations"])
+app.include_router(referrals.router,        prefix=f"{API_PREFIX}/referrals",       tags=["🤝 Referrals"])
+
 # ── HEALTH CHECK ────────────────────────────────────────────────────────────
 
 @app.get("/", tags=["Health"])
