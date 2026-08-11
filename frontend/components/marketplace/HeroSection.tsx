@@ -50,7 +50,7 @@ export default function HeroSection() {
         preload="metadata"
         poster="/images/hero-poster.jpg"
         className="absolute inset-0 w-full h-full object-cover z-0"
-        style={{ opacity: 0.55 }}
+        style={{ opacity: 0.75 }}
       >
         <source src="/videos/afritide-hero.mp4" type="video/mp4" />
         <source src="/videos/afritide-hero.webm" type="video/webm" />
