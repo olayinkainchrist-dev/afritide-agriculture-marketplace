@@ -10,8 +10,8 @@ const IMAGES = [
   "/images/hero/agriculture-06.webp",
 ];
 
-const INTERVAL  = 6000;  // ms each image shows
-const FADE_TIME = 1400;  // ms crossfade duration
+const INTERVAL  = 9000;  // ms each image shows
+const FADE_TIME = 1500;  // ms crossfade duration
 
 export default function HeroSlideshow() {
   const [current,  setCurrent]  = useState(0);
@@ -19,7 +19,6 @@ export default function HeroSlideshow() {
   const [fading,   setFading]   = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Respect reduced motion
   const prefersReduced =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -86,9 +85,9 @@ export default function HeroSlideshow() {
         />
       </div>
 
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#060f08]/75 via-[#060f08]/60 to-[#060f08]/85" />
-      <div className="absolute inset-0 bg-[#060f08]/40" />
+      {/* Dark gradient overlay — reduced for better image visibility */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#060f08]/55 via-[#060f08]/40 to-[#060f08]/65" />
+      <div className="absolute inset-0 bg-[#060f08]/20" />
 
       {/* Ken Burns keyframes */}
       <style>{`
