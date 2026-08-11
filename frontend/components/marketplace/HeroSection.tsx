@@ -44,9 +44,6 @@ export default function HeroSection() {
       {/* ── Background Slideshow ─────────────────────────────── */}
       <HeroSlideshow />
 
-      {/* ── Dark overlay ─────────────────────────────────────── */}
-      <div className="absolute inset-0 z-[1] bg-[#060f08]/80" />
-
       {/* ── Existing decorative gradients ────────────────────── */}
       <div className="absolute inset-0 z-[2] pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_-5%,_#14532d55_0%,_transparent_72%)]" />
