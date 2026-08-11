@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Search, ArrowRight, TrendingUp, Users, Package, Globe } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/store/auth.store";
+import HeroSlideshow from "@/components/marketplace/HeroSlideshow";
 
 const stats = [
   { icon: Users,      label: "Verified Farmers", value: "10,000+", color: "text-emerald-400" },
@@ -40,21 +41,8 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-[94vh] flex flex-col justify-center overflow-hidden bg-[#060f08]">
 
-      {/* ── Background Video ─────────────────────────────────── */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        aria-hidden="true"
-        preload="metadata"
-        poster="/images/hero-poster.jpg"
-        className="absolute inset-0 w-full h-full object-cover z-0"
-        style={{ opacity: 1.50 }}
-      >
-        <source src="/videos/afritide-hero.mp4" type="video/mp4" />
-        <source src="/videos/afritide-hero.webm" type="video/webm" />
-      </video>
+      {/* ── Background Slideshow ─────────────────────────────── */}
+      <HeroSlideshow />
 
       {/* ── Dark overlay ─────────────────────────────────────── */}
       <div className="absolute inset-0 z-[1] bg-[#060f08]/80" />
