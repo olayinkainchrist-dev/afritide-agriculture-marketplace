@@ -149,7 +149,7 @@ class ReferralRiskEvent(Base):
     user_id     = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     event_type  = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
-    metadata    = Column(JSONB, default=dict)
+    event_data  = Column(JSONB, default=dict)
     created_at  = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", foreign_keys=[user_id])
