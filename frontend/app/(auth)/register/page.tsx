@@ -1,5 +1,5 @@
 "use client";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,6 +7,7 @@ import { z } from "zod";
 import { Eye, EyeOff, Leaf, ArrowRight, Loader2, Check } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useSearchParams } from "next/navigation";
+import apiClient from "@/lib/api/client";
 
 const schema = z.object({
   first_name:    z.string().min(2, "First name is required"),
@@ -42,9 +43,10 @@ export default function RegisterPage() {
 function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading,      setLoading]      = useState(false);
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, user } = useAuth();
   const searchParams = useSearchParams();
   const defaultRole = (searchParams.get("role") as any) || "BUYER";
+  const referralCode = searchParams.get("ref");
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -53,10 +55,31 @@ function RegisterForm() {
 
   const selectedRole = watch("role");
 
+  // Log referral code if present
+  useEffect(() => {
+    if (referralCode) {
+      console.log("📌 Referral code detected:", referralCode);
+    }
+  }, [referralCode]);
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
       await registerUser(data);
+      
+      // After successful registration, attribute referral
+      // Use the user from auth store instead of return value
+      if (referralCode && user?.id) {
+        try {
+          await apiClient.post("/referrals/attribute", null, {
+            params: { referral_code: referralCode },
+          });
+          console.log("✅ Referral attributed successfully");
+        } catch (refErr) {
+          console.warn("⚠️ Failed to attribute referral:", refErr);
+          // Don't fail the registration if referral attribution fails
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -149,6 +172,11 @@ function RegisterForm() {
           <div className="mb-8">
             <h1 className="text-3xl font-black text-white mb-2">Create your account</h1>
             <p className="text-gray-500">Join thousands of farmers and buyers on Afritide</p>
+            {referralCode && (
+              <p className="text-green-400 text-xs mt-2 bg-green-950/30 border border-green-800/30 rounded-xl p-2 flex items-center gap-2">
+                🎉 Referred by a friend! You'll both get a bonus when you complete a trade.
+              </p>
+            )}
           </div>
 
           {/* Role selector */}
