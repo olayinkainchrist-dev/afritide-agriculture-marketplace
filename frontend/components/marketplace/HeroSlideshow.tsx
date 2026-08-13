@@ -8,6 +8,15 @@ const IMAGES = [
   "/images/hero/agriculture-04.webp",
   "/images/hero/agriculture-05.webp",
   "/images/hero/agriculture-06.webp",
+  "/images/hero/agriculture-08.webp",
+  "/images/hero/agriculture-09.webp",
+  "/images/hero/agriculture-10.webp",
+  "/images/hero/agriculture-11.webp",
+  "/images/hero/agriculture-12.webp",
+  "/images/hero/agriculture-13.webp",
+  "/images/hero/agriculture-14.webp",
+  "/images/hero/agriculture-15.webp",
+  "/images/hero/agriculture-16.webp",
 ];
 
 const INTERVAL  = 9000;  // ms each image shows
