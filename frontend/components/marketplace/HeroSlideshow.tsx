@@ -8,6 +8,7 @@ const IMAGES = [
   "/images/hero/agriculture-04.webp",
   "/images/hero/agriculture-05.webp",
   "/images/hero/agriculture-06.webp",
+  "/images/hero/agriculture-07.webp",
   "/images/hero/agriculture-08.webp",
   "/images/hero/agriculture-09.webp",
   "/images/hero/agriculture-10.webp",
