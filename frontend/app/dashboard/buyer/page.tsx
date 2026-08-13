@@ -213,6 +213,7 @@ export default function BuyerDashboardPage() {
               { label: "My Suppliers",       href: "/dashboard/buyer/suppliers", icon: Users,      color: "text-blue-400" },
               { label: "Price Board",        href: "/commodities",               icon: TrendingUp, color: "text-amber-400" },
               { label: "My Alerts",          href: "/dashboard/buyer/alerts",    icon: Bell,       color: "text-violet-400" },
+              { label: "Referrals",          href: "/referrals",                 icon: Users },
             ].map(({ label, href, icon: Icon, color }) => (
               <Link key={label} href={href}
                 className="bg-white/[0.03] border border-white/[0.07] hover:border-green-700/40 rounded-2xl p-4 flex flex-col items-center gap-2 text-center transition-all group">

@@ -235,6 +235,10 @@ export default function Navbar() {
                       className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
                       Dashboard
                     </Link>
+                    <Link href="/referrals"
+                      className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
+                      Referral Program
+                    </Link>
                     <Link href="/profile"
                       className="block px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
                       Profile
