@@ -161,7 +161,7 @@ async def get_referral_profile(
 
     return success_response(data={
         "referral_code":    code.code,
-        "referral_link":    f"https://afritidegroup.com/register?ref={code.code}",
+        "referral_link":    f"https://www.afritidegroup.com/register?ref={code.code}",
         "is_active":        code.is_active,
         "click_count":      code.click_count,
         "total_referrals":  total_referrals,
