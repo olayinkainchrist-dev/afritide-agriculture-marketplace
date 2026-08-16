@@ -427,28 +427,35 @@ export default function ProductDetailClient({ id }: Props) {
               </span>
             </div>
 
-            {/* Action buttons */}
+            {/* ── Action buttons ───────────────────────────────────── */}
             <div className="flex flex-col gap-3">
-
-              {/* Add to Cart */}
-              <button
-                onClick={handleAddToCart}
-                disabled={addingToCart}
-                className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
-              >
-                {addingToCart
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding...</>
-                  : <><ShoppingCart className="w-4 h-4" /> Add to Cart</>
-                }
-              </button>
-
-              <div className="grid grid-cols-2 gap-3">
+              {/* Primary action based on pricing type */}
+              {product.is_negotiable ? (
                 <button
                   onClick={handleRFQ}
+                  className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
+                >
+                  <FileText className="w-4 h-4" /> Negotiate Price
+                </button>
+              ) : (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={addingToCart}
+                  className="w-full bg-green-600 hover:bg-green-500 disabled:bg-green-900 disabled:text-green-700 text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-green-900/30"
+                >
+                  {addingToCart
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding...</>
+                    : <><ShoppingCart className="w-4 h-4" /> Add to Cart</>
+                  }
+                </button>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={product.is_negotiable ? handleAddToCart : handleRFQ}
                   className="bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.1] hover:border-green-700/40 text-white font-bold py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm"
                 >
-                  <FileText className="w-4 h-4" />
-                  Request Quote
+                  {product.is_negotiable ? <ShoppingCart className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                  {product.is_negotiable ? "Add to Cart" : "Request Quote"}
                 </button>
                 <button
                   onClick={handleWishlist}
