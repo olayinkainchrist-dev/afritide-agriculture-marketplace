@@ -8,6 +8,7 @@ import { Eye, EyeOff, Leaf, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
+import apiClient from "@/lib/api/client";
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -29,6 +30,18 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(data.email, data.password);
+      // Attribute referral if stored in localStorage
+      const storedRef = localStorage.getItem("afritide_ref");
+      if (storedRef) {
+        try {
+          await apiClient.post("/referrals/attribute", null, {
+            params: { referral_code: storedRef },
+          });
+          localStorage.removeItem("afritide_ref");
+        } catch {
+          // Silent fail — don't block login
+        }
+      }
     } finally {
       setLoading(false);
     }

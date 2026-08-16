@@ -55,10 +55,10 @@ function RegisterForm() {
 
   const selectedRole = watch("role");
 
-  // Log referral code if present
+  // Store referral code in localStorage so it survives OTP flow
   useEffect(() => {
     if (referralCode) {
-      console.log("📌 Referral code detected:", referralCode);
+      localStorage.setItem("afritide_ref", referralCode);
     }
   }, [referralCode]);
 
@@ -66,20 +66,7 @@ function RegisterForm() {
     setLoading(true);
     try {
       await registerUser(data);
-      
-      // After successful registration, attribute referral
-      // Use the user from auth store instead of return value
-      if (referralCode && user?.id) {
-        try {
-          await apiClient.post("/referrals/attribute", null, {
-            params: { referral_code: referralCode },
-          });
-          console.log("✅ Referral attributed successfully");
-        } catch (refErr) {
-          console.warn("⚠️ Failed to attribute referral:", refErr);
-          // Don't fail the registration if referral attribution fails
-        }
-      }
+      // Referral attribution happens after login via localStorage
     } finally {
       setLoading(false);
     }
