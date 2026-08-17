@@ -243,6 +243,9 @@ async def list_all_products(
             "rejection_reason":       p.rejection_reason,
             "created_at":             p.created_at,
             "published_at":           p.published_at,
+            "video_url":              p.video_url,
+            "lab_report_url":         p.lab_report_url,
+            "inspection_certificate_url": p.inspection_certificate_url,
         } for p in products],
         total=total, page=pagination.page, page_size=pagination.page_size,
     )
@@ -284,6 +287,9 @@ async def get_pending_products(
             "state":                  p.state,
             "city":                   p.city,
             "created_at":             p.created_at,
+            "video_url":              p.video_url,
+            "lab_report_url":         p.lab_report_url,
+            "inspection_certificate_url": p.inspection_certificate_url,
         } for p in products],
         total=total, page=pagination.page, page_size=pagination.page_size,
     )
