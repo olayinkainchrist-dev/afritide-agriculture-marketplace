@@ -231,6 +231,7 @@ async def create_product(
     product = Product(
         seller_id=current_user.id,
         slug=slugify(payload.title),
+        video_url=payload.video_url or None,
         **payload.dict(exclude={"video_url", "delivery_options", "category_id"}),
     )
     db.add(product)
