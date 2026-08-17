@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Users, Package, ShoppingCart,
   TrendingUp, Shield, Megaphone, BarChart3,
   CheckCircle2, XCircle, Eye, Loader2,
-  ChevronUp,
+  ChevronUp, FileText,
 } from "lucide-react";
 import { formatDate, formatPrice, getCategoryLabel } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -275,6 +275,34 @@ export default function AdminProductsPage() {
                               <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3">
                                 <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-1">Description</p>
                                 <p className="text-gray-400 text-xs leading-relaxed line-clamp-4">{product.description}</p>
+                              </div>
+                            )}
+
+                            {product.video_url && (
+                              <div>
+                                <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-2">Product Video</p>
+                                <video src={product.video_url} controls
+                                  className="w-full rounded-xl border border-white/[0.08] max-h-48 object-contain bg-black" />
+                              </div>
+                            )}
+
+                            {(product.lab_report_url || product.inspection_certificate_url) && (
+                              <div>
+                                <p className="text-gray-600 text-[10px] uppercase tracking-wide mb-2">Quality Documents</p>
+                                <div className="flex flex-col gap-2">
+                                  {product.lab_report_url && (
+                                    <a href={product.lab_report_url} target="_blank" rel="noopener noreferrer"
+                                      className="flex items-center gap-2 text-green-400 hover:text-green-300 text-xs font-medium bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2 transition-colors">
+                                      <FileText className="w-3.5 h-3.5" /> Laboratory Report →
+                                    </a>
+                                  )}
+                                  {product.inspection_certificate_url && (
+                                    <a href={product.inspection_certificate_url} target="_blank" rel="noopener noreferrer"
+                                      className="flex items-center gap-2 text-green-400 hover:text-green-300 text-xs font-medium bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2 transition-colors">
+                                      <FileText className="w-3.5 h-3.5" /> Inspection Certificate →
+                                    </a>
+                                  )}
+                                </div>
                               </div>
                             )}
 
