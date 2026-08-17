@@ -9,9 +9,10 @@ import { z } from "zod";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { productsApi } from "@/lib/api/products.api";
+import apiClient from "@/lib/api/client";
 import {
   ArrowLeft, Loader2, Save, Package,
-  Leaf, Globe, ImagePlus, X,
+  Leaf, Globe, ImagePlus, X, Video,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -48,7 +49,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const router = useRouter();
   const [saving,          setSaving]          = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingVideo,  setUploadingVideo]  = useState(false);
   const [productImages,   setProductImages]   = useState<string[]>([]);
+  const [videoUrl,        setVideoUrl]        = useState<string>("");
 
   useEffect(() => {
     if (hasHydrated && !isAuthenticated) router.push("/login");
@@ -94,6 +97,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     if (product) {
       setProductImages(product.images || (product.main_image ? [product.main_image] : []));
+      setVideoUrl(product.video_url || "");
     }
   }, [product]);
 
@@ -105,6 +109,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         tags:       data.tags ? data.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
         images:     productImages,
         main_image: productImages[0] || undefined,
+        video_url:  videoUrl || undefined,
       };
       const res = await productsApi.update(id, payload);
       if (res.success) {
@@ -148,6 +153,30 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     } catch {
       toast.error("Failed to remove image");
       setProductImages(productImages);
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { toast.error("Video must be under 50MB"); return; }
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiClient.post("/products/upload-video", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const url = res.data?.data?.url;
+      if (url) {
+        setVideoUrl(url);
+        await productsApi.update(id, { video_url: url });
+        toast.success("Video uploaded successfully!");
+      }
+    } catch {
+      toast.error("Video upload failed");
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -254,8 +283,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <label className="text-xs text-gray-500 mb-1.5 block">
                   Price <span className="text-red-400">*</span>
                 </label>
-                <input {...register("price", { valueAsNumber: true })}
-                  type="number" step="0.01"
+                <input {...register("price", { valueAsNumber: true })} type="number" step="0.01"
                   className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none transition-colors" />
                 {errors.price && <p className="text-red-400 text-xs mt-1">{errors.price.message}</p>}
               </div>
@@ -277,21 +305,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <label className="text-xs text-gray-500 mb-1.5 block">
                   Available Quantity <span className="text-red-400">*</span>
                 </label>
-                <input {...register("quantity_available", { valueAsNumber: true })}
-                  type="number"
+                <input {...register("quantity_available", { valueAsNumber: true })} type="number"
                   className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none transition-colors" />
                 {errors.quantity_available && <p className="text-red-400 text-xs mt-1">{errors.quantity_available.message}</p>}
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Min. Order Quantity</label>
-                <input {...register("minimum_order_quantity", { valueAsNumber: true })}
-                  type="number"
+                <input {...register("minimum_order_quantity", { valueAsNumber: true })} type="number"
                   className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none transition-colors" />
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1.5 block">Delivery Time (days)</label>
-                <input {...register("delivery_time_days", { valueAsNumber: true })}
-                  type="number"
+                <input {...register("delivery_time_days", { valueAsNumber: true })} type="number"
                   className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white text-sm focus:outline-none transition-colors" />
               </div>
             </div>
@@ -310,7 +335,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       watch(key as any) ? "bg-green-500 border-green-500" : "border-white/[0.15]"
                     }`}>
                     {watch(key as any) && (
-                      <svg className="w-3 h-3 text-white" fill="NONE" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -379,6 +404,34 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               ) : (
                 <><ImagePlus className="w-5 h-5 text-gray-600" /><span className="text-gray-400 text-sm">Click to add more images</span></>
               )}
+            </label>
+          </div>
+
+          {/* Video Upload */}
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-6">
+            <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2">
+              <Video className="w-4 h-4 text-green-500" /> Product Video
+              <span className="text-gray-600 font-normal text-xs ml-1">(optional, max 50MB)</span>
+            </h3>
+            {videoUrl ? (
+              <div className="relative rounded-xl overflow-hidden border border-white/[0.1] bg-black mb-3">
+                <video src={videoUrl} controls className="w-full max-h-48 object-contain" />
+                <button type="button" onClick={() => setVideoUrl("")}
+                  className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 transition-colors">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : null}
+            <label className={`flex items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-6 cursor-pointer transition-all ${
+              uploadingVideo
+                ? "border-green-600/60 bg-green-950/20"
+                : "border-white/[0.1] hover:border-green-700/40 hover:bg-white/[0.02]"
+            }`}>
+              <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
+              {uploadingVideo
+                ? <><Loader2 className="w-5 h-5 text-green-400 animate-spin" /><span className="text-green-400 text-sm font-medium">Uploading...</span></>
+                : <><Video className="w-5 h-5 text-gray-600" /><span className="text-gray-400 text-sm">{videoUrl ? "Replace video" : "Click to upload video"}</span></>
+              }
             </label>
           </div>
 

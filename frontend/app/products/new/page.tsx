@@ -11,6 +11,7 @@ import { productsApi } from "@/lib/api/products.api";
 import { ProductCategory } from "@/types";
 import {
   ArrowLeft, ArrowRight, Loader2, Package, Upload, X, Truck, Shield,
+  Video,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -73,6 +74,8 @@ export default function NewProductPage() {
   const [step,             setStep]             = useState(1);
   const [images,           setImages]           = useState<string[]>([]);
   const [uploadingImage,   setUploadingImage]   = useState(false);
+  const [uploadingVideo,   setUploadingVideo]   = useState(false);
+  const [videoUrl,         setVideoUrl]         = useState("");
   const [deliveryOptions,  setDeliveryOptions]  = useState<string[]>(["standard"]);
   const [priceTiers,       setPriceTiers]       = useState<{min_qty: number, max_qty: number | null, price: number}[]>([]);
   const [certifications,   setCertifications]   = useState<string[]>([]);
@@ -133,6 +136,31 @@ export default function NewProductPage() {
     }
   };
 
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { toast.error("Video must be under 50MB"); return; }
+    setUploadingVideo(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiClient.post("/products/upload-video", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const url = res.data?.data?.url;
+      if (url) {
+        setVideoUrl(url);
+        toast.success("Video uploaded");
+      } else {
+        toast.error("Upload succeeded but no URL returned");
+      }
+    } catch {
+      toast.error("Failed to upload video");
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
   const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "lab" | "insp") => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -176,6 +204,7 @@ export default function NewProductPage() {
         tags:             data.tags ? data.tags.split(",").map(t => t.trim()).filter(Boolean) : [],
         images,
         main_image:       images[0] || undefined,
+        video_url:        videoUrl || undefined,
         delivery_options: deliveryOptions,
         price_tiers:      priceTiers.length > 0 ? priceTiers : undefined,
         certifications:   certifications.length > 0 ? certifications : undefined,
@@ -682,6 +711,41 @@ export default function NewProductPage() {
                     )}
                   </div>
                   <p className="text-gray-600 text-xs">First image will be the main product photo. Max 5MB each.</p>
+                </div>
+
+                {/* Video Upload */}
+                <div>
+                  <p className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                    <Video className="w-4 h-4 text-green-500" />
+                    Product Video <span className="text-gray-600 ml-1">(optional, max 50MB)</span>
+                  </p>
+                  {videoUrl ? (
+                    <div className="relative rounded-xl overflow-hidden border border-white/[0.1] bg-black">
+                      <video src={videoUrl} controls className="w-full max-h-48 object-contain" />
+                      <button
+                        type="button"
+                        onClick={() => setVideoUrl("")}
+                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => document.getElementById("video-upload-input")?.click()}
+                      className="border-2 border-dashed border-white/[0.12] hover:border-green-700/50 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-colors group">
+                      {uploadingVideo
+                        ? <><Loader2 className="w-6 h-6 text-green-500 animate-spin mb-2" /><span className="text-gray-500 text-xs">Uploading video...</span></>
+                        : <><Upload className="w-6 h-6 text-gray-600 group-hover:text-green-500 transition-colors mb-2" /><span className="text-gray-600 text-xs group-hover:text-green-400">Click to upload video</span><span className="text-gray-700 text-[10px] mt-1">MP4, MOV, AVI — max 50MB</span></>
+                      }
+                    </div>
+                  )}
+                  <input
+                    id="video-upload-input"
+                    type="file"
+                    accept="video/*"
+                    className="hidden"
+                    onChange={handleVideoUpload}
+                  />
                 </div>
 
                 <div>
