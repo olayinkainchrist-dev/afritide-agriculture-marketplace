@@ -239,6 +239,16 @@ export default function AdminProductsPage() {
                               </div>
                             </div>
                           )}
+                          {product.video_url && (
+                            <div>
+                              <p className="text-gray-600 text-[10px] uppercase tracking-widest font-bold mb-2">Video</p>
+                              <video
+                                src={product.video_url}
+                                controls
+                                className="w-full rounded-xl border border-white/[0.08] max-h-48 object-contain bg-black"
+                              />
+                            </div>
+                          )}
 
                           <div className="space-y-3">
                             <p className="text-gray-600 text-[10px] uppercase tracking-widest font-bold">Details</p>
