@@ -18,7 +18,8 @@ from app.models import (
     user, product, order, payment,
     message, rfq, commodity, review, notification,
     logistics, warehouse, certificate, advertisement, analytics,
-    support, price_alert, cart as cart_model, support_chat, referral as referral_model
+    support, price_alert, cart as cart_model, support_chat, referral as referral_model,
+    commission as commission_model
 )
 
 # Import all routers
@@ -29,7 +30,8 @@ from app.api.routes import (
     warehouses, certificates, advertisements,
     analytics as analytics_router, admin, search, support,
     price_alerts, cart, paystack as paystack_router, stripe as stripe_router, subscriptions,
-    promotions, exchange_rates, support_chat, support_chat, recommendations, referrals,
+    promotions, exchange_rates, support_chat, recommendations, referrals,
+    commissions,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -126,6 +128,7 @@ app.include_router(exchange_rates.router,   prefix=f"{API_PREFIX}/exchange-rates
 app.include_router(support_chat.router,     prefix=f"{API_PREFIX}/support-chat",    tags=["💬 Support Chat"])
 app.include_router(recommendations.router,  prefix=f"{API_PREFIX}/recommendations", tags=["🎯 Recommendations"])
 app.include_router(referrals.router,        prefix=f"{API_PREFIX}/referrals",       tags=["🤝 Referrals"])
+app.include_router(commissions.router,      prefix=f"{API_PREFIX}/commissions",     tags=["💰 Commissions"])
 
 # ── HEALTH CHECK ────────────────────────────────────────────────────────────
 

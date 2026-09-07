@@ -86,6 +86,13 @@ async def create_order(
     db.commit()
     db.refresh(order)
 
+    # Record commission
+    try:
+        from app.services.commission_service import record_order_commission
+        record_order_commission(order, current_user.role.value, db)
+    except Exception:
+        pass  # Never fail order creation due to commission error
+
     return success_response(
         data       = OrderResponseSchema.from_orm(order).dict(),
         message    = "Order placed successfully",

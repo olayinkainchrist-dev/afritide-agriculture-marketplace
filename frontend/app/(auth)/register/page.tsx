@@ -209,7 +209,7 @@ function RegisterForm() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Last name</label>
-                <input {...register("last_name")} placeholder="Israel"
+                <input {...register("last_name")} placeholder="Emmanuel"
                   className="w-full bg-white/[0.05] border border-white/[0.09] hover:border-white/[0.14] focus:border-green-600/60 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
                 {errors.last_name && <p className="text-red-400 text-xs mt-1">{errors.last_name.message}</p>}
               </div>
