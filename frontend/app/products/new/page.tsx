@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -11,7 +12,7 @@ import { productsApi } from "@/lib/api/products.api";
 import { ProductCategory } from "@/types";
 import {
   ArrowLeft, ArrowRight, Loader2, Package, Upload, X, Truck, Shield,
-  Video,
+  Video, Info,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -110,6 +111,7 @@ export default function NewProductPage() {
   });
 
   const selectedCategory = watch("category");
+  const watchedPrice     = watch("price");
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -362,6 +364,11 @@ export default function NewProductPage() {
                   </div>
                 </div>
 
+                {/* Live Commission Calculator */}
+                {watchedPrice > 0 && (
+                  <CommissionCalculator price={watchedPrice} category={watch("category")} />
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-400 mb-2">
@@ -510,7 +517,6 @@ export default function NewProductPage() {
                     className="w-full bg-white/[0.05] border border-white/[0.08] focus:border-green-700/50 rounded-xl px-4 py-3.5 text-white placeholder-gray-600 text-sm focus:outline-none transition-colors" />
                 </div>
 
-                {/* Pickup location */}
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-2">
                     Pickup / Farm Location <span className="text-gray-600">(optional)</span>
@@ -613,7 +619,6 @@ export default function NewProductPage() {
                 <div className="space-y-4">
                   <label className="block text-sm font-medium text-gray-400">Quality Documents</label>
 
-                  {/* Lab Report */}
                   <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div>
@@ -639,7 +644,6 @@ export default function NewProductPage() {
                     </div>
                   </div>
 
-                  {/* Inspection Certificate */}
                   <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div>
@@ -691,7 +695,6 @@ export default function NewProductPage() {
                         )}
                       </div>
                     ))}
-
                     {images.length < 5 && (
                       <div
                         onClick={(e) => {
@@ -722,9 +725,7 @@ export default function NewProductPage() {
                   {videoUrl ? (
                     <div className="relative rounded-xl overflow-hidden border border-white/[0.1] bg-black">
                       <video src={videoUrl} controls className="w-full max-h-48 object-contain" />
-                      <button
-                        type="button"
-                        onClick={() => setVideoUrl("")}
+                      <button type="button" onClick={() => setVideoUrl("")}
                         className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 transition-colors">
                         <X className="w-3 h-3" />
                       </button>
@@ -739,13 +740,7 @@ export default function NewProductPage() {
                       }
                     </div>
                   )}
-                  <input
-                    id="video-upload-input"
-                    type="file"
-                    accept="video/*"
-                    className="hidden"
-                    onChange={handleVideoUpload}
-                  />
+                  <input id="video-upload-input" type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
                 </div>
 
                 <div>
@@ -821,5 +816,45 @@ export default function NewProductPage() {
 
       <Footer />
     </main>
+  );
+}
+
+function CommissionCalculator({ price, category }: { price: number; category?: string }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["commission-preview", price, category],
+    queryFn:  async () => {
+      const res = await apiClient.post("/commissions/calculate", {
+        amount:   price,
+        category: category || null,
+      });
+      return res.data.data;
+    },
+    enabled:   price > 0,
+    staleTime: 30000,
+  });
+
+  if (isLoading || !data) return null;
+
+  return (
+    <div className="bg-amber-950/20 border border-amber-800/30 rounded-2xl p-4">
+      <p className="text-amber-300 text-xs font-bold uppercase tracking-wide mb-3 flex items-center gap-2">
+        <Info className="w-3.5 h-3.5" /> Commission Preview
+      </p>
+      <div className="space-y-1.5">
+        {[
+          { label: "Product Price",                                    value: `₦${Number(data.commissionable_amount).toLocaleString()}`, color: "text-white" },
+          { label: `Afritide Commission (${data.commission_rate}%)`,   value: `−₦${Number(data.commission_amount).toLocaleString()}`,   color: "text-red-400" },
+          { label: "Estimated Seller Payout",                         value: `₦${Number(data.net_payout).toLocaleString()}`,           color: "text-green-400" },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="flex justify-between items-center py-1 border-b border-white/[0.04] last:border-0">
+            <span className="text-gray-500 text-xs">{label}</span>
+            <span className={`font-bold text-sm ${color}`}>{value}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-gray-700 text-[10px] mt-2">
+        Based on your current seller classification: <span className="text-gray-500">{data.rule_name}</span>
+      </p>
+    </div>
   );
 }
