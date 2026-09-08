@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import toast from "react-hot-toast";
 import apiClient from "@/lib/api/client";
+import { formatPrice } from "@/lib/utils";
 
 const schema = z.object({
   title:                  z.string().min(3, "Title must be at least 3 characters"),
@@ -366,7 +367,7 @@ export default function NewProductPage() {
 
                 {/* Live Commission Calculator */}
                 {watchedPrice > 0 && (
-                  <CommissionCalculator price={watchedPrice} category={watch("category")} />
+                  <CommissionCalculator price={watchedPrice} category={watch("category")} currency={watch("currency")} />
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
@@ -819,7 +820,7 @@ export default function NewProductPage() {
   );
 }
 
-function CommissionCalculator({ price, category }: { price: number; category?: string }) {
+function CommissionCalculator({ price, category, currency = "NGN" }: { price: number; category?: string; currency?: string }) {
   const { data, isLoading } = useQuery({
     queryKey: ["commission-preview", price, category],
     queryFn:  async () => {
@@ -842,9 +843,9 @@ function CommissionCalculator({ price, category }: { price: number; category?: s
       </p>
       <div className="space-y-1.5">
         {[
-          { label: "Product Price",                                    value: `₦${Number(data.commissionable_amount).toLocaleString()}`, color: "text-white" },
-          { label: `Afritide Commission (${data.commission_rate}%)`,   value: `−₦${Number(data.commission_amount).toLocaleString()}`,   color: "text-red-400" },
-          { label: "Estimated Seller Payout",                         value: `₦${Number(data.net_payout).toLocaleString()}`,           color: "text-green-400" },
+          { label: "Product Price",                                    value: formatPrice(data.commissionable_amount, currency), color: "text-white" },
+          { label: `Afritide Commission (${data.commission_rate}%)`,   value: `−${formatPrice(data.commission_amount, currency)}`, color: "text-red-400" },
+          { label: "Estimated Seller Payout",                         value: formatPrice(data.net_payout, currency),            color: "text-green-400" },
         ].map(({ label, value, color }) => (
           <div key={label} className="flex justify-between items-center py-1 border-b border-white/[0.04] last:border-0">
             <span className="text-gray-500 text-xs">{label}</span>

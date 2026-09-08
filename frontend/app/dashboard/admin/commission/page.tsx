@@ -375,13 +375,13 @@ export default function AdminCommissionPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-gray-500 text-xs mb-1 block">Min Amount (NGN)</label>
+                  <label className="text-gray-500 text-xs mb-1 block">Min Transaction Amount</label>
                   <input type="number" value={form.min_amount} onChange={e => setForm({...form, min_amount: e.target.value})}
                     placeholder="0"
                     className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-green-700/50" />
                 </div>
                 <div>
-                  <label className="text-gray-500 text-xs mb-1 block">Max Amount (NGN)</label>
+                  <label className="text-gray-500 text-xs mb-1 block">Max Transaction Amount</label>
                   <input type="number" value={form.max_amount} onChange={e => setForm({...form, max_amount: e.target.value})}
                     placeholder="Unlimited"
                     className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-green-700/50" />
