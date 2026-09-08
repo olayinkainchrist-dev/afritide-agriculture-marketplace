@@ -9,7 +9,7 @@ import {
   CheckCircle2, XCircle, Eye,
   BarChart3, Megaphone, DollarSign,
   ArrowUpRight, RefreshCw, Plus, Loader2,
-  FileText, HeadphonesIcon,
+  FileText, HeadphonesIcon, Wallet,
 } from "lucide-react";
 import { User } from "@/types";
 import { formatPrice, formatNumber, formatDate } from "@/lib/utils";
@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { label: "Announcements", href: "/dashboard/admin/announce",     icon: Megaphone },
   { label: "Analytics",     href: "/dashboard/admin/analytics",    icon: BarChart3 },
   { label: "Reports",       href: "/dashboard/admin/reports",      icon: BarChart3 },
+  { label: "Commission",    href: "/dashboard/admin/commission",   icon: Wallet },
   { label: "Support",       href: "/dashboard/admin/support",      icon: HeadphonesIcon },
 ];
 
