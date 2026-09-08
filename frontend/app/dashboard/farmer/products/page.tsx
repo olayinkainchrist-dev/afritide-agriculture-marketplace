@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Package, ShoppingCart,
   MessageSquare, FileText, BarChart3,
   Plus, Eye, Edit, Trash2, Search,
-  Filter, ChevronDown, Zap, X, Loader2,
+  Filter, ChevronDown, Zap, X, Loader2, Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice, getCategoryLabel, formatDate } from "@/lib/utils";

@@ -9,7 +9,7 @@ import {
   LayoutDashboard, Package, ShoppingCart,
   MessageSquare, FileText, BarChart3,
   ChevronDown, ChevronUp, CheckCircle2,
-  Truck, XCircle, Loader2, Clock,
+  Truck, XCircle, Loader2, Clock, Wallet,
 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";

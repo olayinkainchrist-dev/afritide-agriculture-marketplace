@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import apiClient from "@/lib/api/client";
-import { LayoutDashboard, Package, ShoppingCart, MessageSquare, FileText, BarChart3, TrendingUp, Eye, Star } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, MessageSquare, FileText, BarChart3, TrendingUp, Eye, Star, Wallet } from "lucide-react";
 import { formatPrice, formatNumber } from "@/lib/utils";
 
 const NAV_ITEMS = [

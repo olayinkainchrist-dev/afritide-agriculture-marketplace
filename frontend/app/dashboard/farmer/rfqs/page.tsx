@@ -7,7 +7,7 @@ import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import apiClient from "@/lib/api/client";
 import {
   LayoutDashboard, Package, ShoppingCart,
-  MessageSquare, FileText, BarChart3, X,
+  MessageSquare, FileText, BarChart3, X, Wallet,
 } from "lucide-react";
 import { formatPrice, formatDate } from "@/lib/utils";
 
