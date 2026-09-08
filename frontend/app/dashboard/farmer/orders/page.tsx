@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { label: "Messages",    href: "/dashboard/farmer/messages",  icon: MessageSquare },
   { label: "RFQs",        href: "/dashboard/farmer/rfqs",      icon: FileText },
   { label: "Analytics",   href: "/dashboard/farmer/analytics", icon: BarChart3 },
+  { label: "Commission", href: "/dashboard/farmer/commission", icon: Wallet },
 ];
 
 const STATUS_COLORS: Record<string, string> = {

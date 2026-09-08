@@ -9,19 +9,20 @@ import {
   MessageSquare, FileText, TrendingUp,
   BarChart3, Plus, Eye, Star,
   ArrowUpRight, AlertCircle,
-  Clock, CheckCircle2,
+  Clock, CheckCircle2, Wallet,
 } from "lucide-react";
 import { User } from "@/types";
 import { formatPrice, formatNumber, getCategoryLabel } from "@/lib/utils";
 import Link from "next/link";
 
 const NAV_ITEMS = [
-  { label: "Overview",  href: "/dashboard/farmer",           icon: LayoutDashboard },
-  { label: "Listings",  href: "/dashboard/farmer/products",  icon: Package },
-  { label: "Orders",    href: "/dashboard/farmer/orders",    icon: ShoppingCart },
-  { label: "Messages",  href: "/dashboard/farmer/messages",  icon: MessageSquare },
-  { label: "RFQs",      href: "/dashboard/farmer/rfqs",      icon: FileText },
-  { label: "Analytics", href: "/dashboard/farmer/analytics", icon: BarChart3 },
+  { label: "Overview",    href: "/dashboard/farmer",           icon: LayoutDashboard },
+  { label: "Listings",    href: "/dashboard/farmer/products",  icon: Package },
+  { label: "Orders",      href: "/dashboard/farmer/orders",    icon: ShoppingCart },
+  { label: "Messages",    href: "/dashboard/farmer/messages",  icon: MessageSquare },
+  { label: "RFQs",        href: "/dashboard/farmer/rfqs",      icon: FileText },
+  { label: "Analytics",   href: "/dashboard/farmer/analytics", icon: BarChart3 },
+  { label: "Commission",  href: "/dashboard/farmer/commission", icon: Wallet },
 ];
 
 const PRODUCT_SELLER_ROLES = ["FARMER", "COOPERATIVE", "EXPORTER"];
