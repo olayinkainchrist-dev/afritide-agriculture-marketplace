@@ -12,12 +12,12 @@ import {
 import { formatPrice } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { label: "Overview",    href: "/dashboard/farmer",          icon: LayoutDashboard },
-  { label: "Products",    href: "/dashboard/farmer/products", icon: Package },
-  { label: "Orders",      href: "/dashboard/farmer/orders",   icon: ShoppingBag },
-  { label: "Messages",    href: "/dashboard/farmer/messages", icon: MessageSquare },
-  { label: "Analytics",   href: "/dashboard/farmer/analytics",icon: BarChart2 },
-  { label: "Commission",  href: "/dashboard/farmer/commission",icon: Wallet },
+  { label: "Overview",    href: "/dashboard/farmer",            icon: LayoutDashboard },
+  { label: "Products",    href: "/dashboard/farmer/products",   icon: Package },
+  { label: "Orders",      href: "/dashboard/farmer/orders",     icon: ShoppingBag },
+  { label: "Messages",    href: "/dashboard/farmer/messages",   icon: MessageSquare },
+  { label: "Analytics",   href: "/dashboard/farmer/analytics",  icon: BarChart2 },
+  { label: "Commission",  href: "/dashboard/farmer/commission", icon: Wallet },
 ];
 
 export default function CommissionPage() {
