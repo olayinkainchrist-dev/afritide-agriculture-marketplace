@@ -7,7 +7,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from typing import Optional
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 import uuid
+import uuid as uuid_lib
+import logging
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_pagination, PaginationParams
@@ -17,6 +20,7 @@ from app.models.product import Product, ProductStatus
 from app.schemas.common import OrderCreateSchema, OrderUpdateSchema, OrderResponseSchema
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def generate_order_number():
@@ -54,6 +58,37 @@ async def create_order(
         subtotal   += total_price
         order_items.append((product, item.quantity, product.price, total_price))
 
+    # Get seller role before creating order
+    from app.models.user import User as UserModel
+    seller = db.query(UserModel).filter(UserModel.id == seller_id).first()
+    seller_role = seller.role.value if seller else "FARMER"
+
+    # Calculate commission inline
+    from app.services.commission_service import get_seller_commission_rate
+    from app.models.commission import TransactionFee, SellerPayout
+
+    subtotal_dec = Decimal(str(subtotal))
+    commission_amount = Decimal("0")
+    net_amount        = subtotal_dec
+    rate              = Decimal("0")
+    rule_uuid         = None
+
+    try:
+        rate, rule_name, rule_id = get_seller_commission_rate(
+            seller_id        = str(seller_id),
+            seller_role      = seller_role,
+            amount           = subtotal_dec,
+            db               = db,
+        )
+        commission_amount = (subtotal_dec * rate / Decimal("100")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        net_amount = subtotal_dec - commission_amount
+        rule_uuid  = uuid_lib.UUID(rule_id) if rule_id else None
+        logger.info(f"Commission calculated: {float(commission_amount)} {payload.currency} at {float(rate)}%")
+    except Exception as e:
+        logger.error(f"Commission calculation error: {e}")
+
     order = Order(
         order_number    = generate_order_number(),
         buyer_id        = current_user.id,
@@ -61,6 +96,7 @@ async def create_order(
         status          = OrderStatus.PENDING,
         subtotal        = subtotal,
         total_amount    = subtotal,
+        platform_fee    = float(commission_amount),
         currency        = payload.currency,
         shipping_address= payload.shipping_address,
         shipping_method = payload.shipping_method,
@@ -83,18 +119,38 @@ async def create_order(
         product.quantity_available -= quantity
         product.order_count        += 1
 
+    # Record transaction fee inline
+    try:
+        fee = TransactionFee(
+            order_id        = order.id,
+            seller_id       = seller_id,
+            fee_type        = "COMMISSION",
+            rate_percentage = rate,
+            base_amount     = subtotal_dec,
+            fee_amount      = commission_amount,
+            currency        = payload.currency,
+            rule_id         = rule_uuid,
+        )
+        db.add(fee)
+
+        payout = SellerPayout(
+            seller_id         = seller_id,
+            order_id          = order.id,
+            gross_amount      = subtotal_dec,
+            commission_rate   = rate,
+            commission_amount = commission_amount,
+            logistics_fee     = Decimal("0"),
+            net_amount        = net_amount,
+            currency          = payload.currency,
+            payout_status     = "PENDING",
+        )
+        db.add(payout)
+        logger.info(f"Commission records added for order {order.id}")
+    except Exception as e:
+        logger.error(f"Failed to add commission records: {e}")
+
     db.commit()
     db.refresh(order)
-
-    # Record commission based on seller's role
-    try:
-        from app.services.commission_service import record_order_commission
-        from app.models.user import User as UserModel
-        seller = db.query(UserModel).filter(UserModel.id == order.seller_id).first()
-        seller_role = seller.role.value if seller else "FARMER"
-        record_order_commission(order, seller_role, db)
-    except Exception:
-        pass  # Never fail order creation due to commission error
 
     return success_response(
         data       = OrderResponseSchema.from_orm(order).dict(),
