@@ -61,7 +61,7 @@ async def create_order(
     # Get seller role before creating order
     from app.models.user import User as UserModel
     seller = db.query(UserModel).filter(UserModel.id == seller_id).first()
-    seller_role = seller.role.value if seller else "FARMER"
+    seller_role = seller.role.value.upper() if seller else "FARMER"
 
     # Calculate commission inline
     from app.services.commission_service import get_seller_commission_rate
