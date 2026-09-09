@@ -7,12 +7,16 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.orm import Session
+import uuid
+import logging
 
 from app.models.commission import (
     SellerCommissionRule, SellerCommissionProfile,
     TransactionFee, SellerPayout,
 )
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 
 def get_seller_commission_rate(
@@ -35,8 +39,8 @@ def get_seller_commission_rate(
 
     # 1. Check seller-specific negotiated rate
     profile = db.query(SellerCommissionProfile).filter(
-        SellerCommissionProfile.seller_id  == seller_id,
-        SellerCommissionProfile.is_active  == True,
+        SellerCommissionProfile.seller_id     == seller_id,
+        SellerCommissionProfile.is_active     == True,
         SellerCommissionProfile.effective_from <= now,
     ).filter(
         (SellerCommissionProfile.effective_until == None) |
@@ -48,7 +52,7 @@ def get_seller_commission_rate(
 
     # 2. Find best matching rule by priority (highest priority wins)
     rules = db.query(SellerCommissionRule).filter(
-        SellerCommissionRule.is_active     == True,
+        SellerCommissionRule.is_active      == True,
         SellerCommissionRule.effective_from <= now,
     ).filter(
         (SellerCommissionRule.effective_until == None) |
@@ -62,15 +66,9 @@ def get_seller_commission_rate(
     ).order_by(SellerCommissionRule.priority.desc()).all()
 
     for rule in rules:
-        # Check seller type match
-        if rule.seller_type and rule.seller_type != seller_role:
-            continue
-        # Check transaction type match
-        if rule.transaction_type and rule.transaction_type != transaction_type:
-            continue
-        # Check category match
-        if rule.category and rule.category != category:
-            continue
+        if rule.seller_type      and rule.seller_type      != seller_role:       continue
+        if rule.transaction_type and rule.transaction_type != transaction_type:   continue
+        if rule.category         and rule.category         != category:           continue
         return Decimal(str(rule.rate_percentage)), rule.name, str(rule.id)
 
     # 3. Default fallback
@@ -84,6 +82,7 @@ def calculate_commission(
     shipping_cost: Decimal = Decimal("0"),
     category: Optional[str] = None,
     transaction_type: Optional[str] = None,
+    currency: str = "NGN",
     db: Session = None,
 ) -> dict:
     """
@@ -111,7 +110,7 @@ def calculate_commission(
         "net_payout":            float(net_payout),
         "rule_name":             rule_name,
         "rule_id":               rule_id,
-        "currency":              "NGN",
+        "currency":              currency,
     }
 
 
@@ -120,62 +119,73 @@ def record_order_commission(order, seller_role: str, db: Session):
     Called when order is created. Records commission and payout.
     Idempotent — safe to call multiple times.
     """
-    from decimal import Decimal
+    try:
+        # Check if already recorded
+        existing = db.query(SellerPayout).filter(
+            SellerPayout.order_id == order.id
+        ).first()
+        if existing:
+            logger.info(f"Commission already recorded for order {order.id}")
+            return existing
 
-    # Check if already recorded
-    existing = db.query(SellerPayout).filter(
-        SellerPayout.order_id == order.id
-    ).first()
-    if existing:
-        return existing
+        subtotal      = Decimal(str(order.subtotal))
+        shipping_cost = Decimal(str(order.shipping_cost or 0))
 
-    subtotal      = Decimal(str(order.subtotal))
-    shipping_cost = Decimal(str(order.shipping_cost or 0))
-    category      = None  # Can be extended to pass category
+        logger.info(f"Recording commission for order {order.id}, seller_role={seller_role}, subtotal={subtotal}, currency={order.currency}")
 
-    breakdown = calculate_commission(
-        seller_id        = str(order.seller_id),
-        seller_role      = seller_role,
-        subtotal         = subtotal,
-        shipping_cost    = shipping_cost,
-        category         = category,
-        transaction_type = "B2C",
-        db               = db,
-    )
+        breakdown = calculate_commission(
+            seller_id        = str(order.seller_id),
+            seller_role      = seller_role,
+            subtotal         = subtotal,
+            shipping_cost    = shipping_cost,
+            category         = None,
+            transaction_type = "B2C",
+            currency         = order.currency,
+            db               = db,
+        )
 
-    commission_amount = Decimal(str(breakdown["commission_amount"]))
-    net_amount        = Decimal(str(breakdown["net_payout"]))
-    rate              = Decimal(str(breakdown["commission_rate"]))
+        logger.info(f"Commission breakdown: {breakdown}")
 
-    # Update order platform_fee
-    order.platform_fee = float(commission_amount)
+        commission_amount = Decimal(str(breakdown["commission_amount"]))
+        net_amount        = Decimal(str(breakdown["net_payout"]))
+        rate              = Decimal(str(breakdown["commission_rate"]))
+        rule_id           = uuid.UUID(breakdown["rule_id"]) if breakdown["rule_id"] else None
 
-    # Record transaction fee
-    fee = TransactionFee(
-        order_id        = order.id,
-        seller_id       = order.seller_id,
-        fee_type        = "COMMISSION",
-        rate_percentage = rate,
-        base_amount     = subtotal,
-        fee_amount      = commission_amount,
-        currency        = order.currency,
-        rule_id         = breakdown["rule_id"],
-    )
-    db.add(fee)
+        # Update order platform_fee
+        order.platform_fee = float(commission_amount)
 
-    # Record seller payout
-    payout = SellerPayout(
-        seller_id         = order.seller_id,
-        order_id          = order.id,
-        gross_amount      = subtotal,
-        commission_rate   = rate,
-        commission_amount = commission_amount,
-        logistics_fee     = shipping_cost,
-        net_amount        = net_amount,
-        currency          = order.currency,
-        payout_status     = "PENDING",
-    )
-    db.add(payout)
-    db.commit()
+        # Record transaction fee
+        fee = TransactionFee(
+            order_id        = order.id,
+            seller_id       = order.seller_id,
+            fee_type        = "COMMISSION",
+            rate_percentage = rate,
+            base_amount     = subtotal,
+            fee_amount      = commission_amount,
+            currency        = order.currency,
+            rule_id         = rule_id,
+        )
+        db.add(fee)
 
-    return payout
+        # Record seller payout
+        payout = SellerPayout(
+            seller_id         = order.seller_id,
+            order_id          = order.id,
+            gross_amount      = subtotal,
+            commission_rate   = rate,
+            commission_amount = commission_amount,
+            logistics_fee     = shipping_cost,
+            net_amount        = net_amount,
+            currency          = order.currency,
+            payout_status     = "PENDING",
+        )
+        db.add(payout)
+        db.commit()
+
+        logger.info(f"Commission recorded successfully for order {order.id}: {float(commission_amount)} {order.currency}")
+        return payout
+
+    except Exception as e:
+        logger.error(f"Failed to record commission for order {order.id}: {e}")
+        db.rollback()
+        raise
