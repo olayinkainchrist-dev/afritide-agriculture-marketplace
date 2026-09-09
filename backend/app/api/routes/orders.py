@@ -86,10 +86,13 @@ async def create_order(
     db.commit()
     db.refresh(order)
 
-    # Record commission
+    # Record commission based on seller's role
     try:
         from app.services.commission_service import record_order_commission
-        record_order_commission(order, current_user.role.value, db)
+        from app.models.user import User as UserModel
+        seller = db.query(UserModel).filter(UserModel.id == order.seller_id).first()
+        seller_role = seller.role.value if seller else "FARMER"
+        record_order_commission(order, seller_role, db)
     except Exception:
         pass  # Never fail order creation due to commission error
 
