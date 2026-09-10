@@ -74,12 +74,14 @@ async def create_order(
     rule_uuid         = None
 
     try:
+        logger.info(f"Getting commission rate for seller_id={seller_id}, seller_role={seller_role}, amount={subtotal_dec}")
         rate, rule_name, rule_id = get_seller_commission_rate(
             seller_id        = str(seller_id),
             seller_role      = seller_role,
             amount           = subtotal_dec,
             db               = db,
         )
+        logger.info(f"Commission rate: {rate}% ({rule_name}) rule_id={rule_id}")
         commission_amount = (subtotal_dec * rate / Decimal("100")).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
