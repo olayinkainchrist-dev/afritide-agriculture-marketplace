@@ -81,15 +81,12 @@ async def create_order(
     from app.models.user import User as UserModel
     seller = db.query(UserModel).filter(UserModel.id == seller_id).first()
     seller_role = str(seller.role.value).strip().upper() if seller else "FARMER"
-    logger.info(f"SELLER ROLE RAW: '{seller_role}' type={type(seller_role)}")
-    
-    from app.models.commission import TransactionFee, SellerPayout
+    logger.info(f"SELLER ROLE RAW: '{seller_role}'")
 
     subtotal_dec      = Decimal(str(subtotal))
     commission_amount = Decimal("0")
     net_amount        = subtotal_dec
     rate              = Decimal("0")
-    rule_uuid         = None
 
     try:
         rate, rule_name, rule_id = get_commission_rate_direct(seller_role, subtotal_dec, db)
@@ -98,7 +95,6 @@ async def create_order(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
         net_amount = subtotal_dec - commission_amount
-        rule_uuid  = uuid_lib.UUID(rule_id) if rule_id else None
     except Exception as e:
         logger.error(f"Commission calculation error: {e}")
 
@@ -132,34 +128,41 @@ async def create_order(
         product.quantity_available -= quantity
         product.order_count        += 1
 
-    # Record commission inline
+    # Record commission via direct SQL — bypasses ORM type/constraint issues
     try:
-        fee = TransactionFee(
-            order_id        = order.id,
-            seller_id       = seller_id,
-            fee_type        = "COMMISSION",
-            rate_percentage = rate,
-            base_amount     = subtotal_dec,
-            fee_amount      = commission_amount,
-            currency        = payload.currency,
-            rule_id         = rule_uuid,
-        )
-        db.add(fee)
+        db.execute(text("""
+            INSERT INTO transaction_fees
+                (id, order_id, seller_id, fee_type, rate_percentage, base_amount, fee_amount, currency)
+            VALUES
+                (gen_random_uuid(), :order_id, :seller_id, 'COMMISSION', :rate, :base, :fee, :currency)
+        """), {
+            "order_id":  str(order.id),
+            "seller_id": str(seller_id),
+            "rate":      float(rate),
+            "base":      float(subtotal_dec),
+            "fee":       float(commission_amount),
+            "currency":  payload.currency,
+        })
 
-        payout = SellerPayout(
-            seller_id         = seller_id,
-            order_id          = order.id,
-            gross_amount      = subtotal_dec,
-            commission_rate   = rate,
-            commission_amount = commission_amount,
-            logistics_fee     = Decimal("0"),
-            net_amount        = net_amount,
-            currency          = payload.currency,
-            payout_status     = "PENDING",
-        )
-        db.add(payout)
+        db.execute(text("""
+            INSERT INTO seller_payouts
+                (id, seller_id, order_id, gross_amount, commission_rate, commission_amount,
+                 logistics_fee, net_amount, currency, payout_status)
+            VALUES
+                (gen_random_uuid(), :seller_id, :order_id, :gross, :rate, :commission,
+                 0, :net, :currency, 'PENDING')
+        """), {
+            "seller_id":  str(seller_id),
+            "order_id":   str(order.id),
+            "gross":      float(subtotal_dec),
+            "rate":       float(rate),
+            "commission": float(commission_amount),
+            "net":        float(net_amount),
+            "currency":   payload.currency,
+        })
+        logger.info(f"Commission records saved for order {order.id} at {float(rate)}%")
     except Exception as e:
-        logger.error(f"Failed to add commission records: {e}")
+        logger.error(f"Failed to save commission records: {e}")
 
     db.commit()
     db.refresh(order)
