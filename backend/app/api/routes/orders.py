@@ -128,7 +128,10 @@ async def create_order(
         product.quantity_available -= quantity
         product.order_count        += 1
 
-    # Record commission via direct SQL — bypasses ORM type/constraint issues
+    db.commit()
+    db.refresh(order)
+
+    # Record commission via direct SQL AFTER order is committed
     try:
         db.execute(text("""
             INSERT INTO transaction_fees
@@ -160,12 +163,10 @@ async def create_order(
             "net":        float(net_amount),
             "currency":   payload.currency,
         })
-        logger.info(f"Commission records saved for order {order.id} at {float(rate)}%")
+        db.commit()
+        logger.info(f"Commission saved for order {order.id} at {float(rate)}%")
     except Exception as e:
-        logger.error(f"Failed to save commission records: {e}")
-
-    db.commit()
-    db.refresh(order)
+        logger.error(f"Commission insert failed: {e}")
 
     return success_response(
         data        = OrderResponseSchema.from_orm(order).dict(),
