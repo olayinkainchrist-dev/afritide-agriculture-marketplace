@@ -50,28 +50,40 @@ def get_seller_commission_rate(
     if profile:
         return Decimal(str(profile.custom_rate)), "Negotiated Rate", None
 
-    # 2. Find best matching rule by priority (highest priority wins)
+    # 2. Find best matching rule by priority — fetch all active rules, filter in Python
     rules = db.query(SellerCommissionRule).filter(
         SellerCommissionRule.is_active      == True,
         SellerCommissionRule.effective_from <= now,
     ).filter(
         (SellerCommissionRule.effective_until == None) |
         (SellerCommissionRule.effective_until >= now)
-    ).filter(
-        (SellerCommissionRule.min_amount == None) |
-        (SellerCommissionRule.min_amount <= amount)
-    ).filter(
-        (SellerCommissionRule.max_amount == None) |
-        (SellerCommissionRule.max_amount >= amount)
     ).order_by(SellerCommissionRule.priority.desc()).all()
 
+    logger.info(f"Found {len(rules)} active commission rules for seller_role={seller_role}, amount={amount}")
+
     for rule in rules:
-        if rule.seller_type      and rule.seller_type      != seller_role:       continue
-        if rule.transaction_type and rule.transaction_type != transaction_type:   continue
-        if rule.category         and rule.category         != category:           continue
+        # Amount range check in Python to avoid Decimal/Numeric type issues
+        if rule.min_amount is not None and Decimal(str(rule.min_amount)) > amount:
+            logger.info(f"Rule {rule.name} skipped: min_amount {rule.min_amount} > {amount}")
+            continue
+        if rule.max_amount is not None and Decimal(str(rule.max_amount)) < amount:
+            logger.info(f"Rule {rule.name} skipped: max_amount {rule.max_amount} < {amount}")
+            continue
+        # Seller type check
+        if rule.seller_type and rule.seller_type != seller_role:
+            logger.info(f"Rule {rule.name} skipped: seller_type {rule.seller_type} != {seller_role}")
+            continue
+        # Transaction type check
+        if rule.transaction_type and rule.transaction_type != transaction_type:
+            continue
+        # Category check
+        if rule.category and rule.category != category:
+            continue
+        logger.info(f"Rule matched: {rule.name} at {rule.rate_percentage}%")
         return Decimal(str(rule.rate_percentage)), rule.name, str(rule.id)
 
     # 3. Default fallback
+    logger.info("No rule matched, using default 5%")
     return Decimal("5.00"), "Standard Marketplace Rate", None
 
 
