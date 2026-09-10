@@ -80,8 +80,9 @@ async def create_order(
     # Get seller role
     from app.models.user import User as UserModel
     seller = db.query(UserModel).filter(UserModel.id == seller_id).first()
-    seller_role = seller.role.value.upper() if seller else "FARMER"
-
+    seller_role = str(seller.role.value).strip().upper() if seller else "FARMER"
+    logger.info(f"SELLER ROLE RAW: '{seller_role}' type={type(seller_role)}")
+    
     from app.models.commission import TransactionFee, SellerPayout
 
     subtotal_dec      = Decimal(str(subtotal))
