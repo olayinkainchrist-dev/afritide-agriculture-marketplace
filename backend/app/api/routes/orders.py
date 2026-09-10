@@ -4,7 +4,7 @@ Afritide - Orders Routes
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, text
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
@@ -25,6 +25,25 @@ logger = logging.getLogger(__name__)
 
 def generate_order_number():
     return f"AFT-{uuid.uuid4().hex[:8].upper()}"
+
+
+def get_commission_rate_direct(seller_role: str, amount: Decimal, db: Session):
+    """Direct SQL commission lookup — bypasses ORM type issues."""
+    result = db.execute(text("""
+        SELECT name, rate_percentage, id::text
+        FROM seller_commission_rules
+        WHERE is_active = true
+          AND (effective_until IS NULL OR effective_until >= NOW())
+          AND (min_amount IS NULL OR min_amount <= :amount)
+          AND (max_amount IS NULL OR max_amount >= :amount)
+          AND (seller_type IS NULL OR seller_type = :role)
+        ORDER BY priority DESC
+        LIMIT 1
+    """), {"role": seller_role, "amount": float(amount)}).fetchone()
+
+    if result:
+        return Decimal(str(result[1])), result[0], result[2]
+    return Decimal("5.00"), "Standard Marketplace Rate", None
 
 
 @router.post("", summary="Place a new order")
@@ -58,51 +77,42 @@ async def create_order(
         subtotal   += total_price
         order_items.append((product, item.quantity, product.price, total_price))
 
-    # Get seller role before creating order
+    # Get seller role
     from app.models.user import User as UserModel
     seller = db.query(UserModel).filter(UserModel.id == seller_id).first()
     seller_role = seller.role.value.upper() if seller else "FARMER"
 
-    # Calculate commission inline
-    from app.services.commission_service import get_seller_commission_rate
     from app.models.commission import TransactionFee, SellerPayout
 
-    subtotal_dec = Decimal(str(subtotal))
+    subtotal_dec      = Decimal(str(subtotal))
     commission_amount = Decimal("0")
     net_amount        = subtotal_dec
     rate              = Decimal("0")
     rule_uuid         = None
 
     try:
-        logger.info(f"Getting commission rate for seller_id={seller_id}, seller_role={seller_role}, amount={subtotal_dec}")
-        rate, rule_name, rule_id = get_seller_commission_rate(
-            seller_id        = str(seller_id),
-            seller_role      = seller_role,
-            amount           = subtotal_dec,
-            db               = db,
-        )
-        logger.info(f"Commission rate: {rate}% ({rule_name}) rule_id={rule_id}")
+        rate, rule_name, rule_id = get_commission_rate_direct(seller_role, subtotal_dec, db)
+        logger.info(f"Commission: seller_role={seller_role}, rate={rate}%, rule={rule_name}")
         commission_amount = (subtotal_dec * rate / Decimal("100")).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
         net_amount = subtotal_dec - commission_amount
         rule_uuid  = uuid_lib.UUID(rule_id) if rule_id else None
-        logger.info(f"Commission calculated: {float(commission_amount)} {payload.currency} at {float(rate)}%")
     except Exception as e:
         logger.error(f"Commission calculation error: {e}")
 
     order = Order(
-        order_number    = generate_order_number(),
-        buyer_id        = current_user.id,
-        seller_id       = seller_id,
-        status          = OrderStatus.PENDING,
-        subtotal        = subtotal,
-        total_amount    = subtotal,
-        platform_fee    = float(commission_amount),
-        currency        = payload.currency,
-        shipping_address= payload.shipping_address,
-        shipping_method = payload.shipping_method,
-        buyer_notes     = payload.buyer_notes,
+        order_number     = generate_order_number(),
+        buyer_id         = current_user.id,
+        seller_id        = seller_id,
+        status           = OrderStatus.PENDING,
+        subtotal         = subtotal,
+        total_amount     = subtotal,
+        platform_fee     = float(commission_amount),
+        currency         = payload.currency,
+        shipping_address = payload.shipping_address,
+        shipping_method  = payload.shipping_method,
+        buyer_notes      = payload.buyer_notes,
     )
     db.add(order)
     db.flush()
@@ -121,7 +131,7 @@ async def create_order(
         product.quantity_available -= quantity
         product.order_count        += 1
 
-    # Record transaction fee inline
+    # Record commission inline
     try:
         fee = TransactionFee(
             order_id        = order.id,
@@ -147,7 +157,6 @@ async def create_order(
             payout_status     = "PENDING",
         )
         db.add(payout)
-        logger.info(f"Commission records added for order {order.id}")
     except Exception as e:
         logger.error(f"Failed to add commission records: {e}")
 
@@ -155,9 +164,9 @@ async def create_order(
     db.refresh(order)
 
     return success_response(
-        data       = OrderResponseSchema.from_orm(order).dict(),
-        message    = "Order placed successfully",
-        status_code= 201,
+        data        = OrderResponseSchema.from_orm(order).dict(),
+        message     = "Order placed successfully",
+        status_code = 201,
     )
 
 
@@ -254,18 +263,16 @@ async def update_order_status(
             order.shipped_at = datetime.utcnow()
         elif payload.status == OrderStatus.COMPLETED:
             order.completed_at = datetime.utcnow()
-            # Increment seller's total sales count
             from app.models.user import User
             seller = db.query(User).filter(User.id == order.seller_id).first()
             if seller:
                 seller.total_sales = (seller.total_sales or 0) + 1
 
-            # Process referral commission
             try:
                 from app.api.routes.referrals import process_order_commission
                 process_order_commission(order.id, db)
             except Exception:
-                pass  # Never fail order update due to commission error
+                pass
 
         elif payload.status == OrderStatus.CANCELLED:
             order.cancelled_at = datetime.utcnow()
@@ -280,7 +287,6 @@ async def update_order_status(
     db.commit()
     db.refresh(order)
 
-    # Email buyer on status change
     try:
         from app.services.email import send_order_status_email
         from app.models.user import User
@@ -297,6 +303,6 @@ async def update_order_status(
         pass
 
     return success_response(
-        data   = OrderResponseSchema.from_orm(order).dict(),
-        message= "Order updated successfully",
+        data    = OrderResponseSchema.from_orm(order).dict(),
+        message = "Order updated successfully",
     )
