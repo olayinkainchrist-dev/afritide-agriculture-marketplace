@@ -24,11 +24,11 @@ logger = logging.getLogger(__name__)
 
 
 def generate_order_number():
-    return f"AFT-{uuid.uuid4().hex[:8].upper()}"
+    return f"AFR-{uuid.uuid4().hex[:8].upper()}"
 
 
 def get_commission_rate_direct(seller_role: str, amount: Decimal, db: Session):
-    """Direct SQL commission lookup — bypasses ORM type issues."""
+    """Direct SQL commission lookup."""
     result = db.execute(text("""
         SELECT name, rate_percentage, id::text
         FROM seller_commission_rules
@@ -81,7 +81,7 @@ async def create_order(
     from app.models.user import User as UserModel
     seller = db.query(UserModel).filter(UserModel.id == seller_id).first()
     seller_role = str(seller.role.value).strip().upper() if seller else "FARMER"
-    logger.info(f"SELLER ROLE RAW: '{seller_role}'")
+    logger.info(f"Order creation: seller_role='{seller_role}', subtotal={subtotal}")
 
     subtotal_dec      = Decimal(str(subtotal))
     commission_amount = Decimal("0")
@@ -90,11 +90,7 @@ async def create_order(
 
     try:
         rate, rule_name, rule_id = get_commission_rate_direct(seller_role, subtotal_dec, db)
-        # Temporary override to verify pipeline - remove after testing
-        if seller_role == "FARMER":
-            rate = Decimal("3.00")
-            rule_name = "Verified Smallholder Farmer (override)"
-        logger.info(f"Commission: seller_role={seller_role}, rate={rate}%, rule={rule_name}")
+        logger.info(f"Commission rate: {rate}% ({rule_name}) for role={seller_role}")
         commission_amount = (subtotal_dec * rate / Decimal("100")).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
         )
@@ -135,7 +131,7 @@ async def create_order(
     db.commit()
     db.refresh(order)
 
-    # Record commission via direct SQL AFTER order is committed
+    # Record commission via direct SQL after order is committed
     try:
         db.execute(text("""
             INSERT INTO transaction_fees
@@ -168,7 +164,7 @@ async def create_order(
             "currency":   payload.currency,
         })
         db.commit()
-        logger.info(f"Commission saved for order {order.id} at {float(rate)}%")
+        logger.info(f"Commission saved: order={order.id} rate={float(rate)}% amount={float(commission_amount)}")
     except Exception as e:
         logger.error(f"Commission insert failed: {e}")
 
@@ -314,5 +310,4 @@ async def update_order_status(
     return success_response(
         data    = OrderResponseSchema.from_orm(order).dict(),
         message = "Order updated successfully",
-    )#   f o r c e   r e d e p l o y  
- 
+    )
