@@ -35,48 +35,66 @@ def get_or_create_cart(user_id: uuid.UUID, db: Session) -> Cart:
     return cart
 
 
+def get_bulk_price(product: Product, quantity: float) -> float:
+    """Return the applicable price for the given quantity, considering bulk tiers."""
+    if not product.price_tiers:
+        return product.price
+    for tier in sorted(product.price_tiers, key=lambda t: t.get("min_qty", 0), reverse=True):
+        min_qty = tier.get("min_qty", 0)
+        max_qty = tier.get("max_qty")
+        if quantity >= min_qty:
+            if max_qty is None or quantity <= max_qty:
+                return tier.get("price", product.price)
+    return product.price
+
+
 def serialize_cart(cart: Cart, db: Session) -> dict:
-    items = []
+    items    = []
     subtotal = 0.0
 
     for item in cart.items:
         product = db.query(Product).filter(Product.id == item.product_id).first()
         if not product:
             continue
-        item_total = product.price * item.quantity
-        subtotal += item_total
+
+        unit_price = get_bulk_price(product, item.quantity)
+        item_total = unit_price * item.quantity
+        subtotal  += item_total
+
         items.append({
-            "id":          str(item.id),
-            "product_id":  str(product.id),
-            "title":       product.title,
-            "main_image":  product.main_image,
-            "price":       product.price,
-            "currency":    product.currency,
-            "unit":        product.unit,
-            "quantity":    item.quantity,
-            "item_total":  item_total,
-            "seller_id":   str(product.seller_id),
-            "min_order":   product.minimum_order_quantity,
-            "max_order":   product.quantity_available,
-            "country":     product.country,
-            "is_organic":  product.is_organic,
+            "id":             str(item.id),
+            "product_id":     str(product.id),
+            "title":          product.title,
+            "main_image":     product.main_image,
+            "price":          unit_price,
+            "base_price":     product.price,
+            "currency":       product.currency,
+            "unit":           product.unit,
+            "quantity":       item.quantity,
+            "item_total":     item_total,
+            "seller_id":      str(product.seller_id),
+            "min_order":      product.minimum_order_quantity,
+            "max_order":      product.quantity_available,
+            "country":        product.country,
+            "is_organic":     product.is_organic,
             "category":       product.category,
             "weight_per_unit":product.weight_per_unit,
             "seller_state":   product.state,
+            "price_tiers":    product.price_tiers,
         })
 
     return {
-        "id":        str(cart.id),
-        "items":     items,
-        "subtotal":  subtotal,
+        "id":         str(cart.id),
+        "items":      items,
+        "subtotal":   subtotal,
         "item_count": len(items),
     }
 
 
 @router.get("", summary="Get current user's cart")
 async def get_cart(
-    current_user=Depends(get_current_user),
-    db: Session = Depends(get_db),
+    current_user= Depends(get_current_user),
+    db: Session  = Depends(get_db),
 ):
     cart = get_or_create_cart(current_user.id, db)
     return success_response(data=serialize_cart(cart, db))
@@ -89,7 +107,7 @@ async def add_to_cart(
     db:           Session = Depends(get_db),
 ):
     product = db.query(Product).filter(
-        Product.id == payload.product_id,
+        Product.id     == payload.product_id,
         Product.status == ProductStatus.ACTIVE,
     ).first()
 
@@ -108,15 +126,13 @@ async def add_to_cart(
             detail=f"Only {product.quantity_available} {product.unit} available"
         )
 
-    # Can't buy your own product
     if product.seller_id == current_user.id:
         raise HTTPException(status_code=400, detail="You cannot buy your own product")
 
     cart = get_or_create_cart(current_user.id, db)
 
-    # Check if item already in cart
     existing = db.query(CartItem).filter(
-        CartItem.cart_id == cart.id,
+        CartItem.cart_id    == cart.id,
         CartItem.product_id == payload.product_id,
     ).first()
 
@@ -126,16 +142,16 @@ async def add_to_cart(
         db.refresh(existing)
     else:
         item = CartItem(
-            cart_id=cart.id,
-            product_id=payload.product_id,
-            quantity=payload.quantity,
+            cart_id    = cart.id,
+            product_id = payload.product_id,
+            quantity   = payload.quantity,
         )
         db.add(item)
         db.commit()
 
     return success_response(
-        data=serialize_cart(cart, db),
-        message="Item added to cart",
+        data    = serialize_cart(cart, db),
+        message = "Item added to cart",
     )
 
 
@@ -148,7 +164,7 @@ async def update_cart_item(
 ):
     cart = get_or_create_cart(current_user.id, db)
     item = db.query(CartItem).filter(
-        CartItem.id == item_id,
+        CartItem.id      == item_id,
         CartItem.cart_id == cart.id,
     ).first()
 
@@ -166,8 +182,8 @@ async def update_cart_item(
     db.commit()
 
     return success_response(
-        data=serialize_cart(cart, db),
-        message="Cart updated",
+        data    = serialize_cart(cart, db),
+        message = "Cart updated",
     )
 
 
@@ -179,7 +195,7 @@ async def remove_from_cart(
 ):
     cart = get_or_create_cart(current_user.id, db)
     item = db.query(CartItem).filter(
-        CartItem.id == item_id,
+        CartItem.id      == item_id,
         CartItem.cart_id == cart.id,
     ).first()
 
@@ -190,8 +206,8 @@ async def remove_from_cart(
     db.commit()
 
     return success_response(
-        data=serialize_cart(cart, db),
-        message="Item removed from cart",
+        data    = serialize_cart(cart, db),
+        message = "Item removed from cart",
     )
 
 

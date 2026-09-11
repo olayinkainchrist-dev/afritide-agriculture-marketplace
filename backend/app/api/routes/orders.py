@@ -73,9 +73,19 @@ async def create_order(
             raise HTTPException(status_code=400, detail="All products must be from the same seller")
         seller_id = product.seller_id
 
-        total_price = product.price * item.quantity
+        # Apply bulk pricing
+        unit_price = product.price
+        if product.price_tiers:
+            for tier in sorted(product.price_tiers, key=lambda t: t.get("min_qty", 0), reverse=True):
+                min_qty = tier.get("min_qty", 0)
+                max_qty = tier.get("max_qty")
+                if item.quantity >= min_qty:
+                    if max_qty is None or item.quantity <= max_qty:
+                        unit_price = tier.get("price", product.price)
+                        break
+        total_price = unit_price * item.quantity
         subtotal   += total_price
-        order_items.append((product, item.quantity, product.price, total_price))
+        order_items.append((product, item.quantity, unit_price, total_price))
 
     # Get seller role
     from app.models.user import User as UserModel
