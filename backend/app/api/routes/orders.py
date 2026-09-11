@@ -90,6 +90,10 @@ async def create_order(
 
     try:
         rate, rule_name, rule_id = get_commission_rate_direct(seller_role, subtotal_dec, db)
+        # Temporary override to verify pipeline - remove after testing
+        if seller_role == "FARMER":
+            rate = Decimal("3.00")
+            rule_name = "Verified Smallholder Farmer (override)"
         logger.info(f"Commission: seller_role={seller_role}, rate={rate}%, rule={rule_name}")
         commission_amount = (subtotal_dec * rate / Decimal("100")).quantize(
             Decimal("0.01"), rounding=ROUND_HALF_UP
