@@ -158,6 +158,17 @@ export default function AdminCommissionPage() {
     }
   };
 
+  const handlePayoutAction = async (payoutId: string, action: string) => {
+    try {
+      await apiClient.put(`/commissions/admin/payouts/${payoutId}/action`, { action });
+      toast.success("Payout updated");
+      queryClient.invalidateQueries({ queryKey: ["admin-commission-payouts"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-commission-overview"] });
+    } catch {
+      toast.error("Failed to update payout");
+    }
+  };
+
   const handleSellerRate = async () => {
     if (!sellerForm.seller_id || !sellerForm.custom_rate) {
       toast.error("Seller ID and rate are required"); return;
@@ -297,11 +308,20 @@ export default function AdminCommissionPage() {
                       <td className="px-5 py-3 text-gray-400">{p.commission_rate}%</td>
                       <td className="px-5 py-3 text-white">{formatPrice(p.net_amount, p.currency)}</td>
                       <td className="px-5 py-3">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          p.payout_status === "COMPLETED" ? "bg-green-500/20 text-green-400" :
-                          p.payout_status === "PENDING"   ? "bg-amber-500/20 text-amber-400" :
-                          "bg-gray-500/20 text-gray-400"
-                        }`}>{p.payout_status}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            p.payout_status === "COMPLETED" ? "bg-green-500/20 text-green-400" :
+                            p.payout_status === "PENDING"   ? "bg-amber-500/20 text-amber-400" :
+                            "bg-gray-500/20 text-gray-400"
+                          }`}>{p.payout_status}</span>
+                          {p.payout_status === "PENDING" && (
+                            <button
+                              onClick={() => handlePayoutAction(p.id, "complete")}
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-600/20 text-green-400 hover:bg-green-600/40 transition-colors">
+                              Mark Paid
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -54,6 +54,10 @@ class SellerRatePayload(BaseModel):
     effective_until:Optional[datetime] = None
 
 
+class PayoutActionPayload(BaseModel):
+    action: str  # complete, cancel
+
+
 # ── Commission Preview ────────────────────────────────────────────────────────
 
 @router.post("/calculate", summary="Calculate commission preview")
@@ -371,3 +375,28 @@ async def admin_payouts(
         "page":      page,
         "page_size": page_size,
     })
+
+
+@router.put("/admin/payouts/{payout_id}/action", summary="Admin payout action")
+async def admin_payout_action(
+    payout_id:   uuid.UUID,
+    payload:     PayoutActionPayload,
+    current_user = Depends(get_admin_user),
+    db: Session  = Depends(get_db),
+):
+    payout = db.query(SellerPayout).filter(SellerPayout.id == payout_id).first()
+    if not payout:
+        raise HTTPException(status_code=404, detail="Payout not found")
+
+    now = datetime.utcnow()
+    if payload.action == "complete":
+        payout.payout_status = "COMPLETED"
+        payout.payout_date   = now
+    elif payload.action == "cancel":
+        payout.payout_status = "CANCELLED"
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+
+    payout.updated_at = now
+    db.commit()
+    return success_response(message=f"Payout {payload.action}d successfully")
